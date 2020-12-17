@@ -1,1 +1,1 @@
-# lib-zotero-api
+# zotero-api-lib-ts
