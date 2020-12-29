@@ -2,9 +2,11 @@
   "name": "lib-zotero-api",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "zotero-api-lib.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node ./bin/zotero-api-lib.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc ./bin/zotero-api-lib.ts"
   },
   "repository": {
     "type": "git",
@@ -15,5 +17,23 @@
   "bugs": {
     "url": "https://github.com/OpenDevEd/lib-zotero-api/issues"
   },
-  "homepage": "https://github.com/OpenDevEd/lib-zotero-api#readme"
+  "homepage": "https://github.com/OpenDevEd/lib-zotero-api#readme",
+  "dependencies": {
+    "@iarna/toml": "^2.2.5",
+    "@types/node": "^14.14.14",
+    "argparse": "^2.0.1",
+    "args-any": "^1.2.1",
+    "docstring": "^1.1.0",
+    "dotenv": "^8.2.0",
+    "file-system": "^2.2.2",
+    "fs": "0.0.1-security",
+    "http-link-header": "^1.0.3",
+    "md5-file": "^5.0.0",
+    "path": "^0.12.7",
+    "request-promise": "^4.2.6",
+    "require": "^2.4.20",
+    "ts-dotenv": "^0.8.3",
+    "tsconfig": "^7.0.0",
+    "typescript": "^4.1.3"
+  }
 }
