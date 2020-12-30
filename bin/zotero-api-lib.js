@@ -51,7 +51,7 @@ require('docstring');
 var os = require('os');
 // import { ArgumentParser } from 'argparse'
 var ArgumentParser = require('argparse').ArgumentParser;
-var TOML = require('@iarna/toml');
+var toml = require('@iarna/toml');
 var fs = require('fs');
 var path = require('path');
 var request = require('request-promise');
@@ -132,7 +132,7 @@ var Zotero = /** @class */ (function () {
                         }
                         this.args = this.parser.parseArgs();
                         config = [this.args.config, 'zotero-cli.toml', os.homedir() + "/.config/zotero-cli/zotero-cli.toml"].find(function (cfg) { return fs.existsSync(cfg); });
-                        this.config = config ? TOML(fs.readFileSync(config, 'utf-8')) : {};
+                        this.config = config ? toml.parse(fs.readFileSync(config, 'utf-8')) : {};
                         if (this.args.user_id || this.args.group_id) {
                             //Overwriting command line option in config
                             delete this.config['user-id'];
@@ -234,8 +234,8 @@ var Zotero = /** @class */ (function () {
                         if (this.args.group_id) {
                           this.args.group_id = this.extractGroup(this.args.group_id)
                           if (!this.args.group_id) {
-                        this.parser.error('Unable to extract group_id from the string provided via --group_id.')
-                        return
+                      this.parser.error('Unable to extract group_id from the string provided via --group_id.')
+                      return
                           }
                         }
                         */
@@ -528,8 +528,8 @@ var Zotero = /** @class */ (function () {
                 switch (_e.label) {
                     case 0:
                         /**
-                        Retrieve information about a specific collection --key KEY (API: /collections/KEY or /collections/KEY/tags). Use 'collection --help' for details.
-                        (Note: Retrieve items is a collection via 'items --collection KEY'.)
+                      Retrieve information about a specific collection --key KEY (API: /collections/KEY or /collections/KEY/tags). Use 'collection --help' for details.
+                      (Note: Retrieve items is a collection via 'items --collection KEY'.)
                          */
                         if (argparser) {
                             argparser.addArgument('--key', { required: true, help: 'The key of the collection (required). You can provide the key as zotero-select link (zotero://...) to also set the group-id.' });
@@ -701,9 +701,9 @@ var Zotero = /** @class */ (function () {
                 switch (_h.label) {
                     case 0:
                         /**
-                        Retrieve an item (item --key KEY), save/add file attachments, retrieve children. Manage collections and tags. (API: /items/KEY/ or /items/KEY/children).
-                    
-                        Also see 'attachment', 'create' and 'update'.
+                      Retrieve an item (item --key KEY), save/add file attachments, retrieve children. Manage collections and tags. (API: /items/KEY/ or /items/KEY/children).
+                     
+                      Also see 'attachment', 'create' and 'update'.
                         */
                         if (argparser) {
                             argparser.addArgument('--key', { required: true, help: 'The key of the item. You can provide the key as zotero-select link (zotero://...) to also set the group-id.' });
@@ -864,8 +864,8 @@ var Zotero = /** @class */ (function () {
                 switch (_d.label) {
                     case 0:
                         /**
-                        Retrieve/save file attachments for the item specified with --key KEY (API: /items/KEY/file).
-                        Also see 'item', which has options for adding/saving file attachments.
+                      Retrieve/save file attachments for the item specified with --key KEY (API: /items/KEY/file).
+                      Also see 'item', which has options for adding/saving file attachments.
                         */
                         if (argparser) {
                             argparser.addArgument('--key', { required: true, help: 'The key of the item. You can provide the key as zotero-select link (zotero://...) to also set the group-id.' });
@@ -897,9 +897,9 @@ var Zotero = /** @class */ (function () {
                 switch (_c.label) {
                     case 0:
                         /**
-                        Create a new item or items. (API: /items/new) You can retrieve a template with the --template option.
-                    
-                        Use this option to create both top-level items, as well as child items (including notes and links).
+                      Create a new item or items. (API: /items/new) You can retrieve a template with the --template option.
+                     
+                      Use this option to create both top-level items, as well as child items (including notes and links).
                         */
                         if (argparser) {
                             argparser.addArgument('--template', { help: "Retrieve a template for the item you wish to create. You can retrieve the template types using the main argument 'types'." });
