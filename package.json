@@ -1,5 +1,5 @@
 {
-  "name": "lib-zotero-api",
+  "name": "zotero-lib",
   "version": "1.0.0",
   "description": "",
   "main": "zotero-api-lib.ts",
@@ -10,14 +10,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/OpenDevEd/lib-zotero-api.git"
+    "url": "git+https://github.com/OpenDevEd/zotero-lib.git"
   },
-  "author": "",
+  "author": "opendeved",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/OpenDevEd/lib-zotero-api/issues"
+    "url": "https://github.com/OpenDevEd/zotero-lib/issues"
   },
-  "homepage": "https://github.com/OpenDevEd/lib-zotero-api#readme",
+  "homepage": "https://github.com/OpenDevEd/zotero-lib#readme",
   "dependencies": {
     "@iarna/toml": "^2.2.5",
     "@types/node": "^14.14.14",
