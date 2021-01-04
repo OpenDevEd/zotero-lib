@@ -6,7 +6,10 @@
   "scripts": {
     "start": "node ./bin/zotero-api-lib.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc ./bin/zotero-api-lib.ts"
+    "build": "tsc ./bin/zotero-api-lib.ts",
+    "publish:patch": "npm version patch; npm publish; git push --tags",
+    "publish:minor": "npm version minor; npm publish; git push --tags",
+    "publish:major": "npm version major; npm publish; git push --tags"
   },
   "repository": {
     "type": "git",
