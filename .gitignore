@@ -1,0 +1,13 @@
+*.ini
+*.toml
+*.swp
+node_modules
+*.js
+.env
+BaCkUp
+BaCkUp/*
+*/BaCkUp/*
+*~
+*/*~
+*/*/*~
+.vs/*
