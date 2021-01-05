@@ -736,13 +736,18 @@ var Zotero = /** @class */ (function () {
                                 return __generator(this, function (_d) {
                                     switch (_d.label) {
                                         case 0:
+                                            if (!item.data.filename) return [3 /*break*/, 2];
                                             console.log("Downloading file " + item.data.filename);
                                             _b = (_a = fs).writeFileSync;
                                             _c = [item.data.filename];
                                             return [4 /*yield*/, this.get("/items/" + item.key + "/file")];
                                         case 1:
                                             _b.apply(_a, _c.concat([_d.sent(), 'binary']));
-                                            return [2 /*return*/];
+                                            return [3 /*break*/, 3];
+                                        case 2:
+                                            console.log("Not downloading file " + item.key + "/" + item.data.itemType + "/" + item.data.linkMode + "/" + item.data.title);
+                                            _d.label = 3;
+                                        case 3: return [2 /*return*/];
                                     }
                                 });
                             }); }))];
