@@ -1,4 +1,5 @@
-# Introduction: Tools for working with the APIs of Zotero and Zenodo (zotzen)
+# zotero-lib
+## Introduction: Tools for working with the APIs of Zotero and Zenodo (zotzen)
 
 This repository is part of a set of repositories, see here: https://github.com/orgs/OpenDevEd/teams/zotzen-team/repositories. Currently, this set contains a number of libraries
 - zenodo-lib https://github.com/opendeved/zenodo-lib, https://www.npmjs.com/package/zenodo-lib
