@@ -54,6 +54,7 @@ const arg = new class {
   }
 }
 
+// Is this class needed, now that we have a module?
 class Zotero {
   args: any
   output: string = ''
@@ -66,6 +67,7 @@ class Zotero {
     'Zotero-API-Version': '3',
   }
 
+  // CLI code
   async run() {
     this.output = ''
     // global parameters for all commands
@@ -210,6 +212,7 @@ class Zotero {
     if (this.args.out) fs.writeFileSync(this.args.out, this.output)
   }
 
+  // library starts.
   public print(...args: any[]) {
     if (!this.args.out) {
       console.log.apply(console, args)
