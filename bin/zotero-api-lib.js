@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+"use strict";
 var __assign = (this && this.__assign) || function () {
     __assign = Object.assign || function(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -46,6 +47,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+exports.__esModule = true;
 require('dotenv').config();
 require('docstring');
 var os = require('os');
@@ -93,13 +95,25 @@ var arg = new /** @class */ (function () {
     return class_1;
 }());
 var Zotero = /** @class */ (function () {
-    function Zotero() {
+    function Zotero(args, output, parser, config, zotero, base, headers) {
         this.output = '';
         this.base = 'https://api.zotero.org';
         this.headers = {
             'User-Agent': 'Zotero-CLI',
             'Zotero-API-Version': '3'
         };
+        base = "https://api.zotero.org";
+        headers = {
+            'User-Agent': 'Zotero-CLI',
+            'Zotero-API-Version': '3'
+        };
+        this.args = args,
+            this.output = output,
+            this.parser = parser,
+            this.config = config,
+            this.zotero = zotero,
+            this.base = base,
+            this.headers = headers;
     }
     Zotero.prototype.run = function () {
         return __awaiter(this, void 0, void 0, function () {
@@ -1181,3 +1195,4 @@ var Zotero = /** @class */ (function () {
     };
     return Zotero;
 }());
+exports["default"] = Zotero;
