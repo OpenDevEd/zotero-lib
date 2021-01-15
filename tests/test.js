@@ -40,6 +40,7 @@ var zotero = new Zotero(config1)
 console.log("z=" + JSON.stringify(zotero, null, 2))
 //console.log("t="+typeof(Zotero));
 //console.log(JSON.stringify(Zotero,null,2));
+
 async function test() {
   const res = await zotero.readConfig(config1)
   // console.log("res="+JSON.stringify(res,null,2))
@@ -51,16 +52,25 @@ async function test() {
   let report = await zotero.create_item(template)
   console.log("r" + JSON.stringify(report, null, 2))
   report.title = "ABC"
-  //This working in testing:
-  //fs.writeFileSync('../temp.json', JSON.stringify(report))
-  /*const res2 = await zotero.create_item({
+  //Example: Write template to file and submit from file
+  /*
+  fs.writeFileSync('../temp.json', JSON.stringify(report))
+  const res2 = await zotero.create_item({
     files: ["../temp.json"]
   })*/
-  let i = []
+
+  // Example 2: submit (one or more) records as array
+  /* let i = []
+  i.push(report)
+  report.title = "DEF"
   i.push(report)
   const res2 = await zotero.create_item({
     items: i
-  })
+  }) */
+  let i = []
+  const res2 = await zotero.create_item({
+    item: report
+  }) 
   const s = JSON.stringify(res2, null, 2)
   return s;
 }

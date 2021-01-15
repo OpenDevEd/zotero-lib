@@ -742,19 +742,21 @@ module.exports = class Zotero {
       if (!this.args.files.length) return this.message('Need at least one item (args.items) to create or use args.template')
       const items = this.args.files.map(item => JSON.parse(fs.readFileSync(item, 'utf-8')))
       //console.log("input")
-      this.show(items)
+      //this.show(items)
       const result = await this.post('/items', JSON.stringify(items))
-      this.show(result)
-      return result
+      const res = JSON.parse(result)
+      this.show(res)
+      return res
     } else if ("items" in this.args && this.args.items.length > 0) {
       const result = await this.post('/items', JSON.stringify(this.args.items))
       const res = JSON.parse(result)
       this.show(res)
       return res;
     } else if (this.args.item) {
-      const result = await this.post('/items', JSON.stringify(this.args.item))
-      this.show(result)
-      return result;
+      const result = await this.post('/items', "["+JSON.stringify(this.args.item)+"]")
+      const res = JSON.parse(result)
+      this.show(res)
+      return res
     }
   }
   async $update_item(args) {

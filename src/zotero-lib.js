@@ -903,7 +903,7 @@ module.exports = /** @class */ (function () {
     };
     Zotero.prototype.create_item = function (args) {
         return __awaiter(this, void 0, void 0, function () {
-            var result, items, result, result, res, result;
+            var result, items, result, res, result, res, result, res;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -933,13 +933,12 @@ module.exports = /** @class */ (function () {
                         if (!this.args.files.length)
                             return [2 /*return*/, this.message('Need at least one item (args.items) to create or use args.template')];
                         items = this.args.files.map(function (item) { return JSON.parse(fs.readFileSync(item, 'utf-8')); });
-                        //console.log("input")
-                        this.show(items);
                         return [4 /*yield*/, this.post('/items', JSON.stringify(items))];
                     case 3:
                         result = _a.sent();
-                        this.show(result);
-                        return [2 /*return*/, result];
+                        res = JSON.parse(result);
+                        this.show(res);
+                        return [2 /*return*/, res];
                     case 4:
                         if (!("items" in this.args && this.args.items.length > 0)) return [3 /*break*/, 6];
                         return [4 /*yield*/, this.post('/items', JSON.stringify(this.args.items))];
@@ -950,11 +949,12 @@ module.exports = /** @class */ (function () {
                         return [2 /*return*/, res];
                     case 6:
                         if (!this.args.item) return [3 /*break*/, 8];
-                        return [4 /*yield*/, this.post('/items', JSON.stringify(this.args.item))];
+                        return [4 /*yield*/, this.post('/items', "[" + JSON.stringify(this.args.item) + "]")];
                     case 7:
                         result = _a.sent();
-                        this.show(result);
-                        return [2 /*return*/, result];
+                        res = JSON.parse(result);
+                        this.show(res);
+                        return [2 /*return*/, res];
                     case 8: return [2 /*return*/];
                 }
             });
