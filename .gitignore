@@ -2,7 +2,7 @@
 *.toml
 *.swp
 node_modules
-*.js
+build
 .env
 BaCkUp
 BaCkUp/*

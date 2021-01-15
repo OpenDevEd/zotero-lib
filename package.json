@@ -5,7 +5,7 @@
   "main": "bin/zotero-lib.js",
   "scripts": {
     "start": "node ./bin/zotero-lib.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node ./tests/*.js",
     "build": "tsc ./src/zotero-lib.ts",
     "publish:patch": "npm version patch; npm publish; git push --tags",
     "publish:minor": "npm version minor; npm publish; git push --tags",
