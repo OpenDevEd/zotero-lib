@@ -34,6 +34,7 @@
     "http-link-header": "^1.0.3",
     "md5-file": "^5.0.0",
     "path": "^0.12.7",
+    "request": "^2.88.2",
     "request-promise": "^4.2.6",
     "require": "^2.4.20",
     "ts-dotenv": "^0.8.3",
