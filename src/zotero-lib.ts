@@ -64,6 +64,8 @@ const arg = new class {
 
 export default class Zotero {
 
+  // constructor...
+
   base = "https://api.zotero.org";
   headers = {
     'User-Agent': 'Zotero-CLI',
@@ -99,9 +101,12 @@ export default class Zotero {
       // the command must have a docstring
       this[cmd](sp)
     }
+  }
 
-    this.args = this.parser.parseArgs()
+  // needs to go into CLI
+  //  this.args = this.parser.parseArgs()
 
+  public function readConfig() {
     // pick up config
     const config: string = [this.args.config, 'zotero-cli.toml', `${os.homedir()}/.config/zotero-cli/zotero-cli.toml`].find(cfg => fs.existsSync(cfg))
     this.config = config ? toml.parse(fs.readFileSync(config, 'utf-8')) : {}
@@ -263,7 +268,6 @@ export default class Zotero {
   }
 
   // The Zotero API uses several commands: get, post, patch, delete - these are defined below.
-
   async get(uri, options: { userOrGroupPrefix?: boolean, params?: any, resolveWithFullResponse?: boolean, json?: boolean } = {}) {
     if (typeof options.userOrGroupPrefix === 'undefined') options.userOrGroupPrefix = true
     if (typeof options.params === 'undefined') options.params = {}
@@ -350,7 +354,9 @@ export default class Zotero {
       headers,
     })
   }
+  // End of standard API calls
 
+  // Utility functions. private?
   async count(uri, params = {}) {
     return (await this.get(uri, { resolveWithFullResponse: true, params })).headers['total-results']
   }
@@ -376,7 +382,7 @@ export default class Zotero {
     return out
   }
 
-  /// THE COMMANDS ///
+  /// THE COMMANDS --> public
   // The following functions define key API commands: /keys, /collection, /collections, etc.
 
   // https://www.zotero.org/support/dev/web_api/v3/basics
@@ -393,15 +399,29 @@ export default class Zotero {
   // If I call $collections(subparser) -> add options to subparser
   // $collections(null) -> perform cllections action (using args)
   //async $collections(argparser = null) {
-  async $collections(args) {
-    /** Retrieve a list of collections or create a collection. (API: /collections, /collections/top, /collections/<collectionKey>/collections). Use 'collections --help' for details. */
+  public async $collections(args) {
+    this.args = args
+    /* Retrieve a list of collections or create a collection. (API: /collections, /collections/top, /collections/<collectionKey>/collections). Use 'collections --help' for details. */
     // Move this section into the cli
-    /*if (argparser) {
-      argparser.addArgument('--top', { action: 'storeTrue', help: 'Show only collection at top level.' })
-      argparser.addArgument('--key', { help: 'Show all the child collections of collection with key. You can provide the key as zotero-select link (zotero://...) to also set the group-id.' })
-      argparser.addArgument('--create-child', { nargs: '*', help: 'Create child collections of key (or at the top level if no key is specified) with the names specified.' })
+
+  /*  
+  if ("argparser" in args && args.argparser) {
+      args.argparser.addArgument('--top', { action: 'storeTrue', help: 'Show only collection at top level.' })
+      args.argparser.addArgument('--key', { help: 'Show all the child collections of collection with key. You can provide the key as zotero-select link (zotero://...) to also set the group-id.' })
+      args.argparser.addArgument('--create-child', { nargs: '*', help: 'Create child collections of key (or at the top level if no key is specified) with the names specified.' })
       return
-    }*/
+      /*
+      The above means that I can call:
+      args.argparser = new argparser
+      Zotero.$collections(args)
+      Zotero.$collection(args)
+      Zotero.$items(args)
+      Zotero.$item(args)
+      
+    }
+  */
+
+
 
     // Provide guidance to the user:  This function requires:
     // args.key (string, required) 
@@ -410,28 +430,32 @@ export default class Zotero {
     // perform tests: args.key
     if (this.args.key) {
       this.args.key = this.extractKeyAndSetGroup(this.args.key)
-      if (!this.args.key) {
-        this.parser.error('Unable to extract group/key from the string provided.')
-        return
-      }
+      
+    }
+    else{
+      this.parser.error('Unable to extract group/key from the string provided.')
+      return
     }
     // perform test: args.create_child
+    // If create_child=true, then create the child and exit.
     if (this.args.create_child) {
       const response = await this.post('/collections',
         JSON.stringify(this.args.create_child.map(c => { return { name: c, parentCollection: this.args.key } })))
-      this.print('Collections created: ', JSON.parse(response).successful)
-      return
-    }
-    // test for args.top: Not required.
-
-    let collections = null;
-    if (this.args.key) {
-      collections = await this.all(`/collections/${this.args.key}/collections`)
+      //this.print('Collections created: ', JSON.parse(response).successful)
+      return JSON.parse(response).successful
     } else {
-      collections = await this.all(`/collections${this.args.top ? '/top' : ''}`)
-    }
+      // test for args.top: Not required.
 
-    this.show(collections)
+      // If create_child==false:
+      let collections = null;
+      if (this.args.key) {
+        collections = await this.all(`/collections/${this.args.key}/collections`)
+      } else {
+        collections = await this.all(`/collections${this.args.top ? '/top' : ''}`)
+      }
+      this.show(collections)
+      return JSON.parse(collections).successful
+    }
   }
 
   // Operate on a specific collection.
@@ -447,7 +471,7 @@ export default class Zotero {
   Retrieve information about a specific collection --key KEY (API: /collections/KEY or /collections/KEY/tags). Use 'collection --help' for details.   
   (Note: Retrieve items is a collection via 'items --collection KEY'.)
      */
-
+  /*
     if (argparser) {
       argparser.addArgument('--key', { required: true, help: 'The key of the collection (required). You can provide the key as zotero-select link (zotero://...) to also set the group-id.' })
       argparser.addArgument('--tags', { action: 'storeTrue', help: 'Display tags present in the collection.' })
@@ -457,12 +481,16 @@ export default class Zotero {
       return
     }
 
+    */
+
     if (this.args.key) {
       this.args.key = this.extractKeyAndSetGroup(this.args.key)
-      if (!this.args.key) {
-        this.parser.error('Unable to extract group/key from the string provided.')
-        return
-      }
+      
+    }
+
+    else {
+      this.parser.error('Unable to extract group/key from the string provided.')
+      return
     }
 
     if (this.args.tags && this.args.add) {
@@ -518,7 +546,7 @@ export default class Zotero {
     */
 
     let items
-
+ /*
     if (argparser) {
       argparser.addArgument('--count', { action: 'storeTrue', help: 'Return the number of items.' })
       // argparser.addArgument('--all', { action: 'storeTrue', help: 'obsolete' })
@@ -529,6 +557,9 @@ export default class Zotero {
       return
     }
 
+    */
+
+  
     if (this.args.count && this.args.validate) {
       this.parser.error('--count cannot be combined with --validate')
       return
@@ -597,7 +628,7 @@ export default class Zotero {
    
   Also see 'attachment', 'create' and 'update'.
     */
-
+/*
     if (argparser) {
       argparser.addArgument('--key', { required: true, help: 'The key of the item. You can provide the key as zotero-select link (zotero://...) to also set the group-id.' })
       argparser.addArgument('--children', { action: 'storeTrue', help: 'Retrieve list of children for the item.' })
@@ -610,7 +641,7 @@ export default class Zotero {
       argparser.addArgument('--removetags', { nargs: '*', help: 'Remove tags from item. (Convenience method: patch item->data->tags.)' })
       return
     }
-
+*/
 
     if (this.args.key) {
       this.args.key = this.extractKeyAndSetGroup(this.args.key)
@@ -729,33 +760,41 @@ export default class Zotero {
     fs.writeFileSync(this.args.save, await this.get(`/items/${this.args.key}/file`), 'binary')
   }
 
-  async $create_item(argparser = null) {
+  async $create_item(args) {
+  //async $create_item(argparser = null) {
     /** 
   Create a new item or items. (API: /items/new) You can retrieve a template with the --template option.  
    
   Use this option to create both top-level items, as well as child items (including notes and links).
     */
-
+    /*
     if (argparser) {
       argparser.addArgument('--template', { help: "Retrieve a template for the item you wish to create. You can retrieve the template types using the main argument 'types'." })
       argparser.addArgument('items', { nargs: '*', help: 'Json files for the items to be created.' })
       return
     }
+    */
+
+    this.args = args
 
     if (this.args.template) {
-      this.show(await this.get('/items/new', { userOrGroupPrefix: false, params: { itemType: this.args.template } }))
-      return
-    }
-
-    if (!this.args.items.length) this.parser.error('Need at least one item to create')
+      const result = await this.get('/items/new', { userOrGroupPrefix: false, params: { itemType: this.args.template } })
+      this.show(result)
+      return JSON.parse(result).successful
+    } else {
+    if (!this.args.items.length) this.parser.error('Need at least one item (args.items) to create or use args.template')
 
     const items = this.args.items.map(item => JSON.parse(fs.readFileSync(item, 'utf-8')))
-    this.print(await this.post('/items', JSON.stringify(items)))
+    const result = await this.post('/items', JSON.stringify(items))
+    this.show(result)
+    return JSON.parse(result).successful
+    }
   }
-
-  async $update_item(argparser = null) {
+  
+  async $update_item(args) {
     /** Update/replace an item (--key KEY), either update (API: patch /items/KEY) or replacing (using --replace, API: put /items/KEY). */
-
+    this.args = args;
+    /*
     if (argparser) {
       argparser.addArgument('--key', { required: true, help: 'The key of the item. You can provide the key as zotero-select link (zotero://...) to also set the group-id.' })
       argparser.addArgument('--replace', { action: 'storeTrue', help: 'Replace the item by sumbitting the complete json.' })
@@ -763,13 +802,18 @@ export default class Zotero {
       return
     }
 
+    */
     if (this.args.key) {
       this.args.key = this.extractKeyAndSetGroup(this.args.key)
-      if (!this.args.key) {
+      
+    }
+    else{
+    
         this.parser.error('Unable to extract group/key from the string provided.')
         return
-      }
+      
     }
+    
 
     const originalItem = await this.get(`/items/${this.args.key}`)
     for (const item of this.args.items) {
@@ -874,11 +918,14 @@ export default class Zotero {
   async $tags(argparser = null) {
     /** Return a list of tags in the library. Options to filter and count tags. (API: /tags) */
 
+    /*
     if (argparser) {
       argparser.addArgument('--filter', { help: 'Tags of all types matching a specific name.' })
       argparser.addArgument('--count', { action: 'storeTrue', help: 'TODO: document' })
       return
     }
+
+    */
 
     let rawTags = null;
     if (this.args.filter) {
