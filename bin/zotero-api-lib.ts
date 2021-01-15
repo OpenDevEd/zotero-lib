@@ -15,6 +15,14 @@ const Ajv = require('ajv');
 const { parse } = require("args-any");
 
 
+/*
+TO DO: 
+module.exports...
+*/
+
+/*
+TODO: Move this file to 'src' and adjust package.json
+*/
 
 
 // import { parse as TOML } from '@iarna/toml'
@@ -55,19 +63,37 @@ const arg = new class {
 }
 
 // Is this class needed, now that we have a module?
-class Zotero {
+/*
+export default class Zotero {
+ 
+  // Only pass 'args'.
+  constructor(args){
+    
+    this.args = args
+    //this.output = output,
+    //this.parser = parser,
+    //this.config = config,
+    // ???
+    //this.zotero = zotero,
+    //this.base = base,
+    //this.headers = headers
+
+  }
+  */
+  base = "https://api.zotero.org";
+    headers =  {
+      'User-Agent': 'Zotero-CLI',
+      'Zotero-API-Version': '3',
+    }
   args: any
   output: string = ''
   parser: any
   config: any
   zotero: any
-  base = 'https://api.zotero.org'
-  headers = {
-    'User-Agent': 'Zotero-CLI',
-    'Zotero-API-Version': '3',
-  }
+  
 
   // CLI code
+/*
   async run() {
     this.output = ''
     // global parameters for all commands
@@ -187,16 +213,16 @@ class Zotero {
     if (this.args.user_id === 0) this.args.user_id = (await this.get(`/keys/${this.args.api_key}`, { userOrGroupPrefix: false })).userID
 
 
-    /*
+    
     // Could do this here:
-    if (this.args.group_id) {
-      this.args.group_id = this.extractGroup(this.args.group_id)
-      if (!this.args.group_id) {
-  this.parser.error('Unable to extract group_id from the string provided via --group_id.')
-  return
-      }    
-    }
-    */
+    //if (this.args.group_id) {
+  //      this.args.group_id = this.extractGroup(this.args.group_id)
+      //if (!this.args.group_id) {
+  //this.parser.error('Unable to extract group_id from the string provided via --group_id.')
+  //return
+      //}    
+    //}
+  
 
     // using default=2 above prevents the overrides from being picked up
     if (this.args.indent === null) this.args.indent = 2
@@ -211,6 +237,7 @@ class Zotero {
 
     if (this.args.out) fs.writeFileSync(this.args.out, this.output)
   }
+  */
 
   // library starts.
   public print(...args: any[]) {
@@ -233,6 +260,8 @@ class Zotero {
     }
   }
 
+
+  // Function to get more than 100 records, i.e. chunked retrieval.
   async all(uri, params = {}) {
     let chunk = await this.get(uri, { resolveWithFullResponse: true, params })
     let data = chunk.body
@@ -379,16 +408,26 @@ class Zotero {
 
   // TODO: --create-child should go into 'collection'.
 
-  async $collections(argparser = null) {
-    /** Retrieve a list of collections or create a collection. (API: /collections, /collections/top, /collections/<collectionKey>/collections). Use 'collections --help' for details. */
 
-    if (argparser) {
+  // zotero-cli, 
+  // If I call $collections(subparser) -> add options to subparser
+  // $collections(null) -> perform cllections action (using args)
+  //async $collections(argparser = null) {
+  async $collections(args) {
+    /** Retrieve a list of collections or create a collection. (API: /collections, /collections/top, /collections/<collectionKey>/collections). Use 'collections --help' for details. */
+    // Move this section into the cli
+    /*if (argparser) {
       argparser.addArgument('--top', { action: 'storeTrue', help: 'Show only collection at top level.' })
       argparser.addArgument('--key', { help: 'Show all the child collections of collection with key. You can provide the key as zotero-select link (zotero://...) to also set the group-id.' })
       argparser.addArgument('--create-child', { nargs: '*', help: 'Create child collections of key (or at the top level if no key is specified) with the names specified.' })
       return
-    }
+    }*/
 
+        // Provide guidance to the user:  This function requires:
+        // args.key (string, required) 
+        // args.top (boolean, optional)
+        // args.create_child (string, optional)
+    // perform tests: args.key
     if (this.args.key) {
       this.args.key = this.extractKeyAndSetGroup(this.args.key)
       if (!this.args.key) {
@@ -396,14 +435,14 @@ class Zotero {
         return
       }
     }
-
+    // perform test: args.create_child
     if (this.args.create_child) {
       const response = await this.post('/collections',
         JSON.stringify(this.args.create_child.map(c => { return { name: c, parentCollection: this.args.key } })))
       this.print('Collections created: ', JSON.parse(response).successful)
       return
     }
-
+    // test for args.top: Not required.
 
     let collections = null;
     if (this.args.key) {
