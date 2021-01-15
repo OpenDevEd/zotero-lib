@@ -28,12 +28,15 @@ const config2 = {
   config: "/home/zeina/.config/zotero-cli/zotero-cli.toml"
 }
 
+
+// TODO: Test verbose
 const config3 = {
   "user-id": "XXX",
   "group-id": "123",
   "library-type": "group",
   "indent": 4,
   "api-key": "XXX"
+  "verbose": "true"
 }
 
 var zotero = new Zotero(config1)

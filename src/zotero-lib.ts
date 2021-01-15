@@ -231,7 +231,7 @@ module.exports = class Zotero {
     if (typeof options.json === 'undefined') options.json = true
 
     let prefix = ''
-    if (options.userOrGroupPrefix) prefix = this.args.user_id ? `/users/${this.args.user_id}` : `/groups/${this.args.group_id}`
+    if (options.userOrGroupPrefix) prefix = this.config.user_id ? `/users/${this.config.user_id}` : `/groups/${this.config.group_id}`
 
     const params = Object.keys(options.params).map(param => {
       let values = options.params[param]
@@ -240,7 +240,7 @@ module.exports = class Zotero {
     }).join('&')
 
     uri = `${this.base}${prefix}${uri}${params ? '?' + params : ''}`
-    if (this.args.verbose) console.error('GET', uri)
+    if (this.config.verbose) console.error('GET', uri)
 
     return request({
       uri,
@@ -255,7 +255,7 @@ module.exports = class Zotero {
     const prefix = this.config.user_id ? `/users/${this.config.user_id}` : `/groups/${this.config.group_id}`
 
     uri = `${this.base}${prefix}${uri}`
-    if (this.args.verbose) console.error('POST', uri)
+    if (this.config.verbose) console.error('POST', uri)
 
     return request({
       method: 'POST',
@@ -266,10 +266,10 @@ module.exports = class Zotero {
   }
 
   async put(uri, data) {
-    const prefix = this.args.user_id ? `/users/${this.args.user_id}` : `/groups/${this.args.group_id}`
+    const prefix = this.config.user_id ? `/users/${this.config.user_id}` : `/groups/${this.config.group_id}`
 
     uri = `${this.base}${prefix}${uri}`
-    if (this.args.verbose) console.error('PUT', uri)
+    if (this.config.verbose) console.error('PUT', uri)
 
     return request({
       method: 'PUT',
@@ -280,13 +280,13 @@ module.exports = class Zotero {
   }
 
   async patch(uri, data, version?: number) {
-    const prefix = this.args.user_id ? `/users/${this.args.user_id}` : `/groups/${this.args.group_id}`
+    const prefix = this.config.user_id ? `/users/${this.config.user_id}` : `/groups/${this.config.group_id}`
 
     const headers = { ...this.headers, 'Content-Type': 'application/json' }
     if (typeof version !== 'undefined') headers['If-Unmodified-Since-Version'] = version
 
     uri = `${this.base}${prefix}${uri}`
-    if (this.args.verbose) console.error('PATCH', uri)
+    if (this.config.verbose) console.error('PATCH', uri)
 
     return request({
       method: 'PATCH',
@@ -297,13 +297,13 @@ module.exports = class Zotero {
   }
 
   async delete(uri, version?: number) {
-    const prefix = this.args.user_id ? `/users/${this.args.user_id}` : `/groups/${this.args.group_id}`
+    const prefix = this.config.user_id ? `/users/${this.config.user_id}` : `/groups/${this.config.group_id}`
 
     const headers = { ...this.headers, 'Content-Type': 'application/json' }
     if (typeof version !== 'undefined') headers['If-Unmodified-Since-Version'] = version
 
     uri = `${this.base}${prefix}${uri}`
-    if (this.args.verbose) console.error('DELETE', uri)
+    if (this.config.verbose) console.error('DELETE', uri)
 
     return request({
       method: 'DELETE',
@@ -320,8 +320,8 @@ module.exports = class Zotero {
   }
 
   show(v) {
-    // this.print(JSON.stringify(v, null, this.args.indent).replace(new RegExp(this.args.api_key, 'g'), '<API-KEY>'))
-    this.print(JSON.stringify(v, null, this.args.indent))
+    // this.print(JSON.stringify(v, null, this.config.indent).replace(new RegExp(this.config.api_key, 'g'), '<API-KEY>'))
+    this.print(JSON.stringify(v, null, this.config.indent))
   }
 
   extractKeyAndSetGroup(key) {
@@ -334,7 +334,7 @@ module.exports = class Zotero {
         return
       } else {
         // console.log("Key: zotero://-key provided for "+res[2]+" Setting group-id.")
-        this.args.group_id = res[1]
+        this.config.group_id = res[1]
         out = res[3]
       };
     }
