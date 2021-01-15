@@ -2,7 +2,7 @@
   "name": "zotero-lib",
   "version": "1.0.6",
   "description": "",
-  "main": "bin/zotero-lib.js",
+  "main": "src/zotero-lib.js",
   "scripts": {
     "start": "node ./bin/zotero-lib.js",
     "test": "node ./tests/*.js",
