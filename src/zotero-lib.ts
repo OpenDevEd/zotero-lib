@@ -65,9 +65,12 @@ const arg = new class {
 export default class Zotero {
 
   // constructor...
+  constructor(args){
+    this.args = args;
+  }
 
-  base = "https://api.zotero.org";
-  headers = {
+  const base = "https://api.zotero.org";
+  const headers = {
     'User-Agent': 'Zotero-CLI',
     'Zotero-API-Version': '3',
   }
@@ -356,6 +359,7 @@ export default class Zotero {
   }
   // End of standard API calls
 
+  
   // Utility functions. private?
   async count(uri, params = {}) {
     return (await this.get(uri, { resolveWithFullResponse: true, params })).headers['total-results']

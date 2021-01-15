@@ -22,7 +22,7 @@
     },
     "include": [
         "src",
-        "bin"
+        "build"
     ],
     "exclude": [
         "node_modules",
