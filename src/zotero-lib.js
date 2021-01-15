@@ -155,26 +155,47 @@ module.exports = /** @class */ (function () {
                         this.args = args;
                         config = [this.args.config, 'zotero-cli.toml', os.homedir() + "/.config/zotero-cli/zotero-cli.toml"].find(function (cfg) { return fs.existsSync(cfg); });
                         this.config = config ? toml.parse(fs.readFileSync(config, 'utf-8')) : {};
-                        if (this.args.user_id || this.args.group_id) {
-                            //Overwriting command line option in config
-                            delete this.config['user-id'];
-                            delete this.config['group-id'];
-                            this.config['user-id'] = this.args.user_id;
-                            this.config['group-id'] = this.args.group_id;
-                            if (!this.config['user-id'])
-                                delete this.config['user-id'];
-                            if (!this.config['group-id'])
-                                delete this.config['group-id'];
+                        // Make - to _
+                        if (this.config['user-id']) {
+                            this.config.user_id = this.config['user-id'];
                         }
-                        if (!this.args.api_key)
-                            return [2 /*return*/, this.message('no API key provided')];
-                        this.headers['Zotero-API-Key'] = this.args.api_key;
-                        if (this.args.user_id === null && this.args.group_id === null)
-                            return [2 /*return*/, this.message('You must provide exactly one of --user-id or --group-id')];
-                        if (this.args.user_id !== null && this.args.group_id !== null)
-                            return [2 /*return*/, this.message('You must provide exactly one of --user-id or --group-id')];
-                        if (!(this.args.user_id === 0)) return [3 /*break*/, 2];
-                        _a = this.args;
+                        delete this.config['user-id'];
+                        // Make - to _
+                        if (this.config['group-id']) {
+                            this.config.group_id = this.config['group-id'];
+                        }
+                        delete this.config['group-id'];
+                        // Overwrite config with values from args    
+                        if (this.args.user_id) {
+                            this.config.user_id = this.args.user_id;
+                        }
+                        if (this.args.group_id) {
+                            this.config.group_id = this.args.group_id;
+                        }
+                        // Make - to _
+                        if (this.config['api-key']) {
+                            this.config.api_key = this.config['api-key'];
+                        }
+                        delete this.config['api-key'];
+                        if (this.args.api_key) {
+                            this.config.api_key = this.args.api_key;
+                        }
+                        if (this.config.api_key) {
+                            this.headers['Zotero-API-Key'] = this.config.api_key;
+                        }
+                        else {
+                            return [2 /*return*/, this.message('No API key provided in args or config')];
+                        }
+                        console.log(JSON.stringify(this.config, null, 2));
+                        // Check that one  and only one is defined:
+                        if (this.config.user_id === null && this.config.group_id === null)
+                            return [2 /*return*/, this.message('Both user/group are null. You must provide exactly one of --user-id or --group-id')
+                                // TODO
+                                // if (this.config.user_id !== null && this.config.group_id !== null) return this.message('Both user/group are specified. You must provide exactly one of --user-id or --group-id')
+                                // user_id==0 is generic; retrieve the real user id via the api_key
+                            ];
+                        if (!(this.config.user_id === 0)) return [3 /*break*/, 2];
+                        _a = this.config;
                         return [4 /*yield*/, this.get("/keys/" + this.args.api_key, { userOrGroupPrefix: false })];
                     case 1:
                         _a.user_id = (_b.sent()).userID;
@@ -185,6 +206,14 @@ module.exports = /** @class */ (function () {
                             this.args.indent = 2;
                         return [2 /*return*/, this.message("success")];
                 }
+            });
+        });
+    };
+    Zotero.prototype.showConfig = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                console.log(JSON.stringify(this.config, null, 2));
+                return [2 /*return*/];
             });
         });
     };
@@ -299,7 +328,7 @@ module.exports = /** @class */ (function () {
         return __awaiter(this, void 0, void 0, function () {
             var prefix;
             return __generator(this, function (_a) {
-                prefix = this.args.user_id ? "/users/" + this.args.user_id : "/groups/" + this.args.group_id;
+                prefix = this.config.user_id ? "/users/" + this.config.user_id : "/groups/" + this.config.group_id;
                 uri = "" + this.base + prefix + uri;
                 if (this.args.verbose)
                     console.error('POST', uri);
@@ -382,7 +411,8 @@ module.exports = /** @class */ (function () {
         });
     };
     Zotero.prototype.show = function (v) {
-        this.print(JSON.stringify(v, null, this.args.indent).replace(new RegExp(this.args.api_key, 'g'), '<API-KEY>'));
+        // this.print(JSON.stringify(v, null, this.args.indent).replace(new RegExp(this.args.api_key, 'g'), '<API-KEY>'))
+        this.print(JSON.stringify(v, null, this.args.indent));
     };
     Zotero.prototype.extractKeyAndSetGroup = function (key) {
         // zotero://select/groups/(\d+)/(items|collections)/([A-Z01-9]+)
@@ -871,9 +901,9 @@ module.exports = /** @class */ (function () {
             });
         });
     };
-    Zotero.prototype.$create_item = function (args) {
+    Zotero.prototype.create_item = function (args) {
         return __awaiter(this, void 0, void 0, function () {
-            var result, items, result;
+            var result, items, result, result, result;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -887,8 +917,8 @@ module.exports = /** @class */ (function () {
                         this.reReadConfig(args);
                         // function.name({"argparser": subparser}) returns CLI definition.
                         if ("argparser" in args && args.argparser) {
-                            argparser.addArgument('--template', { help: "Retrieve a template for the item you wish to create. You can retrieve the template types using the main argument 'types'." });
-                            argparser.addArgument('items', { nargs: '*', help: 'Json files for the items to be created.' });
+                            args.argparser.addArgument('--template', { help: "Retrieve a template for the item you wish to create. You can retrieve the template types using the main argument 'types'." });
+                            args.argparser.addArgument('items', { nargs: '*', help: 'Json files for the items to be created.' });
                             return [2 /*return*/];
                         }
                         if (!this.args.template) return [3 /*break*/, 2];
@@ -896,8 +926,10 @@ module.exports = /** @class */ (function () {
                     case 1:
                         result = _a.sent();
                         this.show(result);
-                        return [2 /*return*/, JSON.parse(result).successful];
+                        //console.log("/"+result+"/")
+                        return [2 /*return*/, result];
                     case 2:
+                        if (!("files" in this.args && this.args.files.length > 0)) return [3 /*break*/, 4];
                         if (!this.args.items.length)
                             return [2 /*return*/, this.message('Need at least one item (args.items) to create or use args.template')];
                         items = this.args.items.map(function (item) { return JSON.parse(fs.readFileSync(item, 'utf-8')); });
@@ -905,7 +937,22 @@ module.exports = /** @class */ (function () {
                     case 3:
                         result = _a.sent();
                         this.show(result);
-                        return [2 /*return*/, JSON.parse(result).successful];
+                        return [2 /*return*/, result];
+                    case 4:
+                        if (!("items" in this.args && this.args.items.length > 0)) return [3 /*break*/, 6];
+                        return [4 /*yield*/, this.post('/items', JSON.stringify(this.args.items))];
+                    case 5:
+                        result = _a.sent();
+                        this.show(result);
+                        return [2 /*return*/, result];
+                    case 6:
+                        if (!this.args.item) return [3 /*break*/, 8];
+                        return [4 /*yield*/, this.post('/items', JSON.stringify(this.args.item))];
+                    case 7:
+                        result = _a.sent();
+                        this.show(result);
+                        return [2 /*return*/, result];
+                    case 8: return [2 /*return*/];
                 }
             });
         });
@@ -921,12 +968,11 @@ module.exports = /** @class */ (function () {
                         this.reReadConfig(args);
                         // function.name({"argparser": subparser}) returns CLI definition.
                         if ("argparser" in args && args.argparser) {
-                            argparser.addArgument('--key', { required: true, help: 'The key of the item. You can provide the key as zotero-select link (zotero://...) to also set the group-id.' });
-                            argparser.addArgument('--replace', { action: 'storeTrue', help: 'Replace the item by sumbitting the complete json.' });
-                            argparser.addArgument('items', { nargs: 1, help: 'Path of item files in json format.' });
+                            args.argparser.addArgument('--key', { required: true, help: 'The key of the item. You can provide the key as zotero-select link (zotero://...) to also set the group-id.' });
+                            args.argparser.addArgument('--replace', { action: 'storeTrue', help: 'Replace the item by sumbitting the complete json.' });
+                            args.argparser.addArgument('items', { nargs: 1, help: 'Path of item files in json format.' });
                             return [2 /*return*/];
                         }
-                            * /;
                         if (this.args.key) {
                             this.args.key = this.extractKeyAndSetGroup(this.args.key);
                         }
@@ -955,37 +1001,43 @@ module.exports = /** @class */ (function () {
         });
     };
     // <userOrGroupPrefix>/items/trash	Items in the trash
-    Zotero.prototype.$trash = function (argparser) {
-        if (argparser === void 0) { argparser = null; }
+    Zotero.prototype.$trash = function (args) {
         return __awaiter(this, void 0, void 0, function () {
             var items;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         /** Return a list of items in the trash. */
-                        if (argparser)
-                            return [2 /*return*/];
+                        this.args = args;
+                        this.reReadConfig(args);
+                        // function.name({"argparser": subparser}) returns CLI definition.
+                        if ("argparser" in args && args.argparser) {
+                            return [2 /*return*/, null];
+                        }
                         return [4 /*yield*/, this.get('/items/trash')];
                     case 1:
                         items = _a.sent();
                         this.show(items);
-                        return [2 /*return*/];
+                        return [2 /*return*/, items];
                 }
             });
         });
     };
     // https://www.zotero.org/support/dev/web_api/v3/basics
     // <userOrGroupPrefix>/publications/items	Items in My Publications  
-    Zotero.prototype.$publications = function (argparser) {
-        if (argparser === void 0) { argparser = null; }
+    Zotero.prototype.$publications = function (args) {
         return __awaiter(this, void 0, void 0, function () {
             var items;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         /** Return a list of items in publications (user library only). (API: /publications/items) */
-                        if (argparser)
+                        this.args = args;
+                        this.reReadConfig(args);
+                        // function.name({"argparser": subparser}) returns CLI definition.
+                        if ("argparser" in args && args.argparser) {
                             return [2 /*return*/];
+                        }
                         return [4 /*yield*/, this.get('/publications/items')];
                     case 1:
                         items = _a.sent();
@@ -996,92 +1048,107 @@ module.exports = /** @class */ (function () {
         });
     };
     // itemTypes
-    Zotero.prototype.$types = function (argparser) {
-        if (argparser === void 0) { argparser = null; }
+    Zotero.prototype.$types = function (args) {
         return __awaiter(this, void 0, void 0, function () {
-            var _a;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
+            var types;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
                     case 0:
                         /** Retrieve a list of items types available in Zotero. (API: /itemTypes) */
-                        if (argparser)
+                        this.args = args;
+                        this.reReadConfig(args);
+                        // function.name({"argparser": subparser}) returns CLI definition.
+                        if ("argparser" in args && args.argparser) {
                             return [2 /*return*/];
-                        _a = this.show;
+                        }
                         return [4 /*yield*/, this.get('/itemTypes', { userOrGroupPrefix: false })];
                     case 1:
-                        _a.apply(this, [_b.sent()]);
-                        return [2 /*return*/];
+                        types = _a.sent();
+                        this.show(types);
+                        return [2 /*return*/, types];
                 }
             });
         });
     };
-    Zotero.prototype.$groups = function (argparser) {
-        if (argparser === void 0) { argparser = null; }
+    Zotero.prototype.$groups = function (args) {
         return __awaiter(this, void 0, void 0, function () {
-            var _a;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
+            var groups;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
                     case 0:
                         /** Retrieve the Zotero groups data to which the current library_id and api_key has access to. (API: /users/<user-id>/groups) */
-                        if (argparser)
+                        this.args = args;
+                        this.reReadConfig(args);
+                        // function.name({"argparser": subparser}) returns CLI definition.
+                        if ("argparser" in args && args.argparser) {
                             return [2 /*return*/];
-                        _a = this.show;
+                        }
                         return [4 /*yield*/, this.get('/groups')];
                     case 1:
-                        _a.apply(this, [_b.sent()]);
-                        return [2 /*return*/];
+                        groups = _a.sent();
+                        this.show(groups);
+                        return [2 /*return*/, groups];
                 }
             });
         });
     };
-    Zotero.prototype.$fields = function (argparser) {
-        if (argparser === void 0) { argparser = null; }
+    Zotero.prototype.$fields = function (args) {
         return __awaiter(this, void 0, void 0, function () {
-            var _a, _b, _c;
-            return __generator(this, function (_d) {
-                switch (_d.label) {
+            var result, _a, _b, result, _c;
+            var _d, _e;
+            return __generator(this, function (_f) {
+                switch (_f.label) {
                     case 0:
                         /**
                          * Retrieve a template with the fields for --type TYPE (API: /itemTypeFields, /itemTypeCreatorTypes) or all item fields (API: /itemFields).
                          * Note that to retrieve a template, use 'create-item --template TYPE' rather than this command.
                          */
-                        if (argparser) {
-                            argparser.addArgument('--type', { help: 'Display fields types for TYPE.' });
+                        this.args = args;
+                        this.reReadConfig(args);
+                        // function.name({"argparser": subparser}) returns CLI definition.
+                        if ("argparser" in args && args.argparser) {
+                            args.argparser.addArgument('--type', { help: 'Display fields types for TYPE.' });
                             return [2 /*return*/];
                         }
                         if (!this.args.type) return [3 /*break*/, 3];
-                        _a = this.show;
+                        _d = {};
+                        _a = "itemTypeFields";
                         return [4 /*yield*/, this.get('/itemTypeFields', { params: { itemType: this.args.type }, userOrGroupPrefix: false })];
                     case 1:
-                        _a.apply(this, [_d.sent()]);
-                        _b = this.show;
+                        _d[_a] = _f.sent();
+                        _b = "itemTypeCreatorTypes";
                         return [4 /*yield*/, this.get('/itemTypeCreatorTypes', { params: { itemType: this.args.type }, userOrGroupPrefix: false })];
                     case 2:
-                        _b.apply(this, [_d.sent()]);
-                        return [3 /*break*/, 5];
+                        result = (_d[_b] = _f.sent(),
+                            _d);
+                        this.show(result);
+                        return [2 /*return*/, result];
                     case 3:
-                        _c = this.show;
+                        _e = {};
+                        _c = "itemFields";
                         return [4 /*yield*/, this.get('/itemFields', { userOrGroupPrefix: false })];
                     case 4:
-                        _c.apply(this, [_d.sent()]);
-                        _d.label = 5;
-                    case 5: return [2 /*return*/];
+                        result = (_e[_c] = _f.sent(), _e);
+                        this.show(result);
+                        return [2 /*return*/, result];
                 }
             });
         });
     };
     // Searches
     // https://www.zotero.org/support/dev/web_api/v3/basics
-    Zotero.prototype.$searches = function (argparser) {
-        if (argparser === void 0) { argparser = null; }
+    Zotero.prototype.$searches = function (args) {
         return __awaiter(this, void 0, void 0, function () {
             var searchDef, items;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         /** Return a list of the saved searches of the library. Create new saved searches. (API: /searches) */
-                        if (argparser) {
-                            argparser.addArgument('--create', { nargs: 1, help: 'Path of JSON file containing the definitions of saved searches.' });
+                        this.args = args;
+                        this.reReadConfig(args);
+                        // function.name({"argparser": subparser}) returns CLI definition.
+                        if ("argparser" in args && args.argparser) {
+                            args.argparser.addArgument('--create', { nargs: 1, help: 'Path of JSON file containing the definitions of saved searches.' });
                             return [2 /*return*/];
                         }
                         if (!this.args.create) return [3 /*break*/, 2];
@@ -1110,13 +1177,21 @@ module.exports = /** @class */ (function () {
         });
     };
     // Tags
-    Zotero.prototype.$tags = function (argparser) {
-        if (argparser === void 0) { argparser = null; }
+    Zotero.prototype.$tags = function (args) {
         return __awaiter(this, void 0, void 0, function () {
             var rawTags, tags, tag_counts, _i, tags_1, tag, _a, _b;
             return __generator(this, function (_c) {
                 switch (_c.label) {
                     case 0:
+                        /** Return a list of tags in the library. Options to filter and count tags. (API: /tags) */
+                        this.args = args;
+                        this.reReadConfig(args);
+                        // function.name({"argparser": subparser}) returns CLI definition.
+                        if ("argparser" in args && args.argparser) {
+                            args.argparser.addArgument('--filter', { help: 'Tags of all types matching a specific name.' });
+                            args.argparser.addArgument('--count', { action: 'storeTrue', help: 'TODO: document' });
+                            return [2 /*return*/];
+                        }
                         rawTags = null;
                         if (!this.args.filter) return [3 /*break*/, 2];
                         return [4 /*yield*/, this.all("/tags/" + encodeURIComponent(this.args.filter))];

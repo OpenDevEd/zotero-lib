@@ -82,12 +82,12 @@ module.exports = class Zotero {
     const message = this.readConfig(args)
     if (message["status"] == "success") {
 
-    } 
+    }
   }
-  
+
   // zotero: any
 
-   async readConfig(args) {
+  public async readConfig(args) {
     // pick up config: The function reads args and populates config
     /* 
     Called during initialisation.
@@ -120,28 +120,49 @@ module.exports = class Zotero {
     */
 
     this.args = args
-  
+
     const config: string = [this.args.config, 'zotero-cli.toml', `${os.homedir()}/.config/zotero-cli/zotero-cli.toml`].find(cfg => fs.existsSync(cfg))
     this.config = config ? toml.parse(fs.readFileSync(config, 'utf-8')) : {}
 
-    if (this.args.user_id || this.args.group_id) {
-      //Overwriting command line option in config
-      delete this.config['user-id']
-      delete this.config['group-id']
-
-      this.config['user-id'] = this.args.user_id
-      this.config['group-id'] = this.args.group_id
-
-      if (!this.config['user-id']) delete this.config['user-id']
-      if (!this.config['group-id']) delete this.config['group-id']
+    // Make - to _
+    if (this.config['user-id']) {
+      this.config.user_id = this.config['user-id']
+    }
+    delete this.config['user-id']
+    // Make - to _
+    if (this.config['group-id']) {
+      this.config.group_id = this.config['group-id']
+    }
+    delete this.config['group-id']
+    // Overwrite config with values from args    
+    if (this.args.user_id) {
+      this.config.user_id = this.args.user_id
+    }
+    if (this.args.group_id) {
+      this.config.group_id = this.args.group_id
     }
 
-    if (!this.args.api_key) return this.message('no API key provided')
-    this.headers['Zotero-API-Key'] = this.args.api_key
+    // Make - to _
+    if (this.config['api-key']) {
+      this.config.api_key = this.config['api-key']
+    }
+    delete this.config['api-key']
+    if (this.args.api_key) {
+      this.config.api_key = this.args.api_key
+    }
+    if (this.config.api_key) {
+      this.headers['Zotero-API-Key'] = this.config.api_key
+    } else {
+      return this.message('No API key provided in args or config')
+    }
 
-    if (this.args.user_id === null && this.args.group_id === null) return this.message('You must provide exactly one of --user-id or --group-id')
-    if (this.args.user_id !== null && this.args.group_id !== null) return this.message('You must provide exactly one of --user-id or --group-id')
-    if (this.args.user_id === 0) this.args.user_id = (await this.get(`/keys/${this.args.api_key}`, { userOrGroupPrefix: false })).userID
+    console.log(JSON.stringify(this.config, null, 2))
+    // Check that one  and only one is defined:
+    if (this.config.user_id === null && this.config.group_id === null) return this.message('Both user/group are null. You must provide exactly one of --user-id or --group-id')
+    // TODO
+    // if (this.config.user_id !== null && this.config.group_id !== null) return this.message('Both user/group are specified. You must provide exactly one of --user-id or --group-id')
+    // user_id==0 is generic; retrieve the real user id via the api_key
+    if (this.config.user_id === 0) this.config.user_id = (await this.get(`/keys/${this.args.api_key}`, { userOrGroupPrefix: false })).userID
 
     // using default=2 above prevents the overrides from being picked up
     if (this.args.indent === null) this.args.indent = 2
@@ -149,8 +170,12 @@ module.exports = class Zotero {
     return this.message("success")
   }
 
+  async showConfig() {
+    console.log(JSON.stringify(this.config, null, 2))
+  }
+
   async message(msg) {
-    return {"status": msg}
+    return { "status": msg }
   }
 
   finalActions() {
@@ -227,7 +252,7 @@ module.exports = class Zotero {
   }
 
   async post(uri, data, headers = {}) {
-    const prefix = this.args.user_id ? `/users/${this.args.user_id}` : `/groups/${this.args.group_id}`
+    const prefix = this.config.user_id ? `/users/${this.config.user_id}` : `/groups/${this.config.group_id}`
 
     uri = `${this.base}${prefix}${uri}`
     if (this.args.verbose) console.error('POST', uri)
@@ -288,14 +313,15 @@ module.exports = class Zotero {
   }
   // End of standard API calls
 
-  
+
   // Utility functions. private?
   async count(uri, params = {}) {
     return (await this.get(uri, { resolveWithFullResponse: true, params })).headers['total-results']
   }
 
   show(v) {
-    this.print(JSON.stringify(v, null, this.args.indent).replace(new RegExp(this.args.api_key, 'g'), '<API-KEY>'))
+    // this.print(JSON.stringify(v, null, this.args.indent).replace(new RegExp(this.args.api_key, 'g'), '<API-KEY>'))
+    this.print(JSON.stringify(v, null, this.args.indent))
   }
 
   extractKeyAndSetGroup(key) {
@@ -347,7 +373,7 @@ module.exports = class Zotero {
       Zotero.$collection(args)
       Zotero.$items(args)
       Zotero.$item(args)
-      */      
+      */
     }
     // Provide guidance to the user:  This function requires:
     // args.key (string, required) 
@@ -357,7 +383,7 @@ module.exports = class Zotero {
     if (this.args.key) {
       this.args.key = this.extractKeyAndSetGroup(this.args.key)
     }
-    else{
+    else {
       return this.message('Unable to extract group/key from the string provided.')
     }
     // perform test: args.create_child
@@ -395,21 +421,21 @@ module.exports = class Zotero {
   Retrieve information about a specific collection --key KEY (API: /collections/KEY or /collections/KEY/tags). Use 'collection --help' for details.   
   (Note: Retrieve items is a collection via 'items --collection KEY'.)
      */
-  /*
-    if (argparser) {
-      argparser.addArgument('--key', { required: true, help: 'The key of the collection (required). You can provide the key as zotero-select link (zotero://...) to also set the group-id.' })
-      argparser.addArgument('--tags', { action: 'storeTrue', help: 'Display tags present in the collection.' })
-      // argparser.addArgument('itemkeys', { nargs: '*' , help: 'Item keys for items to be added or removed from this collection.'})
-      argparser.addArgument('--add', { nargs: '*', help: 'Add items to this collection. Note that adding items to collections with \'item --addtocollection\' may require fewer API queries. (Convenience method: patch item->data->collections.)' })
-      argparser.addArgument('--remove', { nargs: '*', help: 'Convenience method: Remove items from this collection. Note that removing items from collections with \'item --removefromcollection\' may require fewer API queries. (Convenience method: patch item->data->collections.)' })
-      return
-    }
-
-    */
+    /*
+      if (argparser) {
+        argparser.addArgument('--key', { required: true, help: 'The key of the collection (required). You can provide the key as zotero-select link (zotero://...) to also set the group-id.' })
+        argparser.addArgument('--tags', { action: 'storeTrue', help: 'Display tags present in the collection.' })
+        // argparser.addArgument('itemkeys', { nargs: '*' , help: 'Item keys for items to be added or removed from this collection.'})
+        argparser.addArgument('--add', { nargs: '*', help: 'Add items to this collection. Note that adding items to collections with \'item --addtocollection\' may require fewer API queries. (Convenience method: patch item->data->collections.)' })
+        argparser.addArgument('--remove', { nargs: '*', help: 'Convenience method: Remove items from this collection. Note that removing items from collections with \'item --removefromcollection\' may require fewer API queries. (Convenience method: patch item->data->collections.)' })
+        return
+      }
+  
+      */
 
     if (this.args.key) {
       this.args.key = this.extractKeyAndSetGroup(this.args.key)
-      
+
     }
 
     else {
@@ -483,7 +509,7 @@ module.exports = class Zotero {
       args.argparser.addArgument('--validate', { type: arg.path, help: 'json-schema file for all itemtypes, or directory with schema files, one per itemtype.' })
       return
     }
-    
+
     if (this.args.count && this.args.validate) {
       const msg = this.message('--count cannot be combined with --validate')
       return msg
@@ -553,10 +579,10 @@ module.exports = class Zotero {
    
   Also see 'attachment', 'create' and 'update'.
     */
-   this.args = args
-   this.reReadConfig(args)
-   // $item({"argparser": subparser}) returns CLI definition.
-   if ("argparser" in args && args.argparser) {
+    this.args = args
+    this.reReadConfig(args)
+    // $item({"argparser": subparser}) returns CLI definition.
+    if ("argparser" in args && args.argparser) {
       args.argparser.addArgument('--key', { required: true, help: 'The key of the item. You can provide the key as zotero-select link (zotero://...) to also set the group-id.' })
       args.argparser.addArgument('--children', { action: 'storeTrue', help: 'Retrieve list of children for the item.' })
       args.argparser.addArgument('--filter', { type: arg.json, help: 'Provide a filter as described in the Zotero API documentation under read requests / parameters. To retrieve multiple items you have use "itemkey"; for example: \'{"format": "json,bib", "itemkey": "A,B,C"}\'. See https://www.zotero.org/support/dev/web_api/v3/basics#search_syntax.' })
@@ -671,10 +697,10 @@ module.exports = class Zotero {
   Retrieve/save file attachments for the item specified with --key KEY (API: /items/KEY/file). 
   Also see 'item', which has options for adding/saving file attachments. 
     */
-   this.args = args
-   this.reReadConfig(args)
-   // function.name({"argparser": subparser}) returns CLI definition.
-   if ("argparser" in args && args.argparser) {
+    this.args = args
+    this.reReadConfig(args)
+    // function.name({"argparser": subparser}) returns CLI definition.
+    if ("argparser" in args && args.argparser) {
       args.argparser.addArgument('--key', { required: true, help: 'The key of the item. You can provide the key as zotero-select link (zotero://...) to also set the group-id.' })
       args.argparser.addArgument('--save', { required: true, help: 'Filename to save attachment to.' })
       return
@@ -691,36 +717,43 @@ module.exports = class Zotero {
     fs.writeFileSync(this.args.save, await this.get(`/items/${this.args.key}/file`), 'binary')
   }
 
-  async $create_item(args) {
-  //async $create_item(argparser = null) {
+  async create_item(args) {
+    //async $create_item(argparser = null) {
     /** 
   Create a new item or items. (API: /items/new) You can retrieve a template with the --template option.  
    
   Use this option to create both top-level items, as well as child items (including notes and links).
     */
-   this.args = args
-   this.reReadConfig(args)
-   // function.name({"argparser": subparser}) returns CLI definition.
-   if ("argparser" in args && args.argparser) {
+    this.args = args
+    this.reReadConfig(args)
+    // function.name({"argparser": subparser}) returns CLI definition.
+    if ("argparser" in args && args.argparser) {
       args.argparser.addArgument('--template', { help: "Retrieve a template for the item you wish to create. You can retrieve the template types using the main argument 'types'." })
       args.argparser.addArgument('items', { nargs: '*', help: 'Json files for the items to be created.' })
       return
     }
-  
+
     if (this.args.template) {
       const result = await this.get('/items/new', { userOrGroupPrefix: false, params: { itemType: this.args.template } })
       this.show(result)
-      return JSON.parse(result).successful
-    } else {
-    if (!this.args.items.length)return this.message('Need at least one item (args.items) to create or use args.template')
-
-    const items = this.args.items.map(item => JSON.parse(fs.readFileSync(item, 'utf-8')))
-    const result = await this.post('/items', JSON.stringify(items))
-    this.show(result)
-    return JSON.parse(result).successful
+      //console.log("/"+result+"/")
+      return result
+    } else if ("files" in this.args && this.args.files.length > 0) {
+      if (!this.args.items.length) return this.message('Need at least one item (args.items) to create or use args.template')
+      const items = this.args.items.map(item => JSON.parse(fs.readFileSync(item, 'utf-8')))
+      const result = await this.post('/items', JSON.stringify(items))
+      this.show(result)
+      return result
+    } else if ("items" in this.args && this.args.items.length > 0) {
+      const result = await this.post('/items', JSON.stringify(this.args.items))
+      this.show(result)
+      return result;
+    } else if (this.args.item) {
+      const result = await this.post('/items', JSON.stringify(this.args.item))
+      this.show(result)
+      return result;
     }
   }
-  
   async $update_item(args) {
     /** Update/replace an item (--key KEY), either update (API: patch /items/KEY) or replacing (using --replace, API: put /items/KEY). */
     this.args = args;
@@ -735,16 +768,13 @@ module.exports = class Zotero {
 
     if (this.args.key) {
       this.args.key = this.extractKeyAndSetGroup(this.args.key)
-      
     }
-    else{
-    
-        const msg = this.message('Unable to extract group/key from the string provided.')
-        return msg
-      
+    else {
+      const msg = this.message('Unable to extract group/key from the string provided.')
+      return msg
     }
-    
 
+    // TODO
     const originalItem = await this.get(`/items/${this.args.key}`)
     for (const item of this.args.items) {
       await this[this.args.replace ? 'put' : 'patch'](`/items/${this.args.key}`, fs.readFileSync(item), originalItem.version)
@@ -753,23 +783,31 @@ module.exports = class Zotero {
 
   // <userOrGroupPrefix>/items/trash	Items in the trash
 
-  async $trash(argparser = null) {
+  async $trash(args) {
     /** Return a list of items in the trash. */
-
-    if (argparser) return
-
+    this.args = args
+    this.reReadConfig(args)
+    // function.name({"argparser": subparser}) returns CLI definition.
+    if ("argparser" in args && args.argparser) {
+      return null
+    }
     const items = await this.get('/items/trash')
     this.show(items)
+    return items
   }
 
 
   // https://www.zotero.org/support/dev/web_api/v3/basics
   // <userOrGroupPrefix>/publications/items	Items in My Publications  
 
-  async $publications(argparser = null) {
+  async $publications(args) {
     /** Return a list of items in publications (user library only). (API: /publications/items) */
-
-    if (argparser) return
+    this.args = args
+    this.reReadConfig(args)
+    // function.name({"argparser": subparser}) returns CLI definition.
+    if ("argparser" in args && args.argparser) {
+      return
+    }
 
     const items = await this.get('/publications/items')
     this.show(items)
@@ -777,48 +815,72 @@ module.exports = class Zotero {
 
   // itemTypes
 
-  async $types(argparser = null) {
+  async $types(args) {
     /** Retrieve a list of items types available in Zotero. (API: /itemTypes) */
+    this.args = args
+    this.reReadConfig(args)
+    // function.name({"argparser": subparser}) returns CLI definition.
+    if ("argparser" in args && args.argparser) {
+      return
+    }
 
-    if (argparser) return
-
-    this.show(await this.get('/itemTypes', { userOrGroupPrefix: false }))
+    const types = await this.get('/itemTypes', { userOrGroupPrefix: false })
+    this.show(types)
+    return types
   }
 
-  async $groups(argparser = null) {
+  async $groups(args) {
     /** Retrieve the Zotero groups data to which the current library_id and api_key has access to. (API: /users/<user-id>/groups) */
-    if (argparser) return
-
-    this.show(await this.get('/groups'))
+    this.args = args
+    this.reReadConfig(args)
+    // function.name({"argparser": subparser}) returns CLI definition.
+    if ("argparser" in args && args.argparser) {
+      return
+    }
+    let groups = await this.get('/groups')
+    this.show(groups)
+    return groups
   }
 
-  async $fields(argparser = null) {
+  async $fields(args) {
     /**
      * Retrieve a template with the fields for --type TYPE (API: /itemTypeFields, /itemTypeCreatorTypes) or all item fields (API: /itemFields).
      * Note that to retrieve a template, use 'create-item --template TYPE' rather than this command.
      */
-
-    if (argparser) {
-      argparser.addArgument('--type', { help: 'Display fields types for TYPE.' })
+    this.args = args
+    this.reReadConfig(args)
+    // function.name({"argparser": subparser}) returns CLI definition.
+    if ("argparser" in args && args.argparser) {
+      args.argparser.addArgument('--type', { help: 'Display fields types for TYPE.' })
       return
     }
 
     if (this.args.type) {
-      this.show(await this.get('/itemTypeFields', { params: { itemType: this.args.type }, userOrGroupPrefix: false }))
-      this.show(await this.get('/itemTypeCreatorTypes', { params: { itemType: this.args.type }, userOrGroupPrefix: false }))
+      const result = {
+        "itemTypeFields":
+          await this.get('/itemTypeFields', { params: { itemType: this.args.type }, userOrGroupPrefix: false }),
+        "itemTypeCreatorTypes":
+          await this.get('/itemTypeCreatorTypes', { params: { itemType: this.args.type }, userOrGroupPrefix: false })
+      }
+      this.show(result)
+      return result
     } else {
-      this.show(await this.get('/itemFields', { userOrGroupPrefix: false }))
+      const result = { "itemFields": await this.get('/itemFields', { userOrGroupPrefix: false }) }
+      this.show(result)
+      return result
     }
   }
 
   // Searches
   // https://www.zotero.org/support/dev/web_api/v3/basics
 
-  async $searches(argparser = null) {
+  async $searches(args) {
     /** Return a list of the saved searches of the library. Create new saved searches. (API: /searches) */
-
-    if (argparser) {
-      argparser.addArgument('--create', { nargs: 1, help: 'Path of JSON file containing the definitions of saved searches.' })
+    this.args = args
+    this.reReadConfig(args)
+    // function.name({"argparser": subparser}) returns CLI definition.
+    if ("argparser" in args && args.argparser) {
+      args.argparser.addArgument('--create', { nargs: 1, help: 'Path of JSON file containing the definitions of saved searches.' })
       return
     }
 
@@ -844,18 +906,16 @@ module.exports = class Zotero {
   }
 
   // Tags
-
-  async $tags(argparser = null) {
+  async $tags(args) {
     /** Return a list of tags in the library. Options to filter and count tags. (API: /tags) */
-
-    /*
-    if (argparser) {
-      argparser.addArgument('--filter', { help: 'Tags of all types matching a specific name.' })
-      argparser.addArgument('--count', { action: 'storeTrue', help: 'TODO: document' })
+    this.args = args
+    this.reReadConfig(args)
+    // function.name({"argparser": subparser}) returns CLI definition.
+    if ("argparser" in args && args.argparser) {
+      args.argparser.addArgument('--filter', { help: 'Tags of all types matching a specific name.' })
+      args.argparser.addArgument('--count', { action: 'storeTrue', help: 'TODO: document' })
       return
     }
-
-    */
 
     let rawTags = null;
     if (this.args.filter) {
