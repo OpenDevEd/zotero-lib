@@ -729,7 +729,7 @@ module.exports = class Zotero {
     // function.name({"argparser": subparser}) returns CLI definition.
     if ("argparser" in args && args.argparser) {
       args.argparser.addArgument('--template', { help: "Retrieve a template for the item you wish to create. You can retrieve the template types using the main argument 'types'." })
-      args.argparser.addArgument('items', { nargs: '*', help: 'Json files for the items to be created.' })
+      args.argparser.addArgument('files', { nargs: '*', help: 'Json files for the items to be created.' })
       return
     }
 
@@ -739,15 +739,18 @@ module.exports = class Zotero {
       //console.log("/"+result+"/")
       return result
     } else if ("files" in this.args && this.args.files.length > 0) {
-      if (!this.args.items.length) return this.message('Need at least one item (args.items) to create or use args.template')
-      const items = this.args.items.map(item => JSON.parse(fs.readFileSync(item, 'utf-8')))
+      if (!this.args.files.length) return this.message('Need at least one item (args.items) to create or use args.template')
+      const items = this.args.files.map(item => JSON.parse(fs.readFileSync(item, 'utf-8')))
+      //console.log("input")
+      this.show(items)
       const result = await this.post('/items', JSON.stringify(items))
       this.show(result)
       return result
     } else if ("items" in this.args && this.args.items.length > 0) {
       const result = await this.post('/items', JSON.stringify(this.args.items))
-      this.show(result)
-      return result;
+      const res = JSON.parse(result)
+      this.show(res)
+      return res;
     } else if (this.args.item) {
       const result = await this.post('/items', JSON.stringify(this.args.item))
       this.show(result)

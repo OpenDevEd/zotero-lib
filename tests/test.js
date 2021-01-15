@@ -51,8 +51,15 @@ async function test() {
   let report = await zotero.create_item(template)
   console.log("r" + JSON.stringify(report, null, 2))
   report.title = "ABC"
+  //This working in testing:
+  //fs.writeFileSync('../temp.json', JSON.stringify(report))
+  /*const res2 = await zotero.create_item({
+    files: ["../temp.json"]
+  })*/
+  let i = []
+  i.push(report)
   const res2 = await zotero.create_item({
-    item:  report
+    items: i
   })
   const s = JSON.stringify(res2, null, 2)
   return s;
@@ -62,7 +69,6 @@ async function test() {
 
 test()
 
-//fs.writeFileSync('../temp.txt', s);
 
 
 // run the library

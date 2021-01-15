@@ -903,7 +903,7 @@ module.exports = /** @class */ (function () {
     };
     Zotero.prototype.create_item = function (args) {
         return __awaiter(this, void 0, void 0, function () {
-            var result, items, result, result, result;
+            var result, items, result, result, res, result;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -918,7 +918,7 @@ module.exports = /** @class */ (function () {
                         // function.name({"argparser": subparser}) returns CLI definition.
                         if ("argparser" in args && args.argparser) {
                             args.argparser.addArgument('--template', { help: "Retrieve a template for the item you wish to create. You can retrieve the template types using the main argument 'types'." });
-                            args.argparser.addArgument('items', { nargs: '*', help: 'Json files for the items to be created.' });
+                            args.argparser.addArgument('files', { nargs: '*', help: 'Json files for the items to be created.' });
                             return [2 /*return*/];
                         }
                         if (!this.args.template) return [3 /*break*/, 2];
@@ -930,9 +930,11 @@ module.exports = /** @class */ (function () {
                         return [2 /*return*/, result];
                     case 2:
                         if (!("files" in this.args && this.args.files.length > 0)) return [3 /*break*/, 4];
-                        if (!this.args.items.length)
+                        if (!this.args.files.length)
                             return [2 /*return*/, this.message('Need at least one item (args.items) to create or use args.template')];
-                        items = this.args.items.map(function (item) { return JSON.parse(fs.readFileSync(item, 'utf-8')); });
+                        items = this.args.files.map(function (item) { return JSON.parse(fs.readFileSync(item, 'utf-8')); });
+                        //console.log("input")
+                        this.show(items);
                         return [4 /*yield*/, this.post('/items', JSON.stringify(items))];
                     case 3:
                         result = _a.sent();
@@ -943,8 +945,9 @@ module.exports = /** @class */ (function () {
                         return [4 /*yield*/, this.post('/items', JSON.stringify(this.args.items))];
                     case 5:
                         result = _a.sent();
-                        this.show(result);
-                        return [2 /*return*/, result];
+                        res = JSON.parse(result);
+                        this.show(res);
+                        return [2 /*return*/, res];
                     case 6:
                         if (!this.args.item) return [3 /*break*/, 8];
                         return [4 /*yield*/, this.post('/items', JSON.stringify(this.args.item))];
