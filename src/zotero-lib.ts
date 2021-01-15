@@ -21,7 +21,7 @@ module.exports...
 */
 
 /*
-TODO: Move this file to 'src' and adjust package.json
+TODO: Check this compiles. package.json / tsconfig will need to be adjusted.
 */
 
 
@@ -62,40 +62,22 @@ const arg = new class {
   }
 }
 
-// Is this class needed, now that we have a module?
-/*
 export default class Zotero {
- 
-  // Only pass 'args'.
-  constructor(args){
-    
-    this.args = args
-    //this.output = output,
-    //this.parser = parser,
-    //this.config = config,
-    // ???
-    //this.zotero = zotero,
-    //this.base = base,
-    //this.headers = headers
 
-  }
-  */
   base = "https://api.zotero.org";
-    headers =  {
-      'User-Agent': 'Zotero-CLI',
-      'Zotero-API-Version': '3',
-    }
+  headers = {
+    'User-Agent': 'Zotero-CLI',
+    'Zotero-API-Version': '3',
+  }
+
   args: any
   output: string = ''
   parser: any
   config: any
   zotero: any
-  
 
   // CLI code
-/*
-  async run() {
-    this.output = ''
+  public function getParser() {
     // global parameters for all commands
     this.parser = new ArgumentParser
     this.parser.addArgument('--api-key', { help: 'The API key to access the Zotero API.' })
@@ -213,16 +195,16 @@ export default class Zotero {
     if (this.args.user_id === 0) this.args.user_id = (await this.get(`/keys/${this.args.api_key}`, { userOrGroupPrefix: false })).userID
 
 
-    
+
     // Could do this here:
     //if (this.args.group_id) {
-  //      this.args.group_id = this.extractGroup(this.args.group_id)
-      //if (!this.args.group_id) {
-  //this.parser.error('Unable to extract group_id from the string provided via --group_id.')
-  //return
-      //}    
+    //      this.args.group_id = this.extractGroup(this.args.group_id)
+    //if (!this.args.group_id) {
+    //this.parser.error('Unable to extract group_id from the string provided via --group_id.')
+    //return
+    //}    
     //}
-  
+
 
     // using default=2 above prevents the overrides from being picked up
     if (this.args.indent === null) this.args.indent = 2
@@ -237,13 +219,12 @@ export default class Zotero {
 
     if (this.args.out) fs.writeFileSync(this.args.out, this.output)
   }
-  */
+
 
   // library starts.
   public print(...args: any[]) {
     if (!this.args.out) {
       console.log.apply(console, args)
-
     } else {
       this.output += args.map(m => {
         const type = typeof m
@@ -259,7 +240,6 @@ export default class Zotero {
       }).join(' ') + '\n'
     }
   }
-
 
   // Function to get more than 100 records, i.e. chunked retrieval.
   async all(uri, params = {}) {
@@ -423,10 +403,10 @@ export default class Zotero {
       return
     }*/
 
-        // Provide guidance to the user:  This function requires:
-        // args.key (string, required) 
-        // args.top (boolean, optional)
-        // args.create_child (string, optional)
+    // Provide guidance to the user:  This function requires:
+    // args.key (string, required) 
+    // args.top (boolean, optional)
+    // args.create_child (string, optional)
     // perform tests: args.key
     if (this.args.key) {
       this.args.key = this.extractKeyAndSetGroup(this.args.key)
@@ -614,7 +594,7 @@ export default class Zotero {
   async $item(argparser = null) {
     /** 
   Retrieve an item (item --key KEY), save/add file attachments, retrieve children. Manage collections and tags. (API: /items/KEY/ or /items/KEY/children). 
- 
+   
   Also see 'attachment', 'create' and 'update'.
     */
 
@@ -645,7 +625,7 @@ export default class Zotero {
     if (this.args.savefiles) {
       let children = await this.get(`/items/${this.args.key}/children`);
       await Promise.all(children.filter(item => item.data.itemType === 'attachment').map(async item => {
-	if (item.data.filename) {
+        if (item.data.filename) {
           console.log(`Downloading file ${item.data.filename}`)
           fs.writeFileSync(item.data.filename, await this.get(`/items/${item.key}/file`), 'binary')
         } else {
@@ -752,7 +732,7 @@ export default class Zotero {
   async $create_item(argparser = null) {
     /** 
   Create a new item or items. (API: /items/new) You can retrieve a template with the --template option.  
- 
+   
   Use this option to create both top-level items, as well as child items (including notes and links).
     */
 
@@ -919,7 +899,7 @@ export default class Zotero {
       this.show(tags)
     }
 
- 
-    }
 
   }
+
+}
