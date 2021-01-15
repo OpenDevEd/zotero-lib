@@ -303,7 +303,7 @@ module.exports = /** @class */ (function () {
                     options.json = true;
                 prefix = '';
                 if (options.userOrGroupPrefix)
-                    prefix = this.args.user_id ? "/users/" + this.args.user_id : "/groups/" + this.args.group_id;
+                    prefix = this.config.user_id ? "/users/" + this.config.user_id : "/groups/" + this.config.group_id;
                 params = Object.keys(options.params).map(function (param) {
                     var values = options.params[param];
                     if (!Array.isArray(values))
@@ -311,7 +311,7 @@ module.exports = /** @class */ (function () {
                     return values.map(function (v) { return param + "=" + encodeURI(v); }).join('&');
                 }).join('&');
                 uri = "" + this.base + prefix + uri + (params ? '?' + params : '');
-                if (this.args.verbose)
+                if (this.config.verbose)
                     console.error('GET', uri);
                 return [2 /*return*/, request({
                         uri: uri,
@@ -330,7 +330,7 @@ module.exports = /** @class */ (function () {
             return __generator(this, function (_a) {
                 prefix = this.config.user_id ? "/users/" + this.config.user_id : "/groups/" + this.config.group_id;
                 uri = "" + this.base + prefix + uri;
-                if (this.args.verbose)
+                if (this.config.verbose)
                     console.error('POST', uri);
                 return [2 /*return*/, request({
                         method: 'POST',
@@ -345,9 +345,9 @@ module.exports = /** @class */ (function () {
         return __awaiter(this, void 0, void 0, function () {
             var prefix;
             return __generator(this, function (_a) {
-                prefix = this.args.user_id ? "/users/" + this.args.user_id : "/groups/" + this.args.group_id;
+                prefix = this.config.user_id ? "/users/" + this.config.user_id : "/groups/" + this.config.group_id;
                 uri = "" + this.base + prefix + uri;
-                if (this.args.verbose)
+                if (this.config.verbose)
                     console.error('PUT', uri);
                 return [2 /*return*/, request({
                         method: 'PUT',
@@ -362,12 +362,12 @@ module.exports = /** @class */ (function () {
         return __awaiter(this, void 0, void 0, function () {
             var prefix, headers;
             return __generator(this, function (_a) {
-                prefix = this.args.user_id ? "/users/" + this.args.user_id : "/groups/" + this.args.group_id;
+                prefix = this.config.user_id ? "/users/" + this.config.user_id : "/groups/" + this.config.group_id;
                 headers = __assign(__assign({}, this.headers), { 'Content-Type': 'application/json' });
                 if (typeof version !== 'undefined')
                     headers['If-Unmodified-Since-Version'] = version;
                 uri = "" + this.base + prefix + uri;
-                if (this.args.verbose)
+                if (this.config.verbose)
                     console.error('PATCH', uri);
                 return [2 /*return*/, request({
                         method: 'PATCH',
@@ -382,12 +382,12 @@ module.exports = /** @class */ (function () {
         return __awaiter(this, void 0, void 0, function () {
             var prefix, headers;
             return __generator(this, function (_a) {
-                prefix = this.args.user_id ? "/users/" + this.args.user_id : "/groups/" + this.args.group_id;
+                prefix = this.config.user_id ? "/users/" + this.config.user_id : "/groups/" + this.config.group_id;
                 headers = __assign(__assign({}, this.headers), { 'Content-Type': 'application/json' });
                 if (typeof version !== 'undefined')
                     headers['If-Unmodified-Since-Version'] = version;
                 uri = "" + this.base + prefix + uri;
-                if (this.args.verbose)
+                if (this.config.verbose)
                     console.error('DELETE', uri);
                 return [2 /*return*/, request({
                         method: 'DELETE',
@@ -411,8 +411,8 @@ module.exports = /** @class */ (function () {
         });
     };
     Zotero.prototype.show = function (v) {
-        // this.print(JSON.stringify(v, null, this.args.indent).replace(new RegExp(this.args.api_key, 'g'), '<API-KEY>'))
-        this.print(JSON.stringify(v, null, this.args.indent));
+        // this.print(JSON.stringify(v, null, this.config.indent).replace(new RegExp(this.config.api_key, 'g'), '<API-KEY>'))
+        this.print(JSON.stringify(v, null, this.config.indent));
     };
     Zotero.prototype.extractKeyAndSetGroup = function (key) {
         // zotero://select/groups/(\d+)/(items|collections)/([A-Z01-9]+)
@@ -425,7 +425,7 @@ module.exports = /** @class */ (function () {
             }
             else {
                 // console.log("Key: zotero://-key provided for "+res[2]+" Setting group-id.")
-                this.args.group_id = res[1];
+                this.config.group_id = res[1];
                 out = res[3];
             }
             ;
