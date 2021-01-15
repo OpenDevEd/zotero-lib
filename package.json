@@ -2,7 +2,7 @@
   "name": "zotero-lib",
   "version": "1.0.5",
   "description": "",
-  "main": "zotero-api-lib.ts",
+  "main": "src/zotero-api-lib.ts",
   "scripts": {
     "start": "node ./bin/zotero-api-lib.js",
     "test": "echo \"Error: no test specified\" && exit 1",
