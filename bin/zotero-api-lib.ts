@@ -15,7 +15,14 @@ const Ajv = require('ajv');
 const { parse } = require("args-any");
 
 
+/*
+TO DO: 
+module.exports...
+*/
 
+/*
+TODO: Move this file to 'src' and adjust package.json
+*/
 
 
 // import { parse as TOML } from '@iarna/toml'
@@ -55,6 +62,7 @@ const arg = new class {
   }
 }
 
+/*
 export default class Zotero {
  
   // Only pass 'args'.
@@ -70,6 +78,7 @@ export default class Zotero {
     //this.headers = headers
 
   }
+  */
   base = "https://api.zotero.org";
     headers =  {
       'User-Agent': 'Zotero-CLI',
