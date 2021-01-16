@@ -587,7 +587,7 @@ module.exports = class Zotero {
   // <userOrGroupPrefix>/items/<itemKey>	A specific item in the library
   // <userOrGroupPrefix>/items/<itemKey>/children	Child items under a specific item
 
-  async $item(args) {
+  public async item(args) {
     /** 
   Retrieve an item (item --key KEY), save/add file attachments, retrieve children. Manage collections and tags. (API: /items/KEY/ or /items/KEY/children). 
    
@@ -706,8 +706,9 @@ module.exports = class Zotero {
     } else {
       result = await this.get(`/items/${this.args.key}`, { params })
     }
-    this.show(result)
-    return result
+    //this.show(result)
+    this.finalActions()
+    return this.pruneResponse(result)
   }
 
   async attachment(args) {
@@ -785,7 +786,7 @@ module.exports = class Zotero {
   private pruneResponse(res) {
     return this.pruneData(res,this.args.fullresponse)
   }
-  
+
   public pruneData(res, fullresponse=false) {
     if (fullresponse) return res
     return res.successful["0"].data
