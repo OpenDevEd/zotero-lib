@@ -142,7 +142,8 @@ module.exports = class Zotero {
         else {
             return this.message(1, 'No API key provided in args or config');
         }
-        console.log("config=" + JSON.stringify(this.config, null, 2));
+        if (this.args.verbose)
+            console.log("config=" + JSON.stringify(this.config, null, 2));
         // Check that one and only one is defined:
         if (this.config.user_id === null && this.config.group_id === null)
             return this.message(0, 'Both user/group are null. You must provide exactly one of --user-id or --group-id');
@@ -169,11 +170,13 @@ module.exports = class Zotero {
             "data": data
         };
     }
-    finalActions() {
+    finalActions(output) {
+        //console.log("args="+JSON.stringify(this.args))
+        //TODO: Look at the type of output: if string, then print, if object, then stringify
         if (this.args.out)
-            fs.writeFileSync(this.args.out, this.output);
-        if (this.args.show)
-            this.show(this.output);
+            fs.writeFileSync(this.args.out, JSON.stringify(output, null, this.config.indent));
+        if (this.args.show || this.config.verbose)
+            this.show(output);
     }
     // library starts.
     print(...args) {
@@ -299,8 +302,9 @@ module.exports = class Zotero {
         return (await this.get(uri, { resolveWithFullResponse: true, params })).headers['total-results'];
     }
     show(v) {
+        //TODO: Look at the type of v: if string, then print, if object, then stringify
         // this.print(JSON.stringify(v, null, this.config.indent).replace(new RegExp(this.config.api_key, 'g'), '<API-KEY>'))
-        this.print(JSON.stringify(v, null, this.config.indent));
+        this.print("show=" + JSON.stringify(v, null, this.config.indent));
     }
     extractKeyAndSetGroup(key) {
         // zotero://select/groups/(\d+)/(items|collections)/([A-Z01-9]+)
@@ -379,7 +383,7 @@ module.exports = class Zotero {
                 collections = await this.all(`/collections${this.args.top ? '/top' : ''}`);
             }
             this.show(collections);
-            this.finalActions();
+            this.finalActions(collections);
             return JSON.parse(collections).successful;
         }
     }
@@ -635,16 +639,29 @@ module.exports = class Zotero {
             await this.patch(`/items/${this.args.key}`, JSON.stringify({ tags: newTags }), item.version);
         }
         const params = this.args.filter || {};
-        let result = {};
+        let result;
         if (this.args.children) {
             result = await this.get(`/items/${this.args.key}/children`, { params });
         }
         else {
-            result = await this.get(`/items/${this.args.key}`, { params });
+            if (this.args.addtocollection || this.args.removefromcollection
+                || this.args.removetags || this.args.addtags) {
+                result = await this.get(`/items/${this.args.key}`, { params });
+            }
+            else {
+                // Nothing about the item has changed:
+                result = item;
+            }
         }
         //this.show(result)
-        this.finalActions();
-        return this.pruneResponse(result);
+        // console.log(JSON.stringify(this.args))
+        this.finalActions(result);
+        if (this.args.fullresponse) {
+            return result;
+        }
+        else {
+            return result.data;
+        }
     }
     async attachment(args) {
         /**
