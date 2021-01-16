@@ -50,12 +50,15 @@ async function main() {
   const res2 = await zotero.create_item({
     items: i
   }) */
-  let i = []
+  // let i = []
   const res2 = await zotero.create_item({
-    item: report
+    item: report,
+    fullresponse: true
   })
   const s = JSON.stringify(res2, null, 2)
   console.log(s)
+  const t = JSON.stringify(zotero.pruneData(res2), null, 2)
+  console.log(t)
   // TODO: Have automated test to see whether successful.
   return 0
 }

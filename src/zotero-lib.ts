@@ -778,12 +778,16 @@ module.exports = class Zotero {
       // console.log(result)
       const res = JSON.parse(result)
       this.show(res)
-      return this.pruneData(res)
+      return this.pruneResponse(res)
     }
   }
 
-  private pruneData(res) {
-    if (this.args.fullresponse) return res
+  private pruneResponse(res) {
+    return this.pruneData(res,this.args.fullresponse)
+  }
+  
+  public pruneData(res, fullresponse=false) {
+    if (fullresponse) return res
     return res.successful["0"].data
   }
 
