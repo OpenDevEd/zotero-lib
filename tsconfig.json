@@ -1,7 +1,6 @@
 {
     "compilerOptions": {
         "allowUnreachableCode": false,
-        "declaration": true,
         "importHelpers": true,
         "target": "es2017",
         "disableSizeLimit": true,
@@ -9,14 +8,13 @@
         "noImplicitAny": false,
         "removeComments": false,
         "preserveConstEnums": false,
-        "sourceMap": false,
         "downlevelIteration": true,
         "outDir": "./build",
-    "sourceMap": true,
-    "declaration": true,
-    "noUnusedLocals": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true
+        "sourceMap": true,
+        "declaration": true,
+        "noUnusedLocals": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
         "lib": [
             "es2017",
             "dom"
@@ -35,4 +33,3 @@
         "typings"
     ]
 }
-
