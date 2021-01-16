@@ -11,6 +11,12 @@
         "preserveConstEnums": false,
         "sourceMap": false,
         "downlevelIteration": true,
+        "outDir": "./build",
+    "sourceMap": true,
+    "declaration": true,
+    "noUnusedLocals": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true
         "lib": [
             "es2017",
             "dom"
@@ -21,8 +27,7 @@
         ]
     },
     "include": [
-        "src",
-        "build"
+        "src/*.ts",
     ],
     "exclude": [
         "node_modules",
@@ -30,3 +35,4 @@
         "typings"
     ]
 }
+

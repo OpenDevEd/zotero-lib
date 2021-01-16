@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node ./bin/zotero-lib.js",
     "test": "node ./tests/*.js",
-    "build": "tsc ./src/zotero-lib.ts",
+    "build": "tsc --project ./tsconfig.json",
     "publish:patch": "npm version patch; npm publish; git push --tags",
     "publish:minor": "npm version minor; npm publish; git push --tags",
     "publish:major": "npm version major; npm publish; git push --tags"
