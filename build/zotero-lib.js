@@ -749,7 +749,54 @@ module.exports = class Zotero {
         if ("argparser" in args && args.argparser) {
             args.argparser.addArgument('--key', { required: true, help: 'The key of the item. You can provide the key as zotero-select link (zotero://...) to also set the group-id.' });
             args.argparser.addArgument('--replace', { action: 'storeTrue', help: 'Replace the item by sumbitting the complete json.' });
-            args.argparser.addArgument('items', { nargs: 1, help: 'Path of item files in json format.' });
+            args.argparser.addArgument('--version', { required: false, help: 'The version of the item. If not provided, it is looked up.' });
+            //args.argparser.addArgument('--json', { help: 'string in json format: {key: ..., version: ..., field: value}.' })
+            args.argparser.addArgument('--json', { help: 'string in json format: {field: value}. When using the API library, you can supply args.update' });
+            return 0;
+        }
+        console.log("1");
+        if (this.args.update && this.args.json) {
+            return this.message(0, "You cannot specify both data and json.", this.args);
+        }
+        if (!this.args.update && !this.args.json) {
+            return this.message(0, "You must specify either data or json.", this.args);
+        }
+        console.log("2a");
+        if (this.args.json) {
+            this.args.update = JSON.parse(this.args.json);
+        }
+        console.log("2b");
+        if (this.args.key) {
+            this.args.key = this.extractKeyAndSetGroup(this.args.key);
+        }
+        else {
+            const msg = this.message(0, 'Unable to extract group/key from the string provided. Arguments attached.', this.args);
+            console.log(msg);
+            //return msg
+        }
+        console.log("2c");
+        let originalItemVersion = 0;
+        if (args.version) {
+            originalItemVersion = args.version;
+        }
+        else {
+            const originalItem = await this.get(`/items/${this.args.key}`);
+            originalItemVersion = originalItem.version;
+        }
+        console.log("3");
+        const jsonstr = JSON.stringify(args.update);
+        const result = await this[this.args.replace ? 'put' : 'patch'](`/items/${this.args.key}`, jsonstr, originalItemVersion);
+        return result;
+    }
+    async update_item_file(args) {
+        /** Update/replace an item (--key KEY), either update (API: patch /items/KEY) or replacing (using --replace, API: put /items/KEY). */
+        this.args = args;
+        this.reconfigure(args);
+        // function.name({"argparser": subparser}) returns CLI definition.
+        if ("argparser" in args && args.argparser) {
+            args.argparser.addArgument('--key', { required: true, help: 'The key of the item. You can provide the key as zotero-select link (zotero://...) to also set the group-id.' });
+            args.argparser.addArgument('--replace', { action: 'storeTrue', help: 'Replace the item by sumbitting the complete json.' });
+            args.argparser.addArgument('items', { nargs: 1, help: 'Path of file in json format.' });
             return 0;
         }
         if (this.args.key) {
@@ -759,7 +806,7 @@ module.exports = class Zotero {
             const msg = this.message(0, 'Unable to extract group/key from the string provided. Arguments attached.', this.args);
             return msg;
         }
-        // TODO
+        // TODO return item
         const originalItem = await this.get(`/items/${this.args.key}`);
         for (const item of this.args.items) {
             await this[this.args.replace ? 'put' : 'patch'](`/items/${this.args.key}`, fs.readFileSync(item), originalItem.version);
