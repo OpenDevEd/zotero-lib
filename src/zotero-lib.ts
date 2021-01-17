@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import { stringify } from "@iarna/toml";
+
 require('dotenv').config();
 require('docstring');
 const os = require('os');
@@ -851,6 +853,7 @@ module.exports = class Zotero {
     console.log("3")
     const jsonstr = JSON.stringify(args.update)
     const result = await this[this.args.replace ? 'put' : 'patch'](`/items/${this.args.key}`, jsonstr, originalItemVersion)
+    console.log(JSON.stringify(result,null,2))
     return result
   }
 
