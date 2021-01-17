@@ -26,12 +26,25 @@ async function main() {
   const args = {
     key: zoteroItem.key,
     version: zoteroRecordVersion,
-    update: { url: "kerko_url" },
+    update: { url: "https://kerko_url" },
     fullresponse: false,
     show: true
   }
   console.log("--------------------------------")
-  const zoteroRecord = await zotero.update_item(args)
+  const update = await zotero.update_item(args)
+  if (update.statusCode == 204) {
+    console.log("update successfull - getting record")
+    const zoteroRecord = await zotero.item({ key: zoteroItem.key, show: true })
+    console.log("Result=" + JSON.stringify(zoteroRecord, null, 2))
+  } else {
+    console.log("update failed")
+    return 1
+  }
+  console.log("attaching links")
+  await zotero.attachLinkToItem(zoteroItem.key, "https://opendeved.net", { title: "🔄View item Evidence Library - click to open", tags: ["AddedByZotzen"] })
+  await zotero.attachLinkToItem(zoteroItem.key, "https://opendeved.net", { title: "🔄View Google Doc and download alternative formats", tags: ["AddedByZotzen"] })
+  console.log("attaching note")
+  await zotero.attachNoteToItem(zoteroItem.key, { content: "Hello", tags: ["testing"] })
   // TODO: Have automated test to see whether successful.
   return 0
 }

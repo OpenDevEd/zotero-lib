@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { stringify } from "@iarna/toml";
+//import { stringify } from "@iarna/toml";
 
 require('dotenv').config();
 require('docstring');
@@ -271,6 +271,7 @@ module.exports = class Zotero {
     })
   }
 
+  // TODO: Add       resolveWithFullResponse: options.resolveWithFullResponse,
   async post(uri, data, headers = {}) {
     const prefix = this.config.user_id ? `/users/${this.config.user_id}` : `/groups/${this.config.group_id}`
 
@@ -285,6 +286,7 @@ module.exports = class Zotero {
     })
   }
 
+  // TODO: Add       resolveWithFullResponse: options.resolveWithFullResponse,
   async put(uri, data) {
     const prefix = this.config.user_id ? `/users/${this.config.user_id}` : `/groups/${this.config.group_id}`
 
@@ -299,6 +301,9 @@ module.exports = class Zotero {
     })
   }
 
+  // patch does not return any data. 
+  // TODO: 'request-response' is deprecated - replace by something else? (axios?)
+  // TODO: Errors are not handled - add this to patch (below) but needs adding to others.
   async patch(uri, data, version?: number) {
     const prefix = this.config.user_id ? `/users/${this.config.user_id}` : `/groups/${this.config.group_id}`
 
@@ -307,15 +312,21 @@ module.exports = class Zotero {
 
     uri = `${this.base}${prefix}${uri}`
     if (this.config.verbose) console.error('PATCH', uri)
-
-    return request({
+    const res = await request({
       method: 'PATCH',
       uri,
       headers,
       body: data,
-    })
+      resolveWithFullResponse: true
+    }).then().catch(
+      error => {
+        console.log("TEMPORARY=" + JSON.stringify(error, null, 2))
+        return error
+      });
+    return res
   }
 
+  // TODO: Add       resolveWithFullResponse: options.resolveWithFullResponse,
   async delete(uri, version?: number) {
     const prefix = this.config.user_id ? `/users/${this.config.user_id}` : `/groups/${this.config.group_id}`
 
@@ -361,6 +372,51 @@ module.exports = class Zotero {
     }
     return out
   }
+
+  public objectifyTags(tags) {
+    let tagsarr = []
+    if (tags) {
+      tags.forEach(mytag => {
+        tagsarr.push({ tag: mytag, type: 0 })
+      })
+    }
+    return tagsarr
+  }
+
+  public async attachNoteToItem(PARENT, options: { content?: string, tags?: any } = { content: "Note note.", tags: [] }) {
+    const tags = this.objectifyTags(options.tags)
+    const noteText = options.content.replace(/\n/, "\\n").replace(/\"/, '\\\"')
+    const json = {
+      "parentItem": PARENT,
+      "itemType": "note",
+      "note": noteText,
+      "tags": tags,
+      "collections": [],
+      "relations": {}
+    }
+    return this.create_item({ item: json })
+  }
+
+  // TODO: Rewrite other function args like this.
+  // Rather than fn(args) have fn({......})
+  public async attachLinkToItem(PARENT, URL, options: { title?: string, tags?: any } = { title: "Click to open", tags: [] }) {
+    const tags = this.objectifyTags(options.tags)
+    console.log("Linktitle="+options.title)
+    const json = {
+      "parentItem": PARENT,
+      "itemType": "attachment",
+      "linkMode": "linked_url",
+      "title": options.title,
+      "url": URL,
+      "note": "",
+      "contentType": "",
+      "charset": "",
+      "tags": tags,
+      "relations": {}
+    }
+    return this.create_item({ item: json })
+  }
+
 
   /// THE COMMANDS --> public
   // The following functions define key API commands: /keys, /collection, /collections, etc.
@@ -823,6 +879,9 @@ module.exports = class Zotero {
       args.argparser.addArgument('--json', { help: 'string in json format: {field: value}. When using the API library, you can supply args.update' })
       return 0
     }
+    if (!this.args.replace) {
+      this.args.replace = false
+    }
     console.log("1")
     if (this.args.update && this.args.json) {
       return this.message(0, "You cannot specify both data and json.", this.args)
@@ -851,9 +910,11 @@ module.exports = class Zotero {
       originalItemVersion = originalItem.version
     }
     console.log("3")
+    console.log("TEMPORARY this.args=" + JSON.stringify(this.args, null, 2))
     const jsonstr = JSON.stringify(args.update)
+    console.log("j=" + jsonstr)
     const result = await this[this.args.replace ? 'put' : 'patch'](`/items/${this.args.key}`, jsonstr, originalItemVersion)
-    console.log(JSON.stringify(result,null,2))
+    console.log("X=" + JSON.stringify(result, null, 2))
     return result
   }
 
