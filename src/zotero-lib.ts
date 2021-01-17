@@ -12,7 +12,9 @@ const toml = require('@iarna/toml');
 const fs = require('fs');
 const path = require('path');
 const request = require('request-promise');
-const { LinkHeader } = require('http-link-header');
+//const { LinkHeader } = require('http-link-header');
+const LinkHeader = require('http-link-header')
+
 const Ajv = require('ajv');
 const { parse } = require("args-any");
 
@@ -225,9 +227,16 @@ module.exports = class Zotero {
 
   // Function to get more than 100 records, i.e. chunked retrieval.
   async all(uri, params = {}) {
+    console.log("all=" + uri)
     let chunk = await this.get(uri, { resolveWithFullResponse: true, params })
-    let data = chunk.body
+      .catch(error => {
+        console.log("Error in all: " + error)
+      })
 
+    let data = chunk.body
+    //console.log("ALL-TEMPORARY=" + JSON.stringify(data, null, 2))
+    //const lh = LinkHeader.parse(chunk.headers.link)
+    //console.log("ALL-TEMPORARY=" + JSON.stringify(lh, null, 2))
     let link = chunk.headers.link && LinkHeader.parse(chunk.headers.link).rel('next')
     while (link && link.length && link[0].uri) {
       if (chunk.headers.backoff) await sleep(parseInt(chunk.headers.backoff) * 1000)
@@ -262,13 +271,19 @@ module.exports = class Zotero {
     uri = `${this.base}${prefix}${uri}${params ? '?' + params : ''}`
     if (this.config.verbose) console.error('GET', uri)
 
-    return request({
+    const res = await request({
       uri,
       headers: this.headers,
       encoding: null,
       json: options.json,
       resolveWithFullResponse: options.resolveWithFullResponse,
-    })
+    }).then().catch(
+      error => {
+        console.log(`Error in zotero.get = ${JSON.stringify(error, null, 2)}`)
+        return error
+      });
+    console.log("all=" + JSON.stringify(res, null, 2))
+    return res
   }
 
   // TODO: Add       resolveWithFullResponse: options.resolveWithFullResponse,
@@ -401,7 +416,7 @@ module.exports = class Zotero {
   // Rather than fn(args) have fn({......})
   public async attachLinkToItem(PARENT, URL, options: { title?: string, tags?: any } = { title: "Click to open", tags: [] }) {
     const tags = this.objectifyTags(options.tags)
-    console.log("Linktitle="+options.title)
+    console.log("Linktitle=" + options.title)
     const json = {
       "parentItem": PARENT,
       "itemType": "attachment",
@@ -442,6 +457,7 @@ module.exports = class Zotero {
       args.argparser.addArgument('--top', { action: 'storeTrue', help: 'Show only collection at top level.' })
       args.argparser.addArgument('--key', { help: 'Show all the child collections of collection with key. You can provide the key as zotero-select link (zotero://...) to also set the group-id.' })
       args.argparser.addArgument('--create-child', { nargs: '*', help: 'Create child collections of key (or at the top level if no key is specified) with the names specified.' })
+      args.argparser.addArgument('--terse', { action: 'storeTrue', help: 'Show reduced information about collections.' })
       return
       /*
       The above means that I can call:
@@ -469,7 +485,7 @@ module.exports = class Zotero {
       const response = await this.post('/collections',
         JSON.stringify(this.args.create_child.map(c => { return { name: c, parentCollection: this.args.key } })))
       //this.print('Collections created: ', JSON.parse(response).successful)
-      return JSON.parse(response).successful
+      return response
     } else {
       // test for args.top: Not required.
       // If create_child==false:
@@ -481,7 +497,11 @@ module.exports = class Zotero {
       }
       this.show(collections)
       this.finalActions(collections)
-      return JSON.parse(collections).successful
+      if (this.args.terse) {
+        console.log("test")
+        collections = collections.map(element => Object({ "key": element.data.key, "name": element.data.name}))
+      };
+      return collections
     }
   }
 
