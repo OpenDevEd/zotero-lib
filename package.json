@@ -5,6 +5,7 @@
   "main": "build/zotero-lib.js",
   "scripts": {
     "start": "node ./build/zotero-lib.js",
+    "cli": "node ./build/zotero-lib.js",
     "test": "node ./tests/*.js",
     "test_create": "node ./tests/test_create.js",
     "test_item": "node ./tests/test_item.js",

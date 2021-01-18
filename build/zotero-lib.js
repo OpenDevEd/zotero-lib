@@ -54,6 +54,8 @@ const arg = new class {
 module.exports = class Zotero {
     // constructor...
     constructor(args) {
+        // The following config keys are expected/allowed, with both "-" and "_". The corresponding variables have _
+        this.config_keys = ["user-id", "group-id", "library-type", "api-key", "indent", "verbose", "debug"];
         this.base = "https://api.zotero.org";
         this.output = '';
         this.headers = {
@@ -64,15 +66,15 @@ module.exports = class Zotero {
         if (!args) {
             args = {};
         }
-        this.args = args;
+        //args = args
         // Read config (which also sets the Zotero-API-Key value in the header)
         // TODO: readConfig may need to perform an async operation...
-        const message = this.configure(args);
+        const message = this.configure(args, true);
         if (message["status"] == "success") {
         }
     }
     // zotero: any
-    async configure(args, readconfigfile = true) {
+    async configure(args, readconfigfile = false) {
         // pick up config: The function reads args and populates config
         /*
         Called during initialisation.
@@ -103,37 +105,36 @@ module.exports = class Zotero {
           api-key: "XXX"
         }
         */
-        this.args = args;
-        if (readconfigfile) {
-            const config = [this.args.config, 'zotero-cli.toml', `${os.homedir()}/.config/zotero-cli/zotero-cli.toml`].find(cfg => fs.existsSync(cfg));
+        //args = args
+        if (readconfigfile || args.config) {
+            const config = [args.config, 'zotero-cli.toml', `${os.homedir()}/.config/zotero-cli/zotero-cli.toml`].find(cfg => fs.existsSync(cfg));
             this.config = config ? toml.parse(fs.readFileSync(config, 'utf-8')) : {};
         }
         // Change "-" to "_"
-        const config_keys = ["user-id", "group-id", "library-type", "api-key", "indent", "verbose"];
-        config_keys.forEach(key => {
+        this.config_keys.forEach(key => {
             const undersc = key.replace("-", "_");
             if (key != undersc) {
                 if (this.config[key]) {
                     this.config[undersc] = this.config[key];
                 }
                 delete this.config[key];
-                if (this.args[key]) {
-                    this.args[undersc] = this.args[key];
+                if (args[key]) {
+                    args[undersc] = args[key];
                 }
-                delete this.args[key];
+                delete args[key];
             }
             // copy selected values
-            if (this.args[undersc]) {
-                this.config[undersc] = this.args[undersc];
+            if (args[undersc]) {
+                this.config[undersc] = args[undersc];
             }
         });
         /*
             // Overwrite config with values from args
             // Dont use all object keys, but just designated keys
-            // Object.keys(this.args).forEach(key => {
+            // Object.keys(args).forEach(key => {
             config_keys.forEach(key => {
-              if (this.args[key]) {
-                this.config[key] = this.args[key]
+              if (args[key]) {
+                this.config[key] = args[key]
               }
             })
         */
@@ -144,7 +145,7 @@ module.exports = class Zotero {
         else {
             return this.message(1, 'No API key provided in args or config');
         }
-        if (this.args.verbose)
+        if (args.verbose)
             console.log("config=" + JSON.stringify(this.config, null, 2));
         // Check that one and only one is defined:
         if (this.config.user_id === null && this.config.group_id === null)
@@ -153,17 +154,26 @@ module.exports = class Zotero {
         // if (this.config.user_id !== null && this.config.group_id !== null) return this.message(0,'Both user/group are specified. You must provide exactly one of --user-id or --group-id')
         // user_id==0 is generic; retrieve the real user id via the api_key
         if (this.config.user_id === 0)
-            this.config.user_id = (await this.get(`/keys/${this.args.api_key}`, { userOrGroupPrefix: false })).userID;
+            this.config.user_id = (await this.get(`/keys/${args.api_key}`, { userOrGroupPrefix: false })).userID;
         // using default=2 above prevents the overrides from being picked up
-        if (this.args.indent === null)
-            this.args.indent = 2;
+        if (args.indent === null)
+            args.indent = 2;
         if (this.config.indent === null)
             this.config.indent = 2;
         return this.message(0, "success");
     }
     showConfig() {
-        console.log("show=" + JSON.stringify(this.config, null, 2));
+        console.log("showConfig=" + JSON.stringify(this.config, null, 2));
         return this.config;
+    }
+    async reconfigure(args) {
+        // Changing this to a more limited reconfigure
+        // this.configure(args, false)I
+        let newargs;
+        this.config_keys.forEach(item => {
+            newargs[item] = args[item];
+        });
+        this.configure(args, false);
     }
     message(stat = 0, msg = "None", data = null) {
         return {
@@ -173,16 +183,16 @@ module.exports = class Zotero {
         };
     }
     finalActions(output) {
-        //console.log("args="+JSON.stringify(this.args))
+        //console.log("args="+JSON.stringify(args))
         //TODO: Look at the type of output: if string, then print, if object, then stringify
-        if (this.args.out)
-            fs.writeFileSync(this.args.out, JSON.stringify(output, null, this.config.indent));
-        if (this.args.show || this.config.verbose)
+        if (this.config.out)
+            fs.writeFileSync(this.config.out, JSON.stringify(output, null, this.config.indent));
+        if (this.config.show || this.config.verbose)
             this.show(output);
     }
     // library starts.
     print(...args) {
-        if (!this.args.out) {
+        if (!this.config.out) {
             console.log.apply(console, args);
         }
         else {
@@ -194,7 +204,7 @@ module.exports = class Zotero {
                     return `<Error: ${m.message || m.name}${m.stack ? `\n${m.stack}` : ''}>`;
                 if (m && type === 'object' && m.message)
                     return `<Error: ${m.message}#\n${m.stack}>`;
-                return JSON.stringify(m, null, this.args.indent);
+                return JSON.stringify(m, null, this.config.indent);
             }).join(' ') + '\n';
         }
     }
@@ -404,7 +414,7 @@ module.exports = class Zotero {
     // $collections(null) -> perform cllections action (using args)
     //async $collections(argparser = null) {
     async collections(args) {
-        this.args = args;
+        //args = args
         /* Retrieve a list of collections or create a collection. (API: /collections, /collections/top, /collections/<collectionKey>/collections). Use 'collections --help' for details. */
         if ("argparser" in args && args.argparser) {
             args.argparser.addArgument('--top', { action: 'storeTrue', help: 'Show only collection at top level.' });
@@ -426,16 +436,16 @@ module.exports = class Zotero {
         // args.top (boolean, optional)
         // args.create_child (string, optional)
         // perform tests: args.key
-        if (this.args.key) {
-            this.args.key = this.extractKeyAndSetGroup(this.args.key);
+        if (args.key) {
+            args.key = this.extractKeyAndSetGroup(args.key);
         }
         else {
             return this.message(0, 'Unable to extract group/key from the string provided.');
         }
         // perform test: args.create_child
         // If create_child=true, then create the child and exit.
-        if (this.args.create_child) {
-            const response = await this.post('/collections', JSON.stringify(this.args.create_child.map(c => { return { name: c, parentCollection: this.args.key }; })));
+        if (args.create_child) {
+            const response = await this.post('/collections', JSON.stringify(args.create_child.map(c => { return { name: c, parentCollection: args.key }; })));
             //this.print('Collections created: ', JSON.parse(response).successful)
             return response;
         }
@@ -443,15 +453,15 @@ module.exports = class Zotero {
             // test for args.top: Not required.
             // If create_child==false:
             let collections = null;
-            if (this.args.key) {
-                collections = await this.all(`/collections/${this.args.key}/collections`);
+            if (args.key) {
+                collections = await this.all(`/collections/${args.key}/collections`);
             }
             else {
-                collections = await this.all(`/collections${this.args.top ? '/top' : ''}`);
+                collections = await this.all(`/collections${args.top ? '/top' : ''}`);
             }
             this.show(collections);
             this.finalActions(collections);
-            if (this.args.terse) {
+            if (args.terse) {
                 console.log("test");
                 collections = collections.map(element => Object({ "key": element.data.key, "name": element.data.name }));
             }
@@ -470,7 +480,7 @@ module.exports = class Zotero {
       Retrieve information about a specific collection --key KEY (API: /collections/KEY or /collections/KEY/tags). Use 'collection --help' for details.
       (Note: Retrieve items is a collection via 'items --collection KEY'.)
          */
-        this.args = args;
+        //args = args
         this.reconfigure(args);
         if ("argparser" in args && args.argparser) {
             args.argparser.addArgument('--key', { required: true, help: 'The key of the collection (required). You can provide the key as zotero-select link (zotero://...) to also set the group-id.' });
@@ -480,50 +490,50 @@ module.exports = class Zotero {
             args.argparser.addArgument('--remove', { nargs: '*', help: 'Convenience method: Remove items from this collection. Note that removing items from collections with \'item --removefromcollection\' may require fewer API queries. (Convenience method: patch item->data->collections.)' });
             return;
         }
-        if (this.args.key) {
-            this.args.key = this.extractKeyAndSetGroup(this.args.key);
+        if (args.key) {
+            args.key = this.extractKeyAndSetGroup(args.key);
         }
         else {
             const msg = this.message(0, 'Unable to extract group/key from the string provided.');
             return msg;
         }
-        if (this.args.tags && this.args.add) {
+        if (args.tags && args.add) {
             const msg = this.message(0, '--tags cannot be combined with --add');
             return msg;
         }
-        if (this.args.tags && this.args.remove) {
+        if (args.tags && args.remove) {
             const msg = this.message(0, '--tags cannot be combined with --remove');
             return msg;
         }
         /*
-        if (this.args.add && !this.args.itemkeys.length) {
+        if (args.add && !args.itemkeys.length) {
           const msg = this.message(0,'--add requires item keys')
           return msg
         }
-        if (!this.args.add && this.args.itemkeys.length) {
+        if (!args.add && args.itemkeys.length) {
           const msg = this.message(0,'unexpected item keys')
           return msg
         }
         */
-        if (this.args.add) {
-            for (const itemKey of this.args.add) {
+        if (args.add) {
+            for (const itemKey of args.add) {
                 const item = await this.get(`/items/${itemKey}`);
-                if (item.data.collections.includes(this.args.key))
+                if (item.data.collections.includes(args.key))
                     continue;
-                await this.patch(`/items/${itemKey}`, JSON.stringify({ collections: item.data.collections.concat(this.args.key) }), item.version);
+                await this.patch(`/items/${itemKey}`, JSON.stringify({ collections: item.data.collections.concat(args.key) }), item.version);
             }
         }
-        if (this.args.remove) {
-            for (const itemKey of this.args.remove) {
+        if (args.remove) {
+            for (const itemKey of args.remove) {
                 const item = await this.get(`/items/${itemKey}`);
-                const index = item.data.collections.indexOf(this.args.key);
+                const index = item.data.collections.indexOf(args.key);
                 if (index > -1) {
                     item.data.collections.splice(index, 1);
                 }
                 await this.patch(`/items/${itemKey}`, JSON.stringify({ collections: item.data.collections }), item.version);
             }
         }
-        const res = await this.get(`/collections/${this.args.key}${this.args.tags ? '/tags' : ''}`);
+        const res = await this.get(`/collections/${args.key}${args.tags ? '/tags' : ''}`);
         this.show(res);
         return res;
     }
@@ -531,9 +541,6 @@ module.exports = class Zotero {
     // https://www.zotero.org/support/dev/web_api/v3/basics
     // <userOrGroupPrefix>/items	All items in the library, excluding trashed items
     // <userOrGroupPrefix>/items/top	Top-level items in the library, excluding trashed items
-    async reconfigure(args) {
-        this.configure(args, false);
-    }
     async $items(args) {
         /**
       Retrieve list of items from API. (API: /items, /items/top, /collections/COLLECTION/items/top).
@@ -541,7 +548,7 @@ module.exports = class Zotero {
       By default, all items are retrieved. With --top or limit (via --filter) the default number of items are retrieved.
         */
         let items;
-        this.args = args;
+        //args = args
         this.reconfigure(args);
         if ("argparser" in args && args.argparser) {
             args.argparser.addArgument('--count', { action: 'storeTrue', help: 'Return the number of items.' });
@@ -552,24 +559,24 @@ module.exports = class Zotero {
             args.argparser.addArgument('--validate', { type: arg.path, help: 'json-schema file for all itemtypes, or directory with schema files, one per itemtype.' });
             return;
         }
-        if (this.args.count && this.args.validate) {
+        if (args.count && args.validate) {
             const msg = this.message(0, '--count cannot be combined with --validate');
             return msg;
         }
-        if (this.args.collection) {
-            this.args.collection = this.extractKeyAndSetGroup(this.args.collection);
-            if (!this.args.collection) {
+        if (args.collection) {
+            args.collection = this.extractKeyAndSetGroup(args.collection);
+            if (!args.collection) {
                 const msg = this.message(0, 'Unable to extract group/key from the string provided.');
                 return msg;
             }
         }
-        const collection = this.args.collection ? `/collections/${this.args.collection}` : '';
-        if (this.args.count) {
-            this.print(await this.count(`${collection}/items${this.args.top ? '/top' : ''}`, this.args.filter || {}));
+        const collection = args.collection ? `/collections/${args.collection}` : '';
+        if (args.count) {
+            this.print(await this.count(`${collection}/items${args.top ? '/top' : ''}`, args.filter || {}));
             return;
         }
-        const params = this.args.filter || {};
-        if (this.args.top) {
+        const params = args.filter || {};
+        if (args.top) {
             // This should be all - there may be more than 100 items.
             // items = await this.all(`${collection}/items/top`, { params })
             items = await this.all(`${collection}/items/top`, params);
@@ -584,16 +591,16 @@ module.exports = class Zotero {
         else {
             items = await this.all(`${collection}/items`, params);
         }
-        if (this.args.validate) {
-            if (!fs.existsSync(this.args.validate))
-                throw new Error(`${this.args.validate} does not exist`);
-            const oneSchema = fs.lstatSync(this.args.validate).isFile();
-            let validate = oneSchema ? ajv.compile(JSON.parse(fs.readFileSync(this.args.validate, 'utf-8'))) : null;
+        if (args.validate) {
+            if (!fs.existsSync(args.validate))
+                throw new Error(`${args.validate} does not exist`);
+            const oneSchema = fs.lstatSync(args.validate).isFile();
+            let validate = oneSchema ? ajv.compile(JSON.parse(fs.readFileSync(args.validate, 'utf-8'))) : null;
             const validators = {};
             // still a bit rudimentary
             for (const item of items) {
                 if (!oneSchema) {
-                    validate = validators[item.itemType] = validators[item.itemType] || ajv.compile(JSON.parse(fs.readFileSync(path.join(this.args.validate, `${item.itemType}.json`), 'utf-8')));
+                    validate = validators[item.itemType] = validators[item.itemType] || ajv.compile(JSON.parse(fs.readFileSync(path.join(args.validate, `${item.itemType}.json`), 'utf-8')));
                 }
                 if (!validate(item))
                     this.show(validate.errors);
@@ -613,7 +620,7 @@ module.exports = class Zotero {
        
       Also see 'attachment', 'create' and 'update'.
         */
-        this.args = args;
+        //args = args
         this.reconfigure(args);
         // $item({"argparser": subparser}) returns CLI definition.
         if ("argparser" in args && args.argparser) {
@@ -628,16 +635,16 @@ module.exports = class Zotero {
             args.argparser.addArgument('--removetags', { nargs: '*', help: 'Remove tags from item. (Convenience method: patch item->data->tags.)' });
             return 0;
         }
-        if (this.args.key) {
-            this.args.key = this.extractKeyAndSetGroup(this.args.key);
-            if (!this.args.key) {
+        if (args.key) {
+            args.key = this.extractKeyAndSetGroup(args.key);
+            if (!args.key) {
                 const msg = this.message(0, 'Unable to extract group/key from the string provided.');
                 return msg;
             }
         }
-        const item = await this.get(`/items/${this.args.key}`);
-        if (this.args.savefiles) {
-            let children = await this.get(`/items/${this.args.key}/children`);
+        const item = await this.get(`/items/${args.key}`);
+        if (args.savefiles) {
+            let children = await this.get(`/items/${args.key}/children`);
             await Promise.all(children.filter(item => item.data.itemType === 'attachment').map(async (item) => {
                 if (item.data.filename) {
                     console.log(`Downloading file ${item.data.filename}`);
@@ -648,9 +655,9 @@ module.exports = class Zotero {
                 }
             }));
         }
-        if (this.args.addfile) {
+        if (args.addfile) {
             const attachmentTemplate = await this.get('/items/new?itemType=attachment&linkMode=imported_file', { userOrGroupPrefix: false });
-            for (const filename of this.args.addfile) {
+            for (const filename of args.addfile) {
                 if (!fs.existsSync(filename)) {
                     const msg = this.message(0, `Ignoring non-existing file: ${filename}.`);
                     return msg;
@@ -659,7 +666,7 @@ module.exports = class Zotero {
                 attach.title = path.basename(filename);
                 attach.filename = path.basename(filename);
                 attach.contentType = `application/${path.extname(filename).slice(1)}`;
-                attach.parentItem = this.args.key;
+                attach.parentItem = args.key;
                 const stat = fs.statSync(filename);
                 const uploadItem = JSON.parse(await this.post('/items', JSON.stringify([attach])));
                 const uploadAuth = JSON.parse(await this.post(`/items/${uploadItem.successful[0].key}/file?md5=${md5.sync(filename)}&filename=${attach.filename}&filesize=${fs.statSync(filename)['size']}&mtime=${stat.mtimeMs}`, '{}', { 'If-None-Match': '*' }));
@@ -670,7 +677,7 @@ module.exports = class Zotero {
                         body: Buffer.concat([Buffer.from(uploadAuth.prefix), fs.readFileSync(filename), Buffer.from(uploadAuth.suffix)]),
                         headers: { 'Content-Type': uploadAuth.contentType }
                     });
-                    if (this.args.verbose) {
+                    if (args.verbose) {
                         console.log("uploadResponse=");
                         this.show(uploadResponse);
                     }
@@ -678,47 +685,47 @@ module.exports = class Zotero {
                 }
             }
         }
-        if (this.args.addtocollection) {
+        if (args.addtocollection) {
             let newCollections = item.data.collections;
-            this.args.addtocollection.forEach(itemKey => {
+            args.addtocollection.forEach(itemKey => {
                 if (!newCollections.includes(itemKey)) {
                     newCollections.push(itemKey);
                 }
             });
-            await this.patch(`/items/${this.args.key}`, JSON.stringify({ collections: newCollections }), item.version);
+            await this.patch(`/items/${args.key}`, JSON.stringify({ collections: newCollections }), item.version);
         }
-        if (this.args.removefromcollection) {
+        if (args.removefromcollection) {
             let newCollections = item.data.collections;
-            this.args.removefromcollection.forEach(itemKey => {
+            args.removefromcollection.forEach(itemKey => {
                 const index = newCollections.indexOf(itemKey);
                 if (index > -1) {
                     newCollections.splice(index, 1);
                 }
             });
-            await this.patch(`/items/${this.args.key}`, JSON.stringify({ collections: newCollections }), item.version);
+            await this.patch(`/items/${args.key}`, JSON.stringify({ collections: newCollections }), item.version);
         }
-        if (this.args.addtags) {
+        if (args.addtags) {
             let newTags = item.data.tags;
-            this.args.addtags.forEach(tag => {
+            args.addtags.forEach(tag => {
                 if (!newTags.find(newTag => newTag.tag === tag)) {
                     newTags.push({ tag });
                 }
             });
-            await this.patch(`/items/${this.args.key}`, JSON.stringify({ tags: newTags }), item.version);
+            await this.patch(`/items/${args.key}`, JSON.stringify({ tags: newTags }), item.version);
         }
-        if (this.args.removetags) {
-            let newTags = item.data.tags.filter(tag => !this.args.removetags.includes(tag.tag));
-            await this.patch(`/items/${this.args.key}`, JSON.stringify({ tags: newTags }), item.version);
+        if (args.removetags) {
+            let newTags = item.data.tags.filter(tag => !args.removetags.includes(tag.tag));
+            await this.patch(`/items/${args.key}`, JSON.stringify({ tags: newTags }), item.version);
         }
-        const params = this.args.filter || {};
+        const params = args.filter || {};
         let result;
-        if (this.args.children) {
-            result = await this.get(`/items/${this.args.key}/children`, { params });
+        if (args.children) {
+            result = await this.get(`/items/${args.key}/children`, { params });
         }
         else {
-            if (this.args.addtocollection || this.args.removefromcollection
-                || this.args.removetags || this.args.addtags) {
-                result = await this.get(`/items/${this.args.key}`, { params });
+            if (args.addtocollection || args.removefromcollection
+                || args.removetags || args.addtags) {
+                result = await this.get(`/items/${args.key}`, { params });
             }
             else {
                 // Nothing about the item has changed:
@@ -726,9 +733,9 @@ module.exports = class Zotero {
             }
         }
         //this.show(result)
-        // console.log(JSON.stringify(this.args))
+        // console.log(JSON.stringify(args))
         this.finalActions(result);
-        if (this.args.fullresponse) {
+        if (args.fullresponse) {
             return result;
         }
         else {
@@ -740,7 +747,7 @@ module.exports = class Zotero {
       Retrieve/save file attachments for the item specified with --key KEY (API: /items/KEY/file).
       Also see 'item', which has options for adding/saving file attachments.
         */
-        this.args = args;
+        //args = args
         this.reconfigure(args);
         // function.name({"argparser": subparser}) returns CLI definition.
         if ("argparser" in args && args.argparser) {
@@ -748,14 +755,14 @@ module.exports = class Zotero {
             args.argparser.addArgument('--save', { required: true, help: 'Filename to save attachment to.' });
             return 0;
         }
-        if (this.args.key) {
-            this.args.key = this.extractKeyAndSetGroup(this.args.key);
-            if (!this.args.key) {
+        if (args.key) {
+            args.key = this.extractKeyAndSetGroup(args.key);
+            if (!args.key) {
                 const msg = this.message(0, 'Unable to extract group/key from the string provided.');
                 return msg;
             }
         }
-        fs.writeFileSync(this.args.save, await this.get(`/items/${this.args.key}/file`), 'binary');
+        fs.writeFileSync(args.save, await this.get(`/items/${args.key}/file`), 'binary');
         return this.message(0, 'File saved');
     }
     async create_item(args) {
@@ -764,7 +771,7 @@ module.exports = class Zotero {
        
       Use this option to create both top-level items, as well as child items (including notes and links).
         */
-        this.args = args;
+        //args = args
         this.reconfigure(args);
         // function.name({"argparser": subparser}) returns CLI definition.
         if ("argparser" in args && args.argparser) {
@@ -772,16 +779,16 @@ module.exports = class Zotero {
             args.argparser.addArgument('files', { nargs: '*', help: 'Json files for the items to be created.' });
             return;
         }
-        if (this.args.template) {
-            const result = await this.get('/items/new', { userOrGroupPrefix: false, params: { itemType: this.args.template } });
+        if (args.template) {
+            const result = await this.get('/items/new', { userOrGroupPrefix: false, params: { itemType: args.template } });
             this.show(result);
             //console.log("/"+result+"/")
             return result;
         }
-        else if ("files" in this.args && this.args.files.length > 0) {
-            if (!this.args.files.length)
+        else if ("files" in args && args.files.length > 0) {
+            if (!args.files.length)
                 return this.message(0, 'Need at least one item (args.items) to create or use args.template');
-            const items = this.args.files.map(item => JSON.parse(fs.readFileSync(item, 'utf-8')));
+            const items = args.files.map(item => JSON.parse(fs.readFileSync(item, 'utf-8')));
             //console.log("input")
             //this.show(items)
             const result = await this.post('/items', JSON.stringify(items));
@@ -790,24 +797,26 @@ module.exports = class Zotero {
             // TODO: see how to use pruneData
             return res;
         }
-        else if ("items" in this.args && this.args.items.length > 0) {
-            const result = await this.post('/items', JSON.stringify(this.args.items));
+        else if ("items" in args && args.items.length > 0) {
+            const result = await this.post('/items', JSON.stringify(args.items));
             const res = JSON.parse(result);
             this.show(res);
             // TODO: see how to use pruneData
             return res;
         }
-        else if (this.args.item) {
-            const result = await this.post('/items', "[" + JSON.stringify(this.args.item) + "]");
+        else if (args.item) {
+            const result = await this.post('/items', "[" + JSON.stringify(args.item) + "]");
             // console.log(result)
             const res = JSON.parse(result);
             this.show(res);
-            return this.pruneResponse(res);
+            return this.pruneData(res, args.fullresponse);
         }
     }
-    pruneResponse(res) {
-        return this.pruneData(res, this.args.fullresponse);
-    }
+    /*
+      private pruneResponse(res) {
+        return this.pruneData(res, args.fullresponse)
+      }
+    */
     pruneData(res, fullresponse = false) {
         if (fullresponse)
             return res;
@@ -815,7 +824,7 @@ module.exports = class Zotero {
     }
     async update_item(args) {
         /** Update/replace an item (--key KEY), either update (API: patch /items/KEY) or replacing (using --replace, API: put /items/KEY). */
-        this.args = args;
+        ////args = args;
         this.reconfigure(args);
         // function.name({"argparser": subparser}) returns CLI definition.
         if ("argparser" in args && args.argparser) {
@@ -826,26 +835,26 @@ module.exports = class Zotero {
             args.argparser.addArgument('--json', { help: 'string in json format: {field: value}. When using the API library, you can supply args.update' });
             return 0;
         }
-        if (!this.args.replace) {
-            this.args.replace = false;
+        if (!args.replace) {
+            args.replace = false;
         }
         console.log("1");
-        if (this.args.update && this.args.json) {
-            return this.message(0, "You cannot specify both data and json.", this.args);
+        if (args.update && args.json) {
+            return this.message(0, "You cannot specify both data and json.", args);
         }
-        if (!this.args.update && !this.args.json) {
-            return this.message(0, "You must specify either data or json.", this.args);
+        if (!args.update && !args.json) {
+            return this.message(0, "You must specify either data or json.", args);
         }
         console.log("2a");
-        if (this.args.json) {
-            this.args.update = JSON.parse(this.args.json);
+        if (args.json) {
+            args.update = JSON.parse(args.json);
         }
         console.log("2b");
-        if (this.args.key) {
-            this.args.key = this.extractKeyAndSetGroup(this.args.key);
+        if (args.key) {
+            args.key = this.extractKeyAndSetGroup(args.key);
         }
         else {
-            const msg = this.message(0, 'Unable to extract group/key from the string provided. Arguments attached.', this.args);
+            const msg = this.message(0, 'Unable to extract group/key from the string provided. Arguments attached.', args);
             console.log(msg);
             //return msg
         }
@@ -855,20 +864,20 @@ module.exports = class Zotero {
             originalItemVersion = args.version;
         }
         else {
-            const originalItem = await this.get(`/items/${this.args.key}`);
+            const originalItem = await this.get(`/items/${args.key}`);
             originalItemVersion = originalItem.version;
         }
         console.log("3");
-        console.log("TEMPORARY this.args=" + JSON.stringify(this.args, null, 2));
+        console.log("TEMPORARY args=" + JSON.stringify(args, null, 2));
         const jsonstr = JSON.stringify(args.update);
         console.log("j=" + jsonstr);
-        const result = await this[this.args.replace ? 'put' : 'patch'](`/items/${this.args.key}`, jsonstr, originalItemVersion);
+        const result = await this[args.replace ? 'put' : 'patch'](`/items/${args.key}`, jsonstr, originalItemVersion);
         console.log("X=" + JSON.stringify(result, null, 2));
         return result;
     }
     async update_item_file(args) {
         /** Update/replace an item (--key KEY), either update (API: patch /items/KEY) or replacing (using --replace, API: put /items/KEY). */
-        this.args = args;
+        ////args = args;
         this.reconfigure(args);
         // function.name({"argparser": subparser}) returns CLI definition.
         if ("argparser" in args && args.argparser) {
@@ -877,24 +886,24 @@ module.exports = class Zotero {
             args.argparser.addArgument('items', { nargs: 1, help: 'Path of file in json format.' });
             return 0;
         }
-        if (this.args.key) {
-            this.args.key = this.extractKeyAndSetGroup(this.args.key);
+        if (args.key) {
+            args.key = this.extractKeyAndSetGroup(args.key);
         }
         else {
-            const msg = this.message(0, 'Unable to extract group/key from the string provided. Arguments attached.', this.args);
+            const msg = this.message(0, 'Unable to extract group/key from the string provided. Arguments attached.', args);
             return msg;
         }
         // TODO return item
-        const originalItem = await this.get(`/items/${this.args.key}`);
-        for (const item of this.args.items) {
-            await this[this.args.replace ? 'put' : 'patch'](`/items/${this.args.key}`, fs.readFileSync(item), originalItem.version);
+        const originalItem = await this.get(`/items/${args.key}`);
+        for (const item of args.items) {
+            await this[args.replace ? 'put' : 'patch'](`/items/${args.key}`, fs.readFileSync(item), originalItem.version);
         }
         return this.message(0, "Done");
     }
     // <userOrGroupPrefix>/items/trash	Items in the trash
     async $trash(args) {
         /** Return a list of items in the trash. */
-        this.args = args;
+        //args = args
         this.reconfigure(args);
         // function.name({"argparser": subparser}) returns CLI definition.
         if ("argparser" in args && args.argparser) {
@@ -908,7 +917,7 @@ module.exports = class Zotero {
     // <userOrGroupPrefix>/publications/items	Items in My Publications  
     async $publications(args) {
         /** Return a list of items in publications (user library only). (API: /publications/items) */
-        this.args = args;
+        //args = args
         this.reconfigure(args);
         // function.name({"argparser": subparser}) returns CLI definition.
         if ("argparser" in args && args.argparser) {
@@ -920,7 +929,7 @@ module.exports = class Zotero {
     // itemTypes
     async $types(args) {
         /** Retrieve a list of items types available in Zotero. (API: /itemTypes) */
-        this.args = args;
+        //args = args
         this.reconfigure(args);
         // function.name({"argparser": subparser}) returns CLI definition.
         if ("argparser" in args && args.argparser) {
@@ -932,7 +941,7 @@ module.exports = class Zotero {
     }
     async $groups(args) {
         /** Retrieve the Zotero groups data to which the current library_id and api_key has access to. (API: /users/<user-id>/groups) */
-        this.args = args;
+        //args = args
         this.reconfigure(args);
         // function.name({"argparser": subparser}) returns CLI definition.
         if ("argparser" in args && args.argparser) {
@@ -947,17 +956,17 @@ module.exports = class Zotero {
          * Retrieve a template with the fields for --type TYPE (API: /itemTypeFields, /itemTypeCreatorTypes) or all item fields (API: /itemFields).
          * Note that to retrieve a template, use 'create-item --template TYPE' rather than this command.
          */
-        this.args = args;
+        //args = args
         this.reconfigure(args);
         // function.name({"argparser": subparser}) returns CLI definition.
         if ("argparser" in args && args.argparser) {
             args.argparser.addArgument('--type', { help: 'Display fields types for TYPE.' });
             return 0;
         }
-        if (this.args.type) {
+        if (args.type) {
             const result = {
-                "itemTypeFields": await this.get('/itemTypeFields', { params: { itemType: this.args.type }, userOrGroupPrefix: false }),
-                "itemTypeCreatorTypes": await this.get('/itemTypeCreatorTypes', { params: { itemType: this.args.type }, userOrGroupPrefix: false })
+                "itemTypeFields": await this.get('/itemTypeFields', { params: { itemType: args.type }, userOrGroupPrefix: false }),
+                "itemTypeCreatorTypes": await this.get('/itemTypeCreatorTypes', { params: { itemType: args.type }, userOrGroupPrefix: false })
             };
             this.show(result);
             return result;
@@ -972,17 +981,17 @@ module.exports = class Zotero {
     // https://www.zotero.org/support/dev/web_api/v3/basics
     async $searches(args) {
         /** Return a list of the saved searches of the library. Create new saved searches. (API: /searches) */
-        this.args = args;
+        //args = args
         this.reconfigure(args);
         // function.name({"argparser": subparser}) returns CLI definition.
         if ("argparser" in args && args.argparser) {
             args.argparser.addArgument('--create', { nargs: 1, help: 'Path of JSON file containing the definitions of saved searches.' });
             return;
         }
-        if (this.args.create) {
+        if (args.create) {
             let searchDef = [];
             try {
-                searchDef = JSON.parse(fs.readFileSync(this.args.create[0], 'utf8'));
+                searchDef = JSON.parse(fs.readFileSync(args.create[0], 'utf8'));
             }
             catch (ex) {
                 console.log('Invalid search definition: ', ex);
@@ -1000,7 +1009,7 @@ module.exports = class Zotero {
     // Tags
     async $tags(args) {
         /** Return a list of tags in the library. Options to filter and count tags. (API: /tags) */
-        this.args = args;
+        //args = args
         this.reconfigure(args);
         // function.name({"argparser": subparser}) returns CLI definition.
         if ("argparser" in args && args.argparser) {
@@ -1009,14 +1018,14 @@ module.exports = class Zotero {
             return;
         }
         let rawTags = null;
-        if (this.args.filter) {
-            rawTags = await this.all(`/tags/${encodeURIComponent(this.args.filter)}`);
+        if (args.filter) {
+            rawTags = await this.all(`/tags/${encodeURIComponent(args.filter)}`);
         }
         else {
             rawTags = await this.all('/tags');
         }
         const tags = rawTags.map(tag => tag.tag).sort();
-        if (this.args.count) {
+        if (args.count) {
             const tag_counts = {};
             for (const tag of tags) {
                 tag_counts[tag] = await this.count('/items', { tag });
