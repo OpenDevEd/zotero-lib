@@ -194,10 +194,12 @@ module.exports = class Zotero {
 
   private async reconfigure(args) {
     // Changing this to a more limited reconfigure
-    // this.configure(args, false)I
+    // this.configure(args, false)
+    // console.log("Reconfigure")
     let newargs
     this.config_keys.forEach(item => {
-      newargs[item] = args[item]
+      if (args[item])
+        newargs[item] = args[item]
     })
     this.configure(args, false)
   }
@@ -1134,4 +1136,42 @@ module.exports = class Zotero {
 
   }
 
-};
+  /**
+   * Utility functions. 
+   */
+
+  // Update the DOI of the item provided.
+  public async update_doi(args) {
+    // We dont know what kind of item this is - gotta get the item to see
+    args.fullresponse = false
+    const item = await this.item(args)
+    //const item = this.pruneData(response)
+    if (args.doi) {
+      // TODO: should scan item.extra and check for existing DOI
+      if (!item.doi)
+        console.log("TODO: zotero-lib - should scan item.extra and check for existing DOI")
+      const extra = item.extra + `\nDOI: ${args.doi}`
+      const updateargs = {
+        key: args.key,
+        version: item.version,
+        update: item.doi ? { doi: args.doi } : { extra: extra },
+        fullresponse: false,
+        show: true
+      }
+      const update = await this.update_item(updateargs)
+      if (update.statusCode == 204) {
+        console.log("update successfull - getting record")
+        const zoteroRecord = await this.item({ key: args.key })
+        console.log("Result=" + JSON.stringify(zoteroRecord, null, 2))
+        return zoteroRecord
+      } else {
+        console.log("update failed")
+        return 1
+      }
+    } else {
+      return 1
+    }
+    return 1
+  }
+
+}
