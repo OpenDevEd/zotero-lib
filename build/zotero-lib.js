@@ -875,7 +875,6 @@ module.exports = class Zotero {
     async create_item(args, subparsers) {
         /**
       Create a new item or items. (API: /items/new) You can retrieve a template with the --template option.
-       
       Use this option to create both top-level items, as well as child items (including notes and links).
         */
         this.reconfigure(args);
@@ -1028,10 +1027,13 @@ module.exports = class Zotero {
         this.reconfigure(args);
         // function.name({"argparser": subparser}) returns CLI definition.
         if (args.getInterface && subparsers) {
+            const argparser = subparsers.add_parser("publications", { "help": "Return a list of items in publications (user library only). (API: /publications/items)" });
+            argparser.set_defaults({ "func": this.publications.name });
             return;
         }
         const items = await this.get('/publications/items');
         this.show(items);
+        return items;
     }
     // itemTypes
     async types(args, subparsers) {
@@ -1039,6 +1041,8 @@ module.exports = class Zotero {
         this.reconfigure(args);
         // function.name({"argparser": subparser}) returns CLI definition.
         if (args.getInterface && subparsers) {
+            const argparser = subparsers.add_parser("types", { "help": "Retrieve a list of items types available in Zotero. (API: /itemTypes)." });
+            argparser.set_defaults({ "func": this.types.name });
             return;
         }
         const types = await this.get('/itemTypes', { userOrGroupPrefix: false });
@@ -1050,7 +1054,9 @@ module.exports = class Zotero {
         this.reconfigure(args);
         // function.name({"argparser": subparser}) returns CLI definition.
         if (args.getInterface && subparsers) {
-            return;
+            const argparser = subparsers.add_parser("groups", { "help": "Retrieve the Zotero groups data to which the current library_id and api_key has access to. (API: /users/<user-id>/groups)" });
+            argparser.set_defaults({ "func": this.groups.name });
+            return this.message(0, "success", args);
         }
         let groups = await this.get('/groups');
         this.show(groups);
@@ -1151,8 +1157,22 @@ module.exports = class Zotero {
      * Utility functions.
      */
     // Update the DOI of the item provided.
-    async update_doi(args) {
+    async update_doi(args, subparsers) {
         // We dont know what kind of item this is - gotta get the item to see
+        if (args.getInterface && subparsers) {
+            const argparser = subparsers.add_parser("update-doi", { "help": "Update the DOI for the item." });
+            argparser.set_defaults({ "func": this.update_doi.name });
+            argparser.add_argument("key", {
+                "nargs": 1,
+                "action": "store",
+                "help": "The Zotero item key for the item to be updated."
+            });
+            argparser.add_argument("--doi", {
+                "nargs": 1,
+                "action": "store",
+                "help": "The DOI for the item"
+            });
+        }
         args.fullresponse = false;
         const item = await this.item(args);
         //const item = this.pruneData(response)
@@ -1168,6 +1188,8 @@ module.exports = class Zotero {
                 fullresponse: false,
                 show: true
             };
+            // ACTION: check arguments
+            // ACTION: run code
             const update = await this.update_item(updateargs);
             if (update.statusCode == 204) {
                 console.log("update successfull - getting record");
@@ -1183,77 +1205,95 @@ module.exports = class Zotero {
         else {
             return this.message(1, "update failed - no doi provided");
         }
+        // ACTION: return values
         // return 1
     }
+    async TEMPLATE(args, subparsers) {
+        // ACTION: define CLI interface
+        if (args.getInterface && subparsers) {
+            const argparser = subparsers.add_parser("TEMPLATE", { "help": "HELPTEXT" });
+            argparser.set_defaults({ "func": this.TEMPLATE.name });
+            argparser.add_argument("--switch", {
+                "action": "store_true",
+                "help": "HELPTEXT"
+            });
+            argparser.add_argument("--arguments", {
+                "nargs": "*",
+                "action": "store",
+                "help": "HELPTEXT"
+            });
+        }
+        // ACTION: check arguments
+        if (args.switch) {
+        }
+        if (args.arguments) {
+        }
+        // ACTION: run code
+        // ACTION: return values
+        const data = {};
+        return this.message(0, "exist status", data);
+    }
+    /*
+  public async attachment
+  
+  //  public async attachLinkToItem(PARENT, URL, options: { title?: string, tags?: any } = { title: "Click to open", tags: [] }) {
+  
+  
+  */
+    /* Implement
+    public update_field() {
+      my $str = `zotero-cli $thegroup item --key $item | jq '.data'`;
+      print $str;
+      if ($key) {
+        if (!$value) {
+          print & jq("{ $key }", $str);
+        } else {
+          $str = & jq("{ key, version }", $str);
+          $str = & jq(". += { \"$key\":  \"$value\" }", $str);
+          say $str;
+          if ($update) {
+            open F, ">$item.update.json";
+            print F $str;
+            close F;
+            system "zotero-cli --group-id $group update-item --key $item $item.update.json";
+          }
+        };
+      } else {
+        print $str;
+      };
+    }
+    */
+    /*
+  Implement: extra_append
+  
+    my $str = `./zotUpdateField.pl $thegroup --item $key --key extra | jq " .extra "`;
+  
+  my @extra ;
+  if ($str =~ m/\S/s) {
+      $str =~ s/\n$//s;
+      $str =~ s/\"$//s;
+      $str =~ s/^\"//s;
+      @extra = split(/\\n/,$str);
+  };
+  
+  push @extra, @t;
+  
+  my $string = shell_quote("\"" . join("\\n", @extra) . "\"");
+  #print $string;
+  
+  say `./zotUpdateField.pl $thegroup  --item $key --key extra --value $string --update`;
+  
+  
+  
+    */
+    /*
+    update_url
+        system("./zotUpdateField.pl --update --group $a --item $c --key url --value \"\\\"https://docs.opendeved.net/lib/$c\\\"\"");
+    */
     /**
      *
      *
      */
-    getVersion() {
-        const pjson = require('../package.json');
-        if (pjson.version)
-            console.log(`zenodo-lib version=${pjson.version}`);
-        return pjson.version;
-    }
-    getArguments() {
-        const parser = new ArgumentParser({ "description": "Zotero command line utility" });
-        parser.add_argument('--api-key', {
-            help: 'The API key to access the Zotero API.'
-        });
-        parser.add_argument('--config', {
-            type: parser.file,
-            help: 'Configuration file (toml format). Note that ./zotero-cli.toml and ~/.config/zotero-cli/zotero-cli.toml is picked up automatically.'
-        });
-        parser.add_argument('--user-id', {
-            type: parser.integer, help: 'The id of the user library.'
-        });
-        parser.add_argument('--group-id', {
-            action: 'store',
-            type: parser.integer,
-            help: 'The id of the group library.'
-        });
-        // See below. If changed, add: You can provide the group-id as zotero-select link (zotero://...). Only the group-id is used, the item/collection id is discarded.
-        parser.add_argument('--indent', { type: parser.integer, help: 'Identation for json output.' });
-        parser.add_argument('--out', { help: 'Output to file' });
-        parser.add_argument('--verbose', { action: 'store_true', help: 'Log requests.' });
-        parser.add_argument("--dryrun", {
-            "action": "store_true",
-            "help": "Show the API request and exit.",
-            "default": false
-        });
-        parser.add_argument("--version", {
-            "action": "store_true",
-            "help": "Show version",
-        });
-        /*
-        The following code adds subparsers.
-        */
-        const subparsers = parser.add_subparsers({ "help": "Help for these commands is available via 'command --help'." });
-        this.collections({ getInterface: true }, subparsers);
-        this.collection({ getInterface: true }, subparsers);
-        this.items({ getInterface: true }, subparsers);
-        this.item({ getInterface: true }, subparsers);
-        this.attachment({ getInterface: true }, subparsers);
-        this.create_item({ getInterface: true }, subparsers);
-        this.update_item({ getInterface: true }, subparsers);
-        this.fields({ getInterface: true }, subparsers);
-        this.searches({ getInterface: true }, subparsers);
-        this.tags({ getInterface: true }, subparsers);
-        this.key({ getInterface: true }, subparsers);
-        // Functions for get, post, put, patch, delete. (Delete query to API with uri.)
-        this.__get({ getInterface: true }, subparsers);
-        this.__post({ getInterface: true }, subparsers);
-        this.__put({ getInterface: true }, subparsers);
-        this.__patch({ getInterface: true }, subparsers);
-        this.__delete({ getInterface: true }, subparsers);
-        // Other URLs
-        // https://www.zotero.org/support/dev/web_api/v3/basics
-        // /keys/<key>	
-        // /users/<userID>/groups	
-        //parser.set_defaults({ "func": new Zotero().run() });
-        //this.parser.parse_args();
-        return parser.parse_args();
-    }
     async commandlineinterface() {
         // --- main ---
         var args = this.getArguments();
@@ -1297,7 +1337,79 @@ module.exports = class Zotero {
             }
             if (args.out)
                 fs.writeFileSync(args.out, this.output);
+            process.exit(1);
         }
+    }
+    // local functions
+    getVersion() {
+        const pjson = require('../package.json');
+        if (pjson.version)
+            console.log(`zenodo-lib version=${pjson.version}`);
+        return pjson.version;
+    }
+    getArguments() {
+        const parser = new ArgumentParser({ "description": "Zotero command line utility" });
+        parser.add_argument('--api-key', {
+            help: 'The API key to access the Zotero API.'
+        });
+        parser.add_argument('--config', {
+            type: parser.file,
+            help: 'Configuration file (toml format). Note that ./zotero-cli.toml and ~/.config/zotero-cli/zotero-cli.toml is picked up automatically.'
+        });
+        parser.add_argument('--user-id', {
+            type: parser.integer, help: 'The id of the user library.'
+        });
+        parser.add_argument('--group-id', {
+            action: 'store',
+            type: parser.integer,
+            help: 'The id of the group library.'
+        });
+        // See below. If changed, add: You can provide the group-id as zotero-select link (zotero://...). Only the group-id is used, the item/collection id is discarded.
+        parser.add_argument('--indent', { type: parser.integer, help: 'Identation for json output.' });
+        parser.add_argument('--out', { help: 'Output to file' });
+        parser.add_argument('--verbose', { action: 'store_true', help: 'Log requests.' });
+        parser.add_argument("--dryrun", {
+            "action": "store_true",
+            "help": "Show the API request and exit.",
+            "default": false
+        });
+        parser.add_argument("--version", {
+            "action": "store_true",
+            "help": "Show version",
+        });
+        /*
+        The following code adds subparsers.
+        */
+        const subparsers = parser.add_subparsers({ "help": "Help for these commands is available via 'command --help'." });
+        this.item({ getInterface: true }, subparsers);
+        this.items({ getInterface: true }, subparsers);
+        this.create_item({ getInterface: true }, subparsers);
+        this.update_item({ getInterface: true }, subparsers);
+        this.collection({ getInterface: true }, subparsers);
+        this.collections({ getInterface: true }, subparsers);
+        this.publications({ getInterface: true }, subparsers);
+        this.tags({ getInterface: true }, subparsers);
+        this.attachment({ getInterface: true }, subparsers);
+        this.types({ getInterface: true }, subparsers);
+        this.groups({ getInterface: true }, subparsers);
+        this.fields({ getInterface: true }, subparsers);
+        this.searches({ getInterface: true }, subparsers);
+        this.key({ getInterface: true }, subparsers);
+        // Utility functions
+        this.update_doi({ getInterface: true }, subparsers);
+        // Functions for get, post, put, patch, delete. (Delete query to API with uri.)
+        this.__get({ getInterface: true }, subparsers);
+        this.__post({ getInterface: true }, subparsers);
+        this.__put({ getInterface: true }, subparsers);
+        this.__patch({ getInterface: true }, subparsers);
+        this.__delete({ getInterface: true }, subparsers);
+        // Other URLs
+        // https://www.zotero.org/support/dev/web_api/v3/basics
+        // /keys/<key>	
+        // /users/<userID>/groups	
+        //parser.set_defaults({ "func": new Zotero().run() });
+        //this.parser.parse_args();
+        return parser.parse_args();
     }
 };
 //# sourceMappingURL=zotero-lib.js.map
