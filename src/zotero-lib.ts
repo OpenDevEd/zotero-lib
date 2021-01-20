@@ -303,13 +303,13 @@ module.exports = class Zotero {
     return res
   }
 
-  public async $get(args, subparsers?) {
+  public async __get(args, subparsers?) {
     /** Expose 'get' 
   * Make a direct query to the API using 'GET uri'. 
   */
     if (args.getInterface && subparsers) {
       const argparser = subparsers.add_parser("__get", { "help": "Expose 'get'. Make a direct query to the API using 'GET uri'." })
-      argparser.set_defaults({ "func": "$get" })
+      argparser.set_defaults({ "func": this.__get.name })
       argparser.add_argument('--root', { action: 'store_true', help: 'TODO: document' })
       argparser.add_argument('uri', { nargs: '+', help: 'TODO: document' })
       return { status: 0, message: "success" }
@@ -339,11 +339,11 @@ module.exports = class Zotero {
     })
   }
 
-  public async $post(args, subparsers?) {
+  public async __post(args, subparsers?) {
     /** Expose 'post'. Make a direct query to the API using 'POST uri [--data data]'. */
     if (args.getInterface && subparsers) {
       const argparser = subparsers.add_parser("__post", { "help": "Expose 'post'. Make a direct query to the API using 'POST uri [--data data]'." })
-      argparser.set_defaults({ "func": this.$post.name })
+      argparser.set_defaults({ "func": this.__post.name })
       argparser.add_argument('uri', { nargs: 1, help: 'TODO: document' })
       argparser.add_argument('--data', { required: true, help: 'Escaped JSON string for post data' })
       return { status: 0, message: "success" }
@@ -368,11 +368,11 @@ module.exports = class Zotero {
     })
   }
 
-  public async $put(args, subparsers?) {
+  public async __put(args, subparsers?) {
     /** Make a direct query to the API using 'PUT uri [--data data]'. */
     if (args.getInterface && subparsers) {
       const argparser = subparsers.add_parser("__put", { "help": "Expose 'put'. Make a direct query to the API using 'PUT uri [--data data]'." })
-      argparser.set_defaults({ "func": this.$put.name })
+      argparser.set_defaults({ "func": this.__put.name })
       argparser.add_argument('uri', { nargs: 1, help: 'TODO: document' })
       argparser.add_argument('--data', { required: true, help: 'Escaped JSON string for post data' })
       return { status: 0, message: "success" }
@@ -410,11 +410,11 @@ module.exports = class Zotero {
   }
 
 
-  public async $patch(args, subparsers?) {
+  public async __patch(args, subparsers?) {
     /** Make a direct query to the API using 'PATCH uri [--data data]'. */
     if (args.getInterface && subparsers) {
       const argparser = subparsers.add_parser("__patch", { "help": "Expose 'patch'. Make a direct query to the API using 'PATCH uri [--data data]'." })
-      argparser.set_defaults({ "func": this.$patch.name })
+      argparser.set_defaults({ "func": this.__patch.name })
       argparser.add_argument('uri', { nargs: 1, help: 'TODO: document' })
       argparser.add_argument('--data', { required: true, help: 'Escaped JSON string for post data' })
       argparser.add_argument('--version', { required: true, help: 'Version of Zotero record (obtained previously)' })
@@ -443,11 +443,11 @@ module.exports = class Zotero {
     })
   }
 
-  public async $delete(args, subparsers?) {
+  public async __delete(args, subparsers?) {
     /** Make a direct delete query to the API using 'DELETE uri'. */
     if (args.getInterface && subparsers) {
       const argparser = subparsers.add_parser("__delete", { "help": "Expose 'delete'. Make a direct delete query to the API using 'DELETE uri'." })
-      argparser.set_defaults({ "func": this.$delete.name })
+      argparser.set_defaults({ "func": this.__delete.name })
       argparser.add_argument('uri', { nargs: '+', help: 'Request uri' })
       return { status: 0, message: "success" }
     }
@@ -788,11 +788,11 @@ module.exports = class Zotero {
   // https://www.zotero.org/support/dev/web_api/v3/basics
   // <userOrGroupPrefix>/items/<itemKey>	A specific item in the library
   // <userOrGroupPrefix>/items/<itemKey>/children	Child items under a specific item
-
-  getFuncName() {
-    return this.getFuncName.caller.name
-  }
-
+  /*
+    getFuncName() {
+      return this.getFuncName.caller.name
+    }
+  */
   public async item(args, subparsers?) {
     /** 
   Retrieve an item (item --key KEY), save/add file attachments, retrieve children. Manage collections and tags. (API: /items/KEY/ or /items/KEY/children). 
@@ -943,6 +943,9 @@ module.exports = class Zotero {
     } else {
       return result.data
     }
+    // TODO: What if this fails? Zotero will return, e.g.   "message": "404 - {\"type\":\"Buffer\",\"data\":[78,111,116,32,102,111,117,110,100]}",
+    // console.log(Buffer.from(obj.data).toString())
+    // Need to return a proper message.
   }
 
   async attachment(args, subparsers?) {
@@ -970,8 +973,8 @@ module.exports = class Zotero {
     }
 
     fs.writeFileSync(args.save, await this.get(`/items/${args.key}/file`), 'binary')
-
-    return this.message(0, 'File saved')
+    // TODO return better value.
+    return this.message(0, 'File saved', args.save)
   }
 
   public async create_item(args, subparsers?) {
@@ -1047,18 +1050,18 @@ module.exports = class Zotero {
     if (!args.replace) {
       args.replace = false
     }
-    console.log("1")
+    //console.log("1")
     if (args.update && args.json) {
       return this.message(0, "You cannot specify both data and json.", args)
     }
     if (!args.update && !args.json) {
       return this.message(0, "You must specify either data or json.", args)
     }
-    console.log("2a")
+    //console.log("2a")
     if (args.json) {
       args.update = JSON.parse(args.json)
     }
-    console.log("2b")
+    //console.log("2b")
     if (args.key) {
       args.key = this.extractKeyAndSetGroup(args.key)
     } else {
@@ -1066,7 +1069,7 @@ module.exports = class Zotero {
       console.log(msg)
       //return msg
     }
-    console.log("2c")
+    //console.log("2c")
     let originalItemVersion = 0
     if (args.version) {
       originalItemVersion = args.version
@@ -1074,12 +1077,12 @@ module.exports = class Zotero {
       const originalItem = await this.get(`/items/${args.key}`)
       originalItemVersion = originalItem.version
     }
-    console.log("3")
-    console.log("TEMPORARY args=" + JSON.stringify(args, null, 2))
+    //console.log("3")
+    //console.log("TEMPORARY args=" + JSON.stringify(args, null, 2))
     const jsonstr = JSON.stringify(args.update)
-    console.log("j=" + jsonstr)
+    //console.log("j=" + jsonstr)
     const result = await this[args.replace ? 'put' : 'patch'](`/items/${args.key}`, jsonstr, originalItemVersion)
-    console.log("X=" + JSON.stringify(result, null, 2))
+    //console.log("X=" + JSON.stringify(result, null, 2))
     return result
   }
 
@@ -1188,7 +1191,6 @@ module.exports = class Zotero {
       argparser.set_defaults({ "func": this.fields.name })
       argparser.add_argument('--type', { help: 'Display fields types for TYPE.' })
       return { status: 0, message: "success" }
-
     }
 
     if (args.type) {
@@ -1238,7 +1240,6 @@ module.exports = class Zotero {
       this.print('Saved search(s) created successfully.')
       return res
     }
-
     const items = await this.get('/searches')
     this.show(items)
     return items
@@ -1277,8 +1278,6 @@ module.exports = class Zotero {
       this.show(tags)
       return tags
     }
-
-
   }
 
 
@@ -1313,12 +1312,12 @@ module.exports = class Zotero {
         return zoteroRecord
       } else {
         console.log("update failed")
-        return 1
+        return this.message(1, "update failed")
       }
     } else {
-      return 1
+      return this.message(1, "update failed - no doi provided")
     }
-    return 1
+    // return 1
   }
 
 
@@ -1326,6 +1325,13 @@ module.exports = class Zotero {
    * 
    * 
    */
+
+  getVersion() {
+    const pjson = require('../package.json')
+    if (pjson.version)
+      console.log(`zenodo-lib version=${pjson.version}`)
+    return pjson.version
+  }
 
 
   getArguments() {
@@ -1355,7 +1361,10 @@ module.exports = class Zotero {
       '--out', { help: 'Output to file' })
     parser.add_argument(
       '--verbose', { action: 'store_true', help: 'Log requests.' })
-
+    parser.add_argument("--version", {
+      "action": "store_true",
+      "help": "Show version",
+    });
     /*
     The following code adds subparsers. 
     */
@@ -1375,11 +1384,11 @@ module.exports = class Zotero {
     this.key({ getInterface: true }, subparsers)
 
     // Functions for get, post, put, patch, delete. (Delete query to API with uri.)
-    this.$get({ getInterface: true }, subparsers)
-    this.$post({ getInterface: true }, subparsers)
-    this.$put({ getInterface: true }, subparsers)
-    this.$patch({ getInterface: true }, subparsers)
-    this.$delete({ getInterface: true }, subparsers)
+    this.__get({ getInterface: true }, subparsers)
+    this.__post({ getInterface: true }, subparsers)
+    this.__put({ getInterface: true }, subparsers)
+    this.__patch({ getInterface: true }, subparsers)
+    this.__delete({ getInterface: true }, subparsers)
 
 
     // Other URLs
@@ -1398,7 +1407,10 @@ module.exports = class Zotero {
     // --- main ---
     var args = this.getArguments()
     //const zotero = new Zotero()
-
+    if (args.version) {
+      this.getVersion()
+      process.exit(0)
+    }
     if (args.verbose) {
       console.log("zotero-cli starting...")
     }
@@ -1417,7 +1429,11 @@ module.exports = class Zotero {
       if (args.indent === null) args.indent = 2
 
       this.showConfig()
-      // call the actual command                                                                                                                                               
+      // call the actual command        
+      if (!args.func) {
+        console.log("No arguments provided. Use -h for help.")
+        process.exit(0)
+      }
       try {
         //await this['$' + args.command.replace(/-/g, '_')]()
         // await this[args.command.replace(/-/g, '_')]()

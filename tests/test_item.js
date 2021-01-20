@@ -18,6 +18,9 @@ async function main() {
   const response = await zotero.item({key: "YH7GFG6L"})
   console.log("response = " + JSON.stringify(response, null, 2))
   // TODO: Have automated test to see whether successful.
+  if (!response) {
+    console.log("1 - item not found - item does not exist")
+  }
   return 0
 }
 
