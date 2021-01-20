@@ -14,18 +14,12 @@ const request = require('request-promise');
 const LinkHeader = require('http-link-header');
 const Ajv = require('ajv');
 const { parse } = require("args-any");
-/*
-TO DO:
-module.exports...
-*/
-/*
-TODO: Check this compiles. package.json / tsconfig will need to be adjusted.
-*/
 // import { parse as TOML } from '@iarna/toml'
 // import fs = require('fs')
 // import path = require('path')
 // import request = require('request-promise')
 // import * as LinkHeader from 'http-link-header'
+// TODO: Review issues here https://github.com/edtechhub/zotero-cli/issues and where this relevant, implement below.
 // import Ajv = require('ajv')
 const ajv = new Ajv();
 const md5 = require('md5-file');
@@ -53,7 +47,6 @@ const arg = new class {
     }
 };
 module.exports = class Zotero {
-    // constructor...
     constructor(args) {
         // The following config keys are expected/allowed, with both "-" and "_". The corresponding variables have _
         this.config_keys = ["user-id", "group-id", "library-type", "api-key", "indent", "verbose", "debug"];
@@ -106,7 +99,6 @@ module.exports = class Zotero {
           api-key: "XXX"
         }
         */
-        //args = args
         if (readconfigfile || args.config) {
             const config = [args.config, 'zotero-cli.toml', `${os.homedir()}/.config/zotero-cli/zotero-cli.toml`].find(cfg => fs.existsSync(cfg));
             this.config = config ? toml.parse(fs.readFileSync(config, 'utf-8')) : {};
@@ -414,7 +406,7 @@ module.exports = class Zotero {
     async key(args, subparsers) {
         /** Show details about this API key. (API: /keys ) */
         if (args.getInterface && subparsers) {
-            const parser_key = subparsers.add_parser("key", { "help": "Show details about this API key. (API: /keys )" });
+            const parser_key = subparsers.add_parser("key", { "help": "Show details about an API key. (API: /keys )" });
             parser_key.set_defaults({ "func": this.key.name });
             return { status: 0, message: "success" };
         }
@@ -504,11 +496,10 @@ module.exports = class Zotero {
     // If I call $collections(subparser) -> add options to subparser
     // $collections(null) -> perform cllections action (using args)
     async collections(args, subparsers) {
-        //args = args
         /* Retrieve a list of collections or create a collection. (API: /collections, /collections/top, /collections/<collectionKey>/collections). Use 'collections --help' for details. */
         if (args.getInterface && subparsers) {
             //async $collections
-            const parser_collections = subparsers.add_parser("collections", { "help": "Collections command" });
+            const parser_collections = subparsers.add_parser("collections", { "help": "Retrieve sub-collections and create new collections." });
             parser_collections.set_defaults({ "func": "collections" });
             parser_collections.add_argument('--top', { action: 'store_true', help: 'Show only collection at top level.' });
             parser_collections.add_argument('--key', { nargs: 1, required: true, help: 'Show all the child collections of collection with key. You can provide the key as zotero-select link (zotero://...) to also set the group-id.' });
@@ -572,11 +563,10 @@ module.exports = class Zotero {
       Retrieve information about a specific collection --key KEY (API: /collections/KEY or /collections/KEY/tags). Use 'collection --help' for details.
       (Note: Retrieve items is a collection via 'items --collection KEY'.)
          */
-        //args = args
         this.reconfigure(args);
         if (args.getInterface && subparsers) {
             //async $collection
-            const parser_collection = subparsers.add_parser("collection", { "help": "Collection command" });
+            const parser_collection = subparsers.add_parser("collection", { "help": "Retrieve collection information, display tags, add/remove items. (API: /collections/KEY or /collections/KEY/tags). (Note: Retrieve items is a collection: use 'items --collection KEY'.) " });
             parser_collection.set_defaults({ "func": this.collection.name });
             parser_collection.add_argument('--key', { nargs: 1, help: 'The key of the collection (required). You can provide the key as zotero-select link (zotero://...) to also set the group-id.' });
             parser_collection.add_argument('--tags', { action: 'store_true', help: 'Display tags present in the collection.' });
@@ -643,11 +633,10 @@ module.exports = class Zotero {
       By default, all items are retrieved. With --top or limit (via --filter) the default number of items are retrieved.
         */
         let items;
-        //args = args
         this.reconfigure(args);
         if (args.getInterface && subparsers) {
             //async items
-            const parser_items = subparsers.add_parser("items", { "help": "Items command" });
+            const parser_items = subparsers.add_parser("items", { "help": "Retrieve items, retrieve items within collections, with filter is required. Count items. By default, all items are retrieved. With --top or limit (via --filter) the default number of items are retrieved. (API: /items, /items/top, /collections/COLLECTION/items/top)" });
             parser_items.set_defaults({ "func": this.items.name });
             parser_items.add_argument('--count', { action: 'store_true', help: 'Return the number of items.' });
             // argparser.add_argument('--all', { action: 'store_true', help: 'obsolete' })
@@ -724,12 +713,11 @@ module.exports = class Zotero {
       Also see 'attachment', 'create' and 'update'.
         */
         // console.log("HERE="+this.getFuncName())
-        //args = args
         this.reconfigure(args);
         // $item({"argparser": subparser}) returns CLI definition.
         if (args.getInterface && subparsers) {
             //async item
-            const parser_item = subparsers.add_parser("item", { "help": "Item command" });
+            const parser_item = subparsers.add_parser("item", { "help": "Modify items: Add/remove tags, attach/save files, add to collection/remove, get child items. (API: /items/KEY/ or /items/KEY/children)" });
             parser_item.set_defaults({ "func": this.item.name });
             parser_item.add_argument('--key', {
                 "action": "store",
@@ -864,11 +852,10 @@ module.exports = class Zotero {
       Retrieve/save file attachments for the item specified with --key KEY (API: /items/KEY/file).
       Also see 'item', which has options for adding/saving file attachments.
         */
-        //args = args
         this.reconfigure(args);
         if (args.getInterface && subparsers) {
             //async attachement
-            const parser_attachment = subparsers.add_parser("attachment", { "help": "Item command" });
+            const parser_attachment = subparsers.add_parser("attachment", { "help": "Save file attachments for the item specified with --key KEY (API: /items/KEY/file). Also see 'item', which has options for adding/saving file attachments. " });
             parser_attachment.set_defaults({ "func": this.attachment.name });
             parser_attachment.add_argument('--key', { "action": "store", required: true, help: 'The key of the item. You can provide the key as zotero-select link (zotero://...) to also set the group-id.' });
             parser_attachment.add_argument('--save', { "action": "store", required: true, help: 'Filename to save attachment to.' });
@@ -891,12 +878,11 @@ module.exports = class Zotero {
        
       Use this option to create both top-level items, as well as child items (including notes and links).
         */
-        //args = args
         this.reconfigure(args);
         // function.name({"argparser": subparser}) returns CLI definition.
-        if (args.getIenterface && subparsers) {
+        if (args.getInterface && subparsers) {
             //async create item
-            const parser_create = subparsers.add_parser("create", { "help": "Create command" });
+            const parser_create = subparsers.add_parser("create", { "help": "Create a new item or items. (API: /items/new) You can retrieve a template with the --template option. Use this option to create both top-level items, as well as child items (including notes and links)." });
             parser_create.set_defaults({ "func": this.create_item.name });
             parser_create.add_argument('--template', { help: "Retrieve a template for the item you wish to create. You can retrieve the template types using the main argument 'types'." });
             parser_create.add_argument('items', { nargs: '*', help: 'Json files for the items to be created.' });
@@ -947,11 +933,10 @@ module.exports = class Zotero {
     }
     async update_item(args, subparsers) {
         /** Update/replace an item (--key KEY), either update (API: patch /items/KEY) or replacing (using --replace, API: put /items/KEY). */
-        ////args = args;
         this.reconfigure(args);
         if (args.getInterface && subparsers) {
             //update item
-            const parser_update = subparsers.add_parser("update", { "help": "update command" });
+            const parser_update = subparsers.add_parser("update", { "help": "Update/replace an item (--key KEY), either update (API: patch /items/KEY) or replacing (using --replace, API: put /items/KEY)." });
             parser_update.set_defaults({ "func": this.update_item.name });
             parser_update.add_argument('--key', { required: true, help: 'The key of the item. You can provide the key as zotero-select link (zotero://...) to also set the group-id.' });
             parser_update.add_argument('--replace', { action: 'store_true', help: 'Replace the item by sumbitting the complete json.' });
@@ -1000,11 +985,10 @@ module.exports = class Zotero {
     }
     async update_item_file(args, subparsers) {
         /** Update/replace an item (--key KEY), either update (API: patch /items/KEY) or replacing (using --replace, API: put /items/KEY). */
-        ////args = args;
         this.reconfigure(args);
         // function.name({"argparser": subparser}) returns CLI definition.
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("update-item-file", { "help": "update item from file" });
+            const argparser = subparsers.add_parser("update-item-file", { "help": "Update item from file. Update/replace an item (--key KEY), either update (API: patch /items/KEY) or replacing (using --replace, API: put /items/KEY)." });
             argparser.set_defaults({ "func": this.update_item_file.name });
             argparser.add_argument('--key', { required: true, help: 'The key of the item. You can provide the key as zotero-select link (zotero://...) to also set the group-id.' });
             argparser.add_argument('--replace', { action: 'store_true', help: 'Replace the item by sumbitting the complete json.' });
@@ -1028,7 +1012,6 @@ module.exports = class Zotero {
     // <userOrGroupPrefix>/items/trash	Items in the trash
     async trash(args, subparsers) {
         /** Return a list of items in the trash. */
-        //args = args
         this.reconfigure(args);
         // function.name({"argparser": subparser}) returns CLI definition.
         if (args.getInterface && subparsers) {
@@ -1042,7 +1025,6 @@ module.exports = class Zotero {
     // <userOrGroupPrefix>/publications/items	Items in My Publications  
     async publications(args, subparsers) {
         /** Return a list of items in publications (user library only). (API: /publications/items) */
-        //args = args
         this.reconfigure(args);
         // function.name({"argparser": subparser}) returns CLI definition.
         if (args.getInterface && subparsers) {
@@ -1054,7 +1036,6 @@ module.exports = class Zotero {
     // itemTypes
     async types(args, subparsers) {
         /** Retrieve a list of items types available in Zotero. (API: /itemTypes) */
-        //args = args
         this.reconfigure(args);
         // function.name({"argparser": subparser}) returns CLI definition.
         if (args.getInterface && subparsers) {
@@ -1066,7 +1047,6 @@ module.exports = class Zotero {
     }
     async groups(args, subparsers) {
         /** Retrieve the Zotero groups data to which the current library_id and api_key has access to. (API: /users/<user-id>/groups) */
-        //args = args
         this.reconfigure(args);
         // function.name({"argparser": subparser}) returns CLI definition.
         if (args.getInterface && subparsers) {
@@ -1081,11 +1061,10 @@ module.exports = class Zotero {
          * Retrieve a template with the fields for --type TYPE (API: /itemTypeFields, /itemTypeCreatorTypes) or all item fields (API: /itemFields).
          * Note that to retrieve a template, use 'create-item --template TYPE' rather than this command.
          */
-        //args = args
         this.reconfigure(args);
         // function.name({"argparser": subparser}) returns CLI definition.
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("fields", { "help": "fields command" });
+            const argparser = subparsers.add_parser("fields", { "help": "Retrieve a template with the fields for --type TYPE (API: /itemTypeFields, /itemTypeCreatorTypes) or all item fields (API: /itemFields). Note that to retrieve a template, use 'create-item --template TYPE' rather than this command." });
             argparser.set_defaults({ "func": this.fields.name });
             argparser.add_argument('--type', { help: 'Display fields types for TYPE.' });
             return { status: 0, message: "success" };
@@ -1108,11 +1087,10 @@ module.exports = class Zotero {
     // https://www.zotero.org/support/dev/web_api/v3/basics
     async searches(args, subparsers) {
         /** Return a list of the saved searches of the library. Create new saved searches. (API: /searches) */
-        //args = args
         this.reconfigure(args);
         // function.name({"argparser": subparser}) returns CLI definition.
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("searches", { "help": "searches command" });
+            const argparser = subparsers.add_parser("searches", { "help": "Return a list of the saved searches of the library. Create new saved searches. (API: /searches)" });
             argparser.set_defaults({ "func": this.searches.name });
             argparser.add_argument('--create', { nargs: 1, help: 'Path of JSON file containing the definitions of saved searches.' });
             return { status: 0, message: "success" };
@@ -1139,11 +1117,10 @@ module.exports = class Zotero {
     // Tags
     async tags(args, subparsers) {
         /** Return a list of tags in the library. Options to filter and count tags. (API: /tags) */
-        //args = args
         this.reconfigure(args);
         // function.name({"argparser": subparser}) returns CLI definition.
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("tags", { "help": "tags command" });
+            const argparser = subparsers.add_parser("tags", { "help": "Return a list of tags in the library. Options to filter and count tags. (API: /tags)" });
             argparser.set_defaults({ "func": this.tags.name });
             argparser.add_argument('--filter', { help: 'Tags of all types matching a specific name.' });
             argparser.add_argument('--count', { action: 'store_true', help: 'TODO: document' });
@@ -1239,6 +1216,11 @@ module.exports = class Zotero {
         parser.add_argument('--indent', { type: parser.integer, help: 'Identation for json output.' });
         parser.add_argument('--out', { help: 'Output to file' });
         parser.add_argument('--verbose', { action: 'store_true', help: 'Log requests.' });
+        parser.add_argument("--dryrun", {
+            "action": "store_true",
+            "help": "Show the API request and exit.",
+            "default": false
+        });
         parser.add_argument("--version", {
             "action": "store_true",
             "help": "Show version",
@@ -1246,7 +1228,7 @@ module.exports = class Zotero {
         /*
         The following code adds subparsers.
         */
-        const subparsers = parser.add_subparsers({ "help": "sub-command help" });
+        const subparsers = parser.add_subparsers({ "help": "Help for these commands is available via 'command --help'." });
         this.collections({ getInterface: true }, subparsers);
         this.collection({ getInterface: true }, subparsers);
         this.items({ getInterface: true }, subparsers);
@@ -1284,7 +1266,7 @@ module.exports = class Zotero {
             console.log("zotero-cli starting...");
         }
         if (args.dryrun) {
-            console.log(`API command:\n Zotero.${args.func.name}(${JSON.stringify(args, null, 2)})`);
+            console.log(`API command:\n Zotero.${args.func}(${JSON.stringify(args, null, 2)})`);
         }
         else {
             /* // ZenodoAPI.${args.func.name}(args)
