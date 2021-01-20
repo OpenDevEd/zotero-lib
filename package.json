@@ -3,9 +3,10 @@
   "version": "1.0.17",
   "description": "",
   "main": "build/zotero-lib.js",
+  "bin": "build/zotero-cli.js",
   "scripts": {
-    "start": "node ./build/zotero-lib.js",
-    "cli": "node ./build/zotero-lib.js",
+    "start": "node ./build/zotero-cli.js",
+    "lib": "node ./build/zotero-lib.js",
     "test": "node ./tests/*.js",
     "test_create": "node ./tests/test_create.js",
     "test_item": "node ./tests/test_item.js",
