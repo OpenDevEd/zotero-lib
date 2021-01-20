@@ -1233,63 +1233,171 @@ module.exports = class Zotero {
         const data = {};
         return this.message(0, "exist status", data);
     }
-    /*
-  public async attachment
-  
-  //  public async attachLinkToItem(PARENT, URL, options: { title?: string, tags?: any } = { title: "Click to open", tags: [] }) {
-  
-  
-  */
-    /* Implement
-    public update_field() {
-      my $str = `zotero-cli $thegroup item --key $item | jq '.data'`;
-      print $str;
-      if ($key) {
-        if (!$value) {
-          print & jq("{ $key }", $str);
-        } else {
-          $str = & jq("{ key, version }", $str);
-          $str = & jq(". += { \"$key\":  \"$value\" }", $str);
-          say $str;
-          if ($update) {
-            open F, ">$item.update.json";
-            print F $str;
-            close F;
-            system "zotero-cli --group-id $group update-item --key $item $item.update.json";
-          }
-        };
-      } else {
-        print $str;
-      };
+    async attachLink() {
+        /*
+      
+      //  public async attachLinkToItem(PARENT, URL, options: { title?: string, tags?: any } = { title: "Click to open", tags: [] }) {
+      
+      */
     }
-    */
-    /*
-  Implement: extra_append
-  
-    my $str = `./zotUpdateField.pl $thegroup --item $key --key extra | jq " .extra "`;
-  
-  my @extra ;
-  if ($str =~ m/\S/s) {
-      $str =~ s/\n$//s;
-      $str =~ s/\"$//s;
-      $str =~ s/^\"//s;
-      @extra = split(/\\n/,$str);
-  };
-  
-  push @extra, @t;
-  
-  my $string = shell_quote("\"" . join("\\n", @extra) . "\"");
-  #print $string;
-  
-  say `./zotUpdateField.pl $thegroup  --item $key --key extra --value $string --update`;
-  
-  
-  
-    */
-    /*
-    update_url
-        system("./zotUpdateField.pl --update --group $a --item $c --key url --value \"\\\"https://docs.opendeved.net/lib/$c\\\"\"");
-    */
+    async update_field() {
+        /* Implement
+          my $str = `zotero-cli $thegroup item --key $item | jq '.data'`;
+          print $str;
+          if ($key) {
+            if (!$value) {
+              print & jq("{ $key }", $str);
+            } else {
+              $str = & jq("{ key, version }", $str);
+              $str = & jq(". += { \"$key\":  \"$value\" }", $str);
+              say $str;
+              if ($update) {
+                open F, ">$item.update.json";
+                print F $str;
+                close F;
+                system "zotero-cli --group-id $group update-item --key $item $item.update.json";
+              }
+            };
+          } else {
+            print $str;
+          };
+        }
+        */
+    }
+    async extra_append() {
+        /*
+      Implement: extra_append
+      
+        my $str = `./zotUpdateField.pl $thegroup --item $key --key extra | jq " .extra "`;
+      
+      my @extra ;
+      if ($str =~ m/\S/s) {
+          $str =~ s/\n$//s;
+          $str =~ s/\"$//s;
+          $str =~ s/^\"//s;
+          @extra = split(/\\n/,$str);
+      };
+      
+      push @extra, @t;
+      
+      my $string = shell_quote("\"" . join("\\n", @extra) . "\"");
+      #print $string;
+      
+      say `./zotUpdateField.pl $thegroup  --item $key --key extra --value $string --update`;
+      
+        */
+    }
+    async update_url() {
+        // system("./zotUpdateField.pl --update --group $a --item $c --key url --value \"\\\"https://docs.opendeved.net/lib/$c\\\"\"");    
+    }
+    async getItemsInCollectionWithBib() {
+        //my($gp, $collRefs) = @_;
+        //return `zotero-cli --group $gp items --collection $collRefs --filter "{\\\"format\\\": \\\"json\\\", \\\"include\\\": \\\"data,bib\\\", \\\"style\\\": \\\"apa\\\"}" `;
+    }
+    async attachNote() {
+    }
+    async createSubCollections() {
+        /*
+        sub createColl() {
+          my $group = $_[0];
+          if ($_[1] && $_[2]) {
+            my $parent = $_[1];
+            my $string = shell_quote($_[2]);
+              #say "create: $parent -> $string";
+            my $newstr = `zotero-cli --group-id $group collections --key $parent --create-child $string`;
+              #say $newstr;
+            if ($newstr = ~m / key\: \'([\w\d]+)\'/s) {
+            return $1;
+          } else {
+            say "Something went wrong with creating the collection.";
+            say "zotero-cli --group-id $group collections --key $parent --create-child $string";
+            say "$newstr";
+            die("zoterCli.pm -> createColl");
+          };
+        } else {
+          die("CreateCollection: group: $_[0], parent: $_[1], name $_[2].");
+        };
+        */
+    }
+    async getValue() {
+        /*
+        sub itemGetField() {
+          my($gp, $pkey, $field) = @_;
+          if (!$field) {
+            $field = "title";
+          };
+          my $coll = `zotero-cli --group $gp item --key $pkey`;
+          $coll =  & jq(".data", $coll);
+          my $oname = & jqx(".$field", $coll);
+          return $oname;
+        };
+        */
+    }
+    async collectionName() {
+        /* sub collectionName() {
+           my($gp, $key) = @_;
+           my $coll = `zotero-cli --group $gp collection --key $key`;
+           $coll =  & jq(".data", $coll);
+     #    say "collectionName";
+     #    say $coll;
+           my $oname = & jqx(".name", $coll);
+         #my $oparent = & jqx(".parentCollection", $coll);
+           return $oname;
+         }; */
+    }
+    async amendCollection() {
+        /*
+        sub amendCollection() {
+          my($gp, $key, $parent, $top, $name, $prefix, $append) = @_;
+          my $coll = `zotero-cli --group $gp collection --key $key`;
+          $coll =  & jq(".data", $coll);
+    #    say $coll;
+    
+          my $oname = & jqx(".name", $coll);
+          my $oparent = & jqx(".parentCollection", $coll);
+    
+        # A name must always be provided.
+            if($name) {
+      #    $name = qq{, "name": "$name" };
+          } else {
+            $name = $oname;
+          };
+    
+          if ($prefix) {
+            $name = $prefix.$name;
+          }
+    
+          if ($append) {
+            $name = $name.$append;
+          }
+    
+          $name = qq{, "name": "$name" };
+    
+          if ($parent) {
+            $parent = qq{, "parentCollection": "$parent" };
+          } else {
+            $parent = qq{, "parentCollection": "$oparent" };
+          };
+    
+        # If no parent is provided, the collection is moved to the top level:
+          if ($top) {
+            $parent = "";
+          }
+    
+          my $command = qq < zotero - cli--group $gp put / collections / $key--data '{"version": >
+            .& jqx(".version", $coll)
+              .qq < $name $parent
+        } '>;
+        say $command;
+        say`$command`;
+    
+        my $coll2 = `zotero-cli --group $gp collection --key $key`;
+        $coll2 =  & jq(".data", $coll);
+        say "Result:";
+        say $coll;
+        };
+        */
+    }
     /**
      *
      *
