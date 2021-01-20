@@ -1212,6 +1212,12 @@ module.exports = class Zotero {
      *
      *
      */
+    getVersion() {
+        const pjson = require('../package.json');
+        if (pjson.version)
+            console.log(`zenodo-lib version=${pjson.version}`);
+        return pjson.version;
+    }
     getArguments() {
         const parser = new ArgumentParser({ "description": "Zotero command line utility" });
         parser.add_argument('--api-key', {
@@ -1233,6 +1239,10 @@ module.exports = class Zotero {
         parser.add_argument('--indent', { type: parser.integer, help: 'Identation for json output.' });
         parser.add_argument('--out', { help: 'Output to file' });
         parser.add_argument('--verbose', { action: 'store_true', help: 'Log requests.' });
+        parser.add_argument("--version", {
+            "action": "store_true",
+            "help": "Show version",
+        });
         /*
         The following code adds subparsers.
         */
@@ -1266,6 +1276,10 @@ module.exports = class Zotero {
         // --- main ---
         var args = this.getArguments();
         //const zotero = new Zotero()
+        if (args.version) {
+            this.getVersion();
+            process.exit(0);
+        }
         if (args.verbose) {
             console.log("zotero-cli starting...");
         }
