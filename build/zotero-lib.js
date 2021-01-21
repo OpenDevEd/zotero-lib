@@ -252,6 +252,7 @@ module.exports = class Zotero {
         uri = `${this.base}${prefix}${uri}${params ? '?' + params : ''}`;
         if (this.config.verbose)
             console.error('GET', uri);
+        console.log('GET: ', uri);
         const res = await request({
             uri,
             headers: this.headers,
@@ -259,10 +260,25 @@ module.exports = class Zotero {
             json: options.json,
             resolveWithFullResponse: options.resolveWithFullResponse,
         }).then().catch(error => {
-            console.log(`Error in zotero.get = ${JSON.stringify(error, null, 2)}`);
+            if (this.config.verbose) {
+                console.log(`Error in zotero.get = ${JSON.stringify(error, null, 2)}`);
+            }
+            // console.log(`Error in zotero.get = ${JSON.stringify(error.error.data, null, 2)}`)
+            let message = error.error && error.error.data && Array.isArray(error.error.data) ? Buffer.from(error.error).toString() : "N/A";
+            message = Buffer.from(error.error).toString();
+            const shortError = {
+                "name": error.name,
+                "statusCode": error.statusCode,
+                "message": message,
+                "uri": uri,
+                json: options.json
+            };
+            //console.log("DEBUG", (new Error().stack));
+            //console.log(shortError)
+            console.log(`Error in zotero.get = ` + JSON.stringify(shortError, null, 2));
             return error;
         });
-        console.log("all=" + JSON.stringify(res, null, 2));
+        // console.log("all=" + JSON.stringify(res, null, 2))
         return res;
     }
     async __get(args, subparsers) {
@@ -287,10 +303,11 @@ module.exports = class Zotero {
     // TODO: Add       resolveWithFullResponse: options.resolveWithFullResponse,
     async post(uri, data, headers = {}) {
         const prefix = this.config.user_id ? `/users/${this.config.user_id}` : `/groups/${this.config.group_id}`;
+        console.log("POST" + uri);
         uri = `${this.base}${prefix}${uri}`;
         if (this.config.verbose)
             console.error('POST', uri);
-        return request({
+        return await request({
             method: 'POST',
             uri,
             headers: Object.assign(Object.assign(Object.assign({}, this.headers), { 'Content-Type': 'application/json' }), headers),
@@ -316,7 +333,7 @@ module.exports = class Zotero {
         uri = `${this.base}${prefix}${uri}`;
         if (this.config.verbose)
             console.error('PUT', uri);
-        return request({
+        return await request({
             method: 'PUT',
             uri,
             headers: Object.assign(Object.assign({}, this.headers), { 'Content-Type': 'application/json' }),
@@ -382,7 +399,7 @@ module.exports = class Zotero {
         uri = `${this.base}${prefix}${uri}`;
         if (this.config.verbose)
             console.error('DELETE', uri);
-        return request({
+        return await request({
             method: 'DELETE',
             uri,
             headers,
@@ -426,8 +443,15 @@ module.exports = class Zotero {
     }
     extractKeyAndSetGroup(key) {
         // zotero://select/groups/(\d+)/(items|collections)/([A-Z01-9]+)
-        var out = key;
-        var res = key.match(/^zotero\:\/\/select\/groups\/(library|\d+)\/(items|collections)\/([A-Z01-9]+)/);
+        // TO DO - make this function array->array and string->string.
+        let out;
+        if (Array.isArray(key)) {
+            key = key[0];
+        }
+        else {
+            //out = key
+        }
+        const res = key.match(/^zotero\:\/\/select\/groups\/(library|\d+)\/(items|collections)\/([A-Z01-9]+)/);
         if (res) {
             if (res[2] == "library") {
                 console.log('You cannot specify zotero-select links (zotero://...) to select user libraries.');
@@ -439,6 +463,9 @@ module.exports = class Zotero {
                 out = res[3];
             }
             ;
+        }
+        else {
+            out = key;
         }
         return out;
     }
@@ -527,10 +554,14 @@ module.exports = class Zotero {
         }
         // perform test: args.create_child
         // If create_child=true, then create the child and exit.
+        console.log("collection...." + args.key);
         if (args.create_child) {
             const response = await this.post('/collections', JSON.stringify(args.create_child.map(c => { return { name: c, parentCollection: args.key }; })));
-            //this.print('Collections created: ', JSON.parse(response).successful)
-            return response;
+            this.print('Collections created: ', JSON.parse(response).successful);
+            console.log("collection....done");
+            return JSON.parse(response).successful;
+            // TODO: In all functions where data is returned, add '.successful' - Zotero always wraps in that.
+            // This leaves an array.
         }
         else {
             // test for args.top: Not required.
@@ -1172,6 +1203,7 @@ module.exports = class Zotero {
                 "action": "store",
                 "help": "The DOI for the item"
             });
+            return { status: 0, message: "success" };
         }
         args.fullresponse = false;
         const item = await this.item(args);
@@ -1233,14 +1265,70 @@ module.exports = class Zotero {
         const data = {};
         return this.message(0, "exist status", data);
     }
-    async attachLink() {
-        /*
-      
-      //  public async attachLinkToItem(PARENT, URL, options: { title?: string, tags?: any } = { title: "Click to open", tags: [] }) {
-      
-      */
+    ;
+    // TODO: Implement
+    async attach_link(args, subparsers) {
+        // public async attachLinkToItem(PARENT, URL, options: { title?: string, tags?: any } = { title: "Click to open", tags: [] }) {
+        // ACTION: define CLI interface
+        if (args.getInterface && subparsers) {
+            const argparser = subparsers.add_parser("attachLink", { "help": "HELPTEXT" });
+            argparser.set_defaults({ "func": this.attach_link.name });
+            argparser.add_argument("--key", {
+                "action": "store_true",
+                "help": "HELPTEXT"
+            });
+            argparser.add_argument("--url", {
+                "action": "store_true",
+                "help": "HELPTEXT"
+            });
+            argparser.add_argument("--title", {
+                "action": "store_true",
+                "help": "HELPTEXT"
+            });
+            argparser.add_argument("--tags", {
+                "nargs": "*",
+                "action": "store",
+                "help": "HELPTEXT"
+            });
+            return { status: 0, message: "success" };
+        }
+        // ACTION: check arguments
+        if (args.switch) {
+        }
+        if (args.arguments) {
+        }
+        // ACTION: run code
+        this.attachLinkToItem(args.key, args.url, { title: args.title, tags: args.tags });
+        // ACTION: return values
+        const data = {};
+        return this.message(0, "exist status", data);
     }
-    async update_field() {
+    // TODO: Implement
+    async update_field(args, subparsers) {
+        // ACTION: define CLI interface
+        if (args.getInterface && subparsers) {
+            const argparser = subparsers.add_parser("update-field", { "help": "HELPTEXT" });
+            argparser.set_defaults({ "func": this.update_field.name });
+            argparser.add_argument("--switch", {
+                "action": "store_true",
+                "help": "HELPTEXT"
+            });
+            argparser.add_argument("--arguments", {
+                "nargs": "*",
+                "action": "store",
+                "help": "HELPTEXT"
+            });
+            return { status: 0, message: "success" };
+        }
+        // ACTION: check arguments
+        if (args.switch) {
+        }
+        if (args.arguments) {
+        }
+        // ACTION: run code
+        // ACTION: return values
+        const data = {};
+        return this.message(0, "exist status", data);
         /* Implement
           my $str = `zotero-cli $thegroup item --key $item | jq '.data'`;
           print $str;
@@ -1264,12 +1352,37 @@ module.exports = class Zotero {
         }
         */
     }
-    async extra_append() {
+    // TODO: Implement
+    async extra_append(args, subparsers) {
+        // ACTION: define CLI interface
+        if (args.getInterface && subparsers) {
+            const argparser = subparsers.add_parser("extra-append", { "help": "HELPTEXT" });
+            argparser.set_defaults({ "func": this.extra_append.name });
+            argparser.add_argument("--switch", {
+                "action": "store_true",
+                "help": "HELPTEXT"
+            });
+            argparser.add_argument("--arguments", {
+                "nargs": "*",
+                "action": "store",
+                "help": "HELPTEXT"
+            });
+            return { status: 0, message: "success" };
+        }
+        // ACTION: check arguments
+        if (args.switch) {
+        }
+        if (args.arguments) {
+        }
+        // ACTION: run code
+        // ACTION: return values
+        const data = {};
+        return this.message(0, "exist status", data);
         /*
       Implement: extra_append
-      
+       
         my $str = `./zotUpdateField.pl $thegroup --item $key --key extra | jq " .extra "`;
-      
+       
       my @extra ;
       if ($str =~ m/\S/s) {
           $str =~ s/\n$//s;
@@ -1277,49 +1390,143 @@ module.exports = class Zotero {
           $str =~ s/^\"//s;
           @extra = split(/\\n/,$str);
       };
-      
+       
       push @extra, @t;
-      
+       
       my $string = shell_quote("\"" . join("\\n", @extra) . "\"");
       #print $string;
-      
+       
       say `./zotUpdateField.pl $thegroup  --item $key --key extra --value $string --update`;
-      
+       
         */
     }
-    async update_url() {
+    // TODO: Implement
+    async update_url(args, subparsers) {
         // system("./zotUpdateField.pl --update --group $a --item $c --key url --value \"\\\"https://docs.opendeved.net/lib/$c\\\"\"");    
+        // ACTION: define CLI interface
+        if (args.getInterface && subparsers) {
+            const argparser = subparsers.add_parser("update-url", { "help": "HELPTEXT" });
+            argparser.set_defaults({ "func": this.update_url.name });
+            argparser.add_argument("--switch", {
+                "action": "store_true",
+                "help": "HELPTEXT"
+            });
+            argparser.add_argument("--arguments", {
+                "nargs": "*",
+                "action": "store",
+                "help": "HELPTEXT"
+            });
+            return { status: 0, message: "success" };
+        }
+        // ACTION: check arguments
+        if (args.switch) {
+        }
+        if (args.arguments) {
+        }
+        // ACTION: run code
+        // ACTION: return values
+        const data = {};
+        return this.message(0, "exist status", data);
     }
-    async getItemsInCollectionWithBib() {
+    // TODO: Implement
+    async getbib(args, subparsers) {
         //my($gp, $collRefs) = @_;
         //return `zotero-cli --group $gp items --collection $collRefs --filter "{\\\"format\\\": \\\"json\\\", \\\"include\\\": \\\"data,bib\\\", \\\"style\\\": \\\"apa\\\"}" `;
+        // ACTION: define CLI interface
+        if (args.getInterface && subparsers) {
+            const argparser = subparsers.add_parser("getbib", { "help": "HELPTEXT" });
+            argparser.set_defaults({ "func": this.getbib.name });
+            argparser.add_argument("--switch", {
+                "action": "store_true",
+                "help": "HELPTEXT"
+            });
+            argparser.add_argument("--arguments", {
+                "nargs": "*",
+                "action": "store",
+                "help": "HELPTEXT"
+            });
+            return { status: 0, message: "success" };
+        }
+        // ACTION: check arguments
+        if (args.switch) {
+        }
+        if (args.arguments) {
+        }
+        // ACTION: run code
+        // ACTION: return values
+        const data = {};
+        return this.message(0, "exist status", data);
     }
-    async attachNote() {
+    // TODO: Implement
+    async attach_note(args, subparsers) {
+        // ACTION: define CLI interface
+        if (args.getInterface && subparsers) {
+            const argparser = subparsers.add_parser("attachNote", { "help": "HELPTEXT" });
+            argparser.set_defaults({ "func": this.attach_note.name });
+            argparser.add_argument("--key", {
+                "action": "store_true",
+                "help": "HELPTEXT"
+            });
+            argparser.add_argument("--file", {
+                "action": "store_true",
+                "help": "HELPTEXT"
+            });
+            argparser.add_argument("--description", {
+                "action": "store_true",
+                "help": "HELPTEXT"
+            });
+            argparser.add_argument("--tags", {
+                "nargs": "*",
+                "action": "store",
+                "help": "HELPTEXT"
+            });
+            return { status: 0, message: "success" };
+        }
+        // ACTION: check arguments
+        if (args.switch) {
+        }
+        if (args.arguments) {
+        }
+        // TODO: Read from --file
+        // ACTION: run code
+        this.attachNoteToItem(args.key, { content: args.description, tags: args.tags });
+        // ACTION: return values
+        const data = {};
+        return this.message(0, "exist status", data);
     }
-    async createSubCollections() {
-        /*
-        sub createColl() {
-          my $group = $_[0];
-          if ($_[1] && $_[2]) {
-            my $parent = $_[1];
-            my $string = shell_quote($_[2]);
-              #say "create: $parent -> $string";
-            my $newstr = `zotero-cli --group-id $group collections --key $parent --create-child $string`;
-              #say $newstr;
-            if ($newstr = ~m / key\: \'([\w\d]+)\'/s) {
-            return $1;
-          } else {
-            say "Something went wrong with creating the collection.";
-            say "zotero-cli --group-id $group collections --key $parent --create-child $string";
-            say "$newstr";
-            die("zoterCli.pm -> createColl");
-          };
-        } else {
-          die("CreateCollection: group: $_[0], parent: $_[1], name $_[2].");
-        };
-        */
+    /*
+    // TODO: Implement
+    public async createSubCollections(parent_key, group_id, child_name) {
+      // ACTION: define CLI interface
+      if (args.getInterface && subparsers) {
+        const argparser = subparsers.add_parser("createSubCollections", { "help": "HELPTEXT" });
+        argparser.set_defaults({ "func": this.createSubCollections.name });
+        argparser.add_argument("--switch", {
+          "action": "store_true",
+          "help": "HELPTEXT"
+        });
+        argparser.add_argument("--arguments", {
+          "nargs": "*",
+          "action": "store",
+          "help": "HELPTEXT"
+        });
+      }
+      // ACTION: check arguments
+      if (args.switch) {
+  
+      }
+      if (args.arguments) {
+  
+      }
+      // ACTION: run code
+      const data = this.collections({group_id: group_id, key: parent_key, create_child: child_name})
+      // `zotero-cli --group-id $group collections --key $parent --create-child $string`;
+      // ACTION: return values
+      return this.message(0, "exist status", data)
     }
-    async getValue() {
+    */
+    // TODO: Implement
+    async getValue(args, subparsers) {
         /*
         sub itemGetField() {
           my($gp, $pkey, $field) = @_;
@@ -1332,65 +1539,139 @@ module.exports = class Zotero {
           return $oname;
         };
         */
+        // ACTION: define CLI interface
+        if (args.getInterface && subparsers) {
+            const argparser = subparsers.add_parser("getValue", { "help": "HELPTEXT" });
+            argparser.set_defaults({ "func": this.getValue.name });
+            argparser.add_argument("--switch", {
+                "action": "store_true",
+                "help": "HELPTEXT"
+            });
+            argparser.add_argument("--arguments", {
+                "nargs": "*",
+                "action": "store",
+                "help": "HELPTEXT"
+            });
+            return { status: 0, message: "success" };
+        }
+        // ACTION: check arguments
+        if (args.switch) {
+        }
+        if (args.arguments) {
+        }
+        // ACTION: run code
+        // ACTION: return values
+        const data = {};
+        return this.message(0, "exist status", data);
     }
-    async collectionName() {
+    // TODO: Implement
+    async collectionName(args, subparsers) {
         /* sub collectionName() {
            my($gp, $key) = @_;
            my $coll = `zotero-cli --group $gp collection --key $key`;
            $coll =  & jq(".data", $coll);
-     #    say "collectionName";
-     #    say $coll;
+      #    say "collectionName";
+      #    say $coll;
            my $oname = & jqx(".name", $coll);
          #my $oparent = & jqx(".parentCollection", $coll);
            return $oname;
          }; */
+        // ACTION: define CLI interface
+        if (args.getInterface && subparsers) {
+            const argparser = subparsers.add_parser("collectionName", { "help": "HELPTEXT" });
+            argparser.set_defaults({ "func": this.collectionName.name });
+            argparser.add_argument("--switch", {
+                "action": "store_true",
+                "help": "HELPTEXT"
+            });
+            argparser.add_argument("--arguments", {
+                "nargs": "*",
+                "action": "store",
+                "help": "HELPTEXT"
+            });
+            return { status: 0, message: "success" };
+        }
+        // ACTION: check arguments
+        if (args.switch) {
+        }
+        if (args.arguments) {
+        }
+        // ACTION: run code
+        // ACTION: return values
+        const data = {};
+        return this.message(0, "exist status", data);
     }
-    async amendCollection() {
+    // TODO: Implement
+    async amendCollection(args, subparsers) {
+        // ACTION: define CLI interface
+        if (args.getInterface && subparsers) {
+            const argparser = subparsers.add_parser("amendCollection", { "help": "HELPTEXT" });
+            argparser.set_defaults({ "func": this.amendCollection.name });
+            argparser.add_argument("--switch", {
+                "action": "store_true",
+                "help": "HELPTEXT"
+            });
+            argparser.add_argument("--arguments", {
+                "nargs": "*",
+                "action": "store",
+                "help": "HELPTEXT"
+            });
+            return { status: 0, message: "success" };
+        }
+        // ACTION: check arguments
+        if (args.switch) {
+        }
+        if (args.arguments) {
+        }
+        // ACTION: run code
+        // ACTION: return values
+        const data = {};
+        return this.message(0, "exist status", data);
         /*
         sub amendCollection() {
           my($gp, $key, $parent, $top, $name, $prefix, $append) = @_;
           my $coll = `zotero-cli --group $gp collection --key $key`;
           $coll =  & jq(".data", $coll);
-    #    say $coll;
-    
+      #    say $coll;
+       
           my $oname = & jqx(".name", $coll);
           my $oparent = & jqx(".parentCollection", $coll);
-    
+       
         # A name must always be provided.
             if($name) {
       #    $name = qq{, "name": "$name" };
           } else {
             $name = $oname;
           };
-    
+       
           if ($prefix) {
             $name = $prefix.$name;
           }
-    
+       
           if ($append) {
             $name = $name.$append;
           }
-    
+       
           $name = qq{, "name": "$name" };
-    
+       
           if ($parent) {
             $parent = qq{, "parentCollection": "$parent" };
           } else {
             $parent = qq{, "parentCollection": "$oparent" };
           };
-    
+       
         # If no parent is provided, the collection is moved to the top level:
           if ($top) {
             $parent = "";
           }
-    
+       
           my $command = qq < zotero - cli--group $gp put / collections / $key--data '{"version": >
             .& jqx(".version", $coll)
               .qq < $name $parent
         } '>;
         say $command;
         say`$command`;
-    
+       
         my $coll2 = `zotero-cli --group $gp collection --key $key`;
         $coll2 =  & jq(".data", $coll);
         say "Result:";
@@ -1399,11 +1680,12 @@ module.exports = class Zotero {
         */
     }
     /**
-     *
+     *  Command Line Interface
      *
      */
     async commandlineinterface() {
         // --- main ---
+        console.log("zotero-cli args...");
         var args = this.getArguments();
         //const zotero = new Zotero()
         if (args.version) {
@@ -1436,7 +1718,7 @@ module.exports = class Zotero {
             try {
                 //await this['$' + args.command.replace(/-/g, '_')]()
                 // await this[args.command.replace(/-/g, '_')]()
-                console.log("TEMPORARY=" + JSON.stringify(args, null, 2));
+                console.log("ARGS=" + JSON.stringify(args, null, 2));
                 await this[args.func](args);
             }
             catch (ex) {
@@ -1445,7 +1727,6 @@ module.exports = class Zotero {
             }
             if (args.out)
                 fs.writeFileSync(args.out, this.output);
-            process.exit(1);
         }
     }
     // local functions
@@ -1456,6 +1737,7 @@ module.exports = class Zotero {
         return pjson.version;
     }
     getArguments() {
+        console.log("args in");
         const parser = new ArgumentParser({ "description": "Zotero command line utility" });
         parser.add_argument('--api-key', {
             help: 'The API key to access the Zotero API.'

@@ -6,15 +6,16 @@
 //var Zotero = require('zotero-lib');
 var Zotero = require('./zotero-lib')
 
-/*
 module.exports = {
   node: 'current'
-};*/
+}
 
 async function main() {
-  const zotero = new Zotero()
-  zotero.commandlineinterface().then(
-    console.log("done")
+  console.log("Command-line: config")
+  const zotero = await new Zotero()
+  console.log("Command-line: start")
+  await zotero.commandlineinterface().then(
+    console.log("Command-line: done")
   ).catch(err => {
     console.error('error:', err)
     process.exit(1)
