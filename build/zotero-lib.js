@@ -1259,14 +1259,14 @@ module.exports = class Zotero {
         const new_coll = await zotero.collections({
             group_id: group,
             key: this.value(base_collection),
-            create_child: this.value(child_name)
+            create_child: this.array(child_name)
         });
         //console.log("TEMPORARY=" + JSON.stringify(new_coll, null, 2))
         output.push({ collection: new_coll });
         const ecoll = new_coll[0].key;
         const res = await zotero.item({
             key: key,
-            addtocollection: [ecoll]
+            addtocollection: this.array(ecoll)
         });
         output.push({ response2: res });
         const refcol_res = await zotero.collections({
