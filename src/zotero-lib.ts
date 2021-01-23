@@ -483,7 +483,7 @@ module.exports = class Zotero {
   }
 
   private show(v) {
-    //TODO: Look at the type of v: if string, then print, if object, then stringify
+    // TODO: Look at the type of v: if string, then print, if object, then stringify
     // this.print(JSON.stringify(v, null, this.config.indent).replace(new RegExp(this.config.api_key, 'g'), '<API-KEY>'))
     this.print("show=" + JSON.stringify(v, null, this.config.indent))
   }
@@ -507,30 +507,36 @@ module.exports = class Zotero {
   private extractKeyAndSetGroup(key) {
     // zotero://select/groups/(\d+)/(items|collections)/([A-Z01-9]+)
     // TO DO - make this function array->array and string->string.
-    let out
-    key = this.value(key)
-    key = key.toString()
-    const res = key.match(/^zotero\:\/\/select\/groups\/(library|\d+)\/(items|collections)\/([A-Z01-9]+)/)
-    if (res) {
-      if (res[2] == "library") {
-        console.log('You cannot specify zotero-select links (zotero://...) to select user libraries.')
-        return
-      } else {
-        // console.log("Key: zotero://-key provided for "+res[2]+" Setting group-id.")
-        this.config.group_id = res[1]
-        out = res[3]
-      };
+    if (Array.isArray(key)) {
+      key = key.map(mykey => {
+        return this.extractKeyAndSetGroup(mykey)
+      })
+      return key
     } else {
-      out = key
+      let out = ""
+      key = key.toString()
+      const res = key.match(/^zotero\:\/\/select\/groups\/(library|\d+)\/(items|collections)\/([A-Z01-9]+)/)
+      if (res) {
+        if (res[2] == "library") {
+          console.log('You cannot specify zotero-select links (zotero://...) to select user libraries.')
+          return
+        } else {
+          // console.log("Key: zotero://-key provided for "+res[2]+" Setting group-id.")
+          this.config.group_id = res[1]
+          out = res[3]
+        };
+      } else {
+        out = key
+      }
+      return out
     }
-    return out
   }
 
   public objectifyTags(tags) {
     let tagsarr = []
     if (tags) {
       tags = this.array(tags)
-      console.log(typeof(tags))
+      console.log(typeof (tags))
       tags.forEach(mytag => {
         tagsarr.push({ tag: mytag, type: 0 })
       })
@@ -855,7 +861,7 @@ module.exports = class Zotero {
       return { status: 0, message: "success" }
     }
 
-
+    let output = []
     if (args.key) {
       args.key = this.extractKeyAndSetGroup(args.key)
       if (!args.key) {
@@ -865,9 +871,11 @@ module.exports = class Zotero {
     }
 
     const item = await this.get(`/items/${args.key}`)
+    output.push({ "record": item })
 
     if (args.savefiles) {
       let children = await this.get(`/items/${args.key}/children`);
+      output.push({ "children": children })
       await Promise.all(children.filter(item => item.data.itemType === 'attachment').map(async item => {
         if (item.data.filename) {
           console.log(`Downloading file ${item.data.filename}`)
@@ -894,6 +902,7 @@ module.exports = class Zotero {
         const stat = fs.statSync(filename)
         const uploadItem = JSON.parse(await this.post('/items', JSON.stringify([attach])))
         const uploadAuth = JSON.parse(await this.post(`/items/${uploadItem.successful[0].key}/file?md5=${md5.sync(filename)}&filename=${attach.filename}&filesize=${fs.statSync(filename)['size']}&mtime=${stat.mtimeMs}`, '{}', { 'If-None-Match': '*' }))
+        let request_post = null
         if (uploadAuth.exists !== 1) {
           const uploadResponse = await request({
             method: 'POST',
@@ -905,22 +914,28 @@ module.exports = class Zotero {
             console.log("uploadResponse=")
             this.show(uploadResponse)
           }
-          await this.post(`/items/${uploadItem.successful[0].key}/file?upload=${uploadAuth.uploadKey}`, '{}', { 'Content-Type': 'application/x-www-form-urlencoded', 'If-None-Match': '*' })
+          request_post = await this.post(`/items/${uploadItem.successful[0].key}/file?upload=${uploadAuth.uploadKey}`, '{}', { 'Content-Type': 'application/x-www-form-urlencoded', 'If-None-Match': '*' })
         }
+        output.push({ "file": request_post })
       }
     }
 
     if (args.addtocollection) {
+      console.log("-->" + args.addtocollection)
+      args.addtocollection = this.extractKeyAndSetGroup(args.addtocollection)
+      console.log("-->" + args.addtocollection)
       let newCollections = item.data.collections
       args.addtocollection.forEach(itemKey => {
         if (!newCollections.includes(itemKey)) {
           newCollections.push(itemKey)
         }
       })
-      await this.patch(`/items/${args.key}`, JSON.stringify({ collections: newCollections }), item.version)
+      const addto = await this.patch(`/items/${args.key}`, JSON.stringify({ collections: newCollections }), item.version)
+      output.push({ "addtocollection": addto })
     }
 
     if (args.removefromcollection) {
+      args.removefromcollection = this.extractKeyAndSetGroup(args.removefromcollection)
       let newCollections = item.data.collections
       args.removefromcollection.forEach(itemKey => {
         const index = newCollections.indexOf(itemKey)
@@ -928,7 +943,9 @@ module.exports = class Zotero {
           newCollections.splice(index, 1)
         }
       })
-      await this.patch(`/items/${args.key}`, JSON.stringify({ collections: newCollections }), item.version)
+      const removefrom = await this.patch(`/items/${args.key}`, JSON.stringify({ collections: newCollections }), item.version)
+      output.push({ "removefromcollection": removefrom })
+
     }
 
     if (args.addtags) {
@@ -938,18 +955,22 @@ module.exports = class Zotero {
           newTags.push({ tag })
         }
       })
-      await this.patch(`/items/${args.key}`, JSON.stringify({ tags: newTags }), item.version)
+      const res = await this.patch(`/items/${args.key}`, JSON.stringify({ tags: newTags }), item.version)
+      output.push({ "addtags": res })
     }
 
     if (args.removetags) {
       let newTags = item.data.tags.filter(tag => !args.removetags.includes(tag.tag))
-      await this.patch(`/items/${args.key}`, JSON.stringify({ tags: newTags }), item.version)
+      const res = await this.patch(`/items/${args.key}`, JSON.stringify({ tags: newTags }), item.version)
+      output.push({ "removetags": res })
     }
 
     const params = args.filter || {}
     let result
     if (args.children) {
+      console.log("children")
       result = await this.get(`/items/${args.key}/children`, { params })
+      output.push({ "children_final": result })
     } else {
       if (
         args.addtocollection || args.removefromcollection
@@ -960,15 +981,20 @@ module.exports = class Zotero {
         // Nothing about the item has changed:
         result = item
       }
+      output.push({ "item_final": result })
+      if (args.fullresponse) {
+        //return result
+      } else {
+        result = result.data
+      }
     }
     //this.show(result)
     // console.log(JSON.stringify(args))
+    this.output = JSON.stringify(output, null, 2)
+
+    // return this.message(0,"Success", output)
     this.finalActions(result)
-    if (args.fullresponse) {
-      return result
-    } else {
-      return result.data
-    }
+    return result
     // TODO: What if this fails? Zotero will return, e.g.   "message": "404 - {\"type\":\"Buffer\",\"data\":[78,111,116,32,102,111,117,110,100]}",
     // console.log(Buffer.from(obj.data).toString())
     // Need to return a proper message.
@@ -2028,13 +2054,19 @@ module.exports = class Zotero {
         //await this['$' + args.command.replace(/-/g, '_')]()
         // await this[args.command.replace(/-/g, '_')]()
         console.log("ARGS=" + JSON.stringify(args, null, 2))
-        await this[args.func](args)
+        const result = await this[args.func](args)
+        if (args.show) {
+          console.log("Result=" + JSON.stringify(result, null, this.config.indent))
+          console.log("Output=" + this.output)
+        }
+        if (args.out)
+          fs.writeFileSync(args.out, JSON.stringify(result, null, this.config.indent))
       } catch (ex) {
         this.print('Command execution failed: ', ex)
         process.exit(1)
       }
 
-      if (args.out) fs.writeFileSync(args.out, this.output)
+
 
     }
   }
@@ -2072,12 +2104,17 @@ module.exports = class Zotero {
     parser.add_argument(
       '--indent', { type: parser.integer, help: 'Identation for json output.' })
     parser.add_argument(
-      '--out', { help: 'Output to file' })
-    parser.add_argument(
       '--verbose', { action: 'store_true', help: 'Log requests.' })
     parser.add_argument("--dryrun", {
       "action": "store_true",
       "help": "Show the API request and exit.",
+      "default": false
+    })
+    parser.add_argument(
+      '--out', { help: 'Output to file' })
+    parser.add_argument("--show", {
+      "action": "store_true",
+      "help": "Print the result to the commandline.",
       "default": false
     });
     parser.add_argument("--version", {
