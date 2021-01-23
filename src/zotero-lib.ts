@@ -921,9 +921,9 @@ module.exports = class Zotero {
     }
 
     if (args.addtocollection) {
-      console.log("-->" + args.addtocollection)
-      args.addtocollection = this.extractKeyAndSetGroup(args.addtocollection)
-      console.log("-->" + args.addtocollection)
+      //console.log("-->" + args.addtocollection)
+      //args.addtocollection = this.extractKeyAndSetGroup(args.addtocollection)
+      //console.log("-->" + args.addtocollection)
       let newCollections = item.data.collections
       args.addtocollection.forEach(itemKey => {
         if (!newCollections.includes(itemKey)) {

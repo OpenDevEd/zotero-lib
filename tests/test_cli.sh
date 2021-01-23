@@ -6,3 +6,8 @@ npm start -- --show item --key zotero://select/groups/2259720/items/NKX3RG5B --r
 npm start -- --show item --key zotero://select/groups/2259720/items/NKX3RG5B --addtag "SOME_TAG"
 npm start -- --show item --key zotero://select/groups/2259720/items/NKX3RG5B --removetag "SOME_TAG"
 npm start -- --show item --key zotero://select/groups/2259720/items/NKX3RG5B --children
+npm start -- --show item --key zotero://select/groups/2259720/items/XIML4I5W --children --savefiles
+npm start -- --show item --key zotero://select/groups/2259720/items/XIML4I5W --children --addfile file.pdf
+
+
+
