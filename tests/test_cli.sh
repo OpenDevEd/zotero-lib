@@ -1,4 +1,7 @@
 npm start -- -h
+npm run start -- key
+npm run start -- key --groups
+npm run start -- key --groups --terse
 npm start -- --show --group 2259720 item --key KYVTFLIC
 npm start -- --show item --key zotero://select/groups/2259720/items/KYVTFLIC
 npm start -- --show item --key zotero://select/groups/2259720/items/NKX3RG5B --addto 8KIQAXVM

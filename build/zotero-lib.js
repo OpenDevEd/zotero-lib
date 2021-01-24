@@ -424,11 +424,37 @@ module.exports = class Zotero {
         if (args.getInterface && subparsers) {
             const parser_key = subparsers.add_parser("key", { "help": "Show details about an API key. (API: /keys )" });
             parser_key.set_defaults({ "func": this.key.name });
+            parser_key.add_argument('--key', { nargs: 1, help: 'Provide the API key. Otherwise the API key given in the config is used. API: /keys' });
+            parser_key.add_argument('--groups', { action: 'store_true', help: 'Show groups available to this key (API: /users/<userID>/groups)' });
+            parser_key.add_argument('--terse', { action: 'store_true', help: 'Produce a simplified listing of groups' });
             return { status: 0, message: "success" };
+        }
+        if (!args.api_key) {
+            args.api_key = this.config.api_key;
         }
         const res = await this.get(`/keys/${args.api_key}`, { userOrGroupPrefix: false });
         this.show(res);
-        return res;
+        let res2 = [];
+        if (args.groups) {
+            // TODO: This only retrieves 100 libraries. Need to an 'all' query.
+            res2 = await this.get(`/users/${res.userID}/groups`, { params: { limit: 100 }, userOrGroupPrefix: false });
+            // /users/<userID>/groups      
+            if (args.terse) {
+                console.log(`Number of groups: ${res2.length}`);
+                const res3 = res2.sort((a, b) => (a.data.name > b.data.name) ? 1 : ((b.data.name > a.data.name) ? -1 : 0));
+                res3.forEach(element => {
+                    const data = element.data;
+                    console.log(`${data.id}\t${data.name} ${data.owner} ${data.type}`);
+                });
+            }
+            else {
+                this.show(res2);
+            }
+            if (res2.length > 100) {
+                console.log(`Warning - only first 100 retrieved. ${res2.length}`);
+            }
+        }
+        return { key: res, groups: res2 };
     }
     // End of standard API calls
     // Utility functions. private?
@@ -805,6 +831,8 @@ module.exports = class Zotero {
             await Promise.all(children.filter(item => item.data.itemType === 'attachment').map(async (item) => {
                 if (item.data.filename) {
                     console.log(`Downloading file ${item.data.filename}`);
+                    // TODO: 
+                    // await this.attachment({key: item.key, save: item.data.filename})
                     fs.writeFileSync(item.data.filename, await this.get(`/items/${item.key}/file`), 'binary');
                 }
                 else {
@@ -845,9 +873,9 @@ module.exports = class Zotero {
             }
         }
         if (args.addtocollection) {
-            console.log("-->" + args.addtocollection);
-            args.addtocollection = this.extractKeyAndSetGroup(args.addtocollection);
-            console.log("-->" + args.addtocollection);
+            //console.log("-->" + args.addtocollection)
+            //args.addtocollection = this.extractKeyAndSetGroup(args.addtocollection)
+            //console.log("-->" + args.addtocollection)
             let newCollections = item.data.collections;
             args.addtocollection.forEach(itemKey => {
                 if (!newCollections.includes(itemKey)) {
