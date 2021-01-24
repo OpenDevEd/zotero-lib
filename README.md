@@ -25,8 +25,14 @@ View entry on https://www.npmjs.com/package/zotero-lib
 
 # Used by
 This library is currently used by 
-- https://github.com/OpenDevEd/zotero-cli
-- https://github.com/OpenDevEd/zotzen-cli
+- https://github.com/OpenDevEd/zotero-lib
+- https://github.com/OpenDevEd/zotzen-lib
 - https://github.com/OpenDevEd/zotzen-web
 
 This code builds on earlier code for https://github.com/OpenDevEd/zotero-cli, which was developed by [@bjohas](https://github.com/bjohas), [@retorquere](https://github.com/retorquere) and [@a1diablo](https://github.com/a1diablo).
+
+# Use of the library and the CLI
+
+The directory tests/ contains a number of tests that illustrate the
+use of the npm library. The file tests/test_cli.sh has examples for
+use of the library from the command line.
