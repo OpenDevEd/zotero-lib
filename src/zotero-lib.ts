@@ -320,7 +320,9 @@ module.exports = class Zotero {
     let out = []
     for (const uri of args.uri) {
       const res = await this.get(uri, { userOrGroupPrefix: !args.root })
-      this.show(res)
+      if (args.show) {
+        this.show(res)
+      }
       out.push(res)
     }
     return out
