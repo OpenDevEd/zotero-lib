@@ -774,7 +774,8 @@ module.exports = class Zotero {
             }
         }
         else {
-            this.show(items);
+            if (args.show)
+                this.show(items);
         }
         return items;
     }
