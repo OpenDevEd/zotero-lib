@@ -484,12 +484,15 @@ module.exports = class Zotero {
         }
         return value;
     }
-    extractKeyAndSetGroup(key) {
+    extractKeyGroupVariable(key, n) {
+        // n=1 -> group
+        // n=2 -> items vs. collections
+        // n=3 -> key
         // zotero://select/groups/(\d+)/(items|collections)/([A-Z01-9]+)
         // TO DO - make this function array->array and string->string.
         if (Array.isArray(key)) {
             key = key.map(mykey => {
-                return this.extractKeyAndSetGroup(mykey);
+                return this.extractKeyGroupVariable(mykey, n);
             });
             return key;
         }
@@ -498,22 +501,31 @@ module.exports = class Zotero {
             key = key.toString();
             const res = key.match(/^zotero\:\/\/select\/groups\/(library|\d+)\/(items|collections)\/([A-Z01-9]+)/);
             if (res) {
+                // console.log("TEMPORARY="+JSON.stringify(   res       ,null,2))         
                 if (res[2] == "library") {
                     console.log('You cannot specify zotero-select links (zotero://...) to select user libraries.');
-                    return;
+                    return null;
                 }
                 else {
                     // console.log("Key: zotero://-key provided for "+res[2]+" Setting group-id.")
                     this.config.group_id = res[1];
-                    out = res[3];
+                    out = res[n];
+                    //console.log(`--> ${n}/${out}`)
                 }
-                ;
             }
             else {
                 out = key;
             }
             return out;
         }
+    }
+    extractKeyAndSetGroup(key) {
+        //console.log("extractKeyAndSetGroup")
+        return this.extractKeyGroupVariable(key, 3);
+    }
+    extractGroupAndSetGroup(key) {
+        //console.log("extractGroupAndSetGroup")
+        return this.extractKeyGroupVariable(key, 1);
     }
     objectifyTags(tags) {
         let tagsarr = [];
@@ -594,8 +606,9 @@ module.exports = class Zotero {
         // args.top (boolean, optional)
         // args.create_child (string, optional)
         // perform tests: args.key
+        console.log("console args =" + JSON.stringify(args, null, 2));
         if (args.key) {
-            args.key = this.extractKeyAndSetGroup(args.key);
+            args.key = this.extractKeyAndSetGroup(this.value(args.key));
         }
         else {
             return this.message(0, 'Unable to extract group/key from the string provided.');
@@ -606,9 +619,18 @@ module.exports = class Zotero {
         console.log("collection...." + args.key);
         if (args.create_child) {
             const response = await this.post('/collections', JSON.stringify(args.create_child.map(c => { return { name: c, parentCollection: args.key }; })));
-            this.print('Collections created: ', JSON.parse(response).successful);
-            console.log("collection....done");
-            return JSON.parse(response).successful;
+            const resp = JSON.parse(response);
+            console.log("response=" + JSON.stringify(resp, null, 2));
+            if (resp.successful) {
+                this.print('Collections created: ', resp.successful);
+                console.log("collection....done");
+                return resp.successful;
+            }
+            else {
+                console.log("collection....failed");
+                console.log("response=" + JSON.stringify(resp, null, 2));
+                return resp;
+            }
             // TODO: In all functions where data is returned, add '.successful' - Zotero always wraps in that.
             // This leaves an array.
         }
@@ -1294,10 +1316,13 @@ module.exports = class Zotero {
         if (!args.collection) {
             args.collection = "";
         }
-        const key = this.value(args.key);
-        const base_collection = this.value(args.collection);
-        const group = args.group_id;
-        const zotero = new Zotero({ group_id: group });
+        const group_id = args.group_id ? args.group_id :
+            this.extractGroupAndSetGroup(args.key) ? this.extractGroupAndSetGroup(args.key) :
+                this.extractGroupAndSetGroup(args.collection) ? this.extractGroupAndSetGroup(args.collection) : this.config.group_id;
+        const base_collection = this.value(this.extractKeyAndSetGroup(args.collection));
+        const key = this.value(this.extractKeyAndSetGroup(args.key));
+        console.log(`Key = ${key}; group_id = ${group_id}; ${this.extractGroupAndSetGroup(args.key)}; ${this.extractGroupAndSetGroup(args.collection)}`);
+        const zotero = new Zotero({ group_id: group_id });
         const response = await zotero.item({ key: key });
         //console.log("response = " + JSON.stringify(response, null, 2))
         // TODO: Have automated test to see whether successful.
@@ -1312,64 +1337,74 @@ module.exports = class Zotero {
         //const new_coll = zotero.create_collection(group, base_collection, $name)
         // console.log("ch="+child_name)
         output.push({ child_name: child_name });
-        // Everything below here shouldb e done as Promise.all
+        // Everything below here should be done as Promise.all
+        console.log("collections -base");
         const new_coll = await zotero.collections({
-            group_id: group,
+            group_id: group_id,
             key: this.value(base_collection),
             create_child: this.array(child_name)
         });
         //console.log("TEMPORARY=" + JSON.stringify(new_coll, null, 2))
         output.push({ collection: new_coll });
-        const ecoll = new_coll[0].key;
+        console.log("Move item to collection");
+        const ecoll = this.array(new_coll[0].key);
         const res = await zotero.item({
             key: key,
-            addtocollection: this.array(ecoll)
+            addtocollection: ecoll
         });
         output.push({ response2: res });
+        console.log("1-collections");
         const refcol_res = await zotero.collections({
-            group_id: group,
-            key: this.array(ecoll),
+            group_id: group_id,
+            key: ecoll,
             create_child: ["✅_References"]
         });
         output.push({ collection: refcol_res });
+        console.log(`1-links: ${group_id}:${key}`);
+        console.log("TEMPORARY=" + JSON.stringify(refcol_res, null, 2));
         const refcol = refcol_res[0].key;
         const link1 = await zotero.attach_link({
-            group_id: group,
+            group_id: group_id,
             key: key,
-            url: `zotero://select/groups/${group}/collections/${refcol}`,
+            url: `zotero://select/groups/${group_id}/collections/${refcol}`,
             title: "✅View collection with references.",
             tags: ["_r:viewRefs"]
         });
         output.push({ link: link1 });
-        const refcol_citing = await zotero.collections({ group_id: group, key: [ecoll], create_child: ["✅Citing articles"] });
+        console.log("2-collection");
+        const refcol_citing = await zotero.collections({ group_id: group_id, key: ecoll, create_child: ["✅Citing articles"] });
         output.push({ collection: refcol_citing });
         const citingcol = refcol_citing[0].key;
+        console.log(`2-link`);
         const link2 = await zotero.attach_link({
-            group_id: group,
+            group_id: group_id,
             key: key,
-            url: `zotero://select/groups/${group}/collections/${citingcol}`,
+            url: `zotero://select/groups/${group_id}/collections/${citingcol}`,
             title: "✅View collection with citing articles (cited by).",
             tags: ["_r:viewCitedBy"]
         });
         output.push({ link: link2 });
-        const refcol_rem = await zotero.collections({ group_id: group, key: [ecoll], create_child: ["✅Removed references"] });
+        console.log("3-collection");
+        const refcol_rem = await zotero.collections({ group_id: group_id, key: ecoll, create_child: ["✅Removed references"] });
         output.push({ collection: refcol_rem });
         const refremcol = refcol_rem[0].key;
+        console.log(`3-link`);
         const link3 = await zotero.attach_link({
-            group_id: group,
+            group_id: group_id,
             key: key,
-            url: `zotero://select/groups/${group}/collections/${refremcol}`,
+            url: `zotero://select/groups/${group_id}/collections/${refremcol}`,
             title: "✅View collection with removed references.",
             tags: ["_r:viewRRemoved"]
         });
         output.push({ link: link3 });
+        console.log("Note");
         // say "Creating note for item key. Note key: "  
         // ERROR HERE: key is still an array.
         const key2 = this.extractKeyAndSetGroup(key);
         const note = await zotero.attach_note({
-            group_id: group,
+            group_id: group_id,
             key: key2,
-            description: `<h1>Bibliography</h1><p>Updated: date</p><p>Do not edit this note manually.</p><p><b>bibliography://select/groups/${group}/collections/${refcol}</b></p>`,
+            description: `<h1>Bibliography</h1><p>Updated: date</p><p>Do not edit this note manually.</p><p><b>bibliography://select/groups/${group_id}/collections/${refcol}</b></p>`,
             tags: ["_cites"]
         });
         output.push({ note: note });

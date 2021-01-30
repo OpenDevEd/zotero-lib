@@ -5,9 +5,10 @@ const Zotero = require('../build/zotero-lib')
 const fs = require('fs')
 
 async function main() {
-  await enclose_item_in_collection({
+  zotero = new Zotero()
+  await zotero.enclose_item_in_collection({
     key: "U4FNKF86",
-    collection: "DMUSZD4Y",
+    collection: "8TRFR2ZR",
     group_id: 2259720
   })
 }
