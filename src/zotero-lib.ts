@@ -524,11 +524,15 @@ module.exports = class Zotero {
   }
 
   private array(value) {
-    if (!Array.isArray(value)) {
-      value = [value]
-    } else {
+    let out = []
+    if (value) {
+      if (!Array.isArray(value)) {
+        out = [value]
+      } else {
+        out = value
+      }
     }
-    return value
+    return out
   }
 
   private extractKeyGroupVariable(key, n) {
@@ -676,14 +680,14 @@ module.exports = class Zotero {
       const response = await this.post('/collections',
         JSON.stringify(args.create_child.map(c => { return { name: c, parentCollection: args.key } })))
       const resp = JSON.parse(response)
-      console.log("response="+JSON.stringify(   resp         ,null,2))         
+      console.log("response=" + JSON.stringify(resp, null, 2))
       if (resp.successful) {
         this.print('Collections created: ', resp.successful)
         console.log("collection....done")
         return resp.successful
       } else {
         console.log("collection....failed")
-        console.log("response="+JSON.stringify(   resp         ,null,2))         
+        console.log("response=" + JSON.stringify(resp, null, 2))
         return resp
       }
       // TODO: In all functions where data is returned, add '.successful' - Zotero always wraps in that.
@@ -914,12 +918,11 @@ module.exports = class Zotero {
     }
 
     let output = []
-    if (args.key) {
-      args.key = this.extractKeyAndSetGroup(args.key)
-      if (!args.key) {
-        const msg = this.message(0, 'Unable to extract group/key from the string provided.')
-        return msg
-      }
+    
+    [args.key, args.group_id] = this.getGroupAndKey(args)
+    if (!args.key) {
+      const msg = this.message(0, 'Unable to extract group/key from the string provided.')
+      return msg
     }
 
     const item = await this.get(`/items/${args.key}`)
@@ -1422,11 +1425,8 @@ module.exports = class Zotero {
     if (!args.collection) {
       args.collection = ""
     }
-    const group_id = args.group_id ? args.group_id :
-      this.extractGroupAndSetGroup(args.key) ? this.extractGroupAndSetGroup(args.key) :
-        this.extractGroupAndSetGroup(args.collection) ? this.extractGroupAndSetGroup(args.collection) : this.config.group_id
+    const [ group_id, key ] = this.getGroupAndKey(args);
     const base_collection = this.value(this.extractKeyAndSetGroup(args.collection))
-    const key = this.value(this.extractKeyAndSetGroup(args.key))
     console.log(`Key = ${key}; group_id = ${group_id}; ${this.extractGroupAndSetGroup(args.key)}; ${this.extractGroupAndSetGroup(args.collection)}`)
     const zotero = new Zotero({ group_id: group_id })
     const response = await zotero.item({ key: key })
@@ -1531,6 +1531,16 @@ module.exports = class Zotero {
   }
 
 
+  private getGroupAndKey(args: any) {
+    // Precendence: explicit argument - otherwise from args.key, otherwise from args.collection
+    // TODO: Check this with "  private extractKeyGroupVariable " - because that sets this.config.group_id - does that matter?
+    const group_id = args.group_id ? args.group_id :
+      args.key && this.extractGroupAndSetGroup(args.key) ? this.extractGroupAndSetGroup(args.key) :
+        args.collection && this.extractGroupAndSetGroup(args.collection) ? this.extractGroupAndSetGroup(args.collection) : this.config.group_id;
+    const key = this.value(this.extractKeyAndSetGroup(args.key));
+    return [group_id, key];
+  }
+
   // Update the DOI of the item provided.
   public async update_doi(args, subparsers?) {
     this.reconfigure(args)
@@ -1619,26 +1629,49 @@ module.exports = class Zotero {
     this.reconfigure(args)
     // public async attachLinkToItem(PARENT, URL, options: { title?: string, tags?: any } = { title: "Click to open", tags: [] }) {
     // ACTION: define CLI interface
+    const decoration = {
+      kerko_url: { title: "👀View item in Evidence Library", tags: ["_r:kerko", "_r:zotzen"] },
+      googledoc: { title: "📝View Google Doc and download alternative formats", tags: ["_r:googleDoc", "_r:zotzen"] },
+      deposit: { title: "🔄View entry on Zenodo (deposit)", tags: ["_r:zenodoDeposit", "_r:zotzen"] },
+      record: { title: "🔄View entry on Zenodo (record)", tags: ["_r:zenodoRecord", "_r:zotzen"] },
+      doi: { title: "🔄Look up this DOI (once activated)", tags: ["_r:doi", "_r:zotzen"] },
+      primarycollection: { title: "🆉View primary collection for this item", tags: ["_r:primary_collection", "_r:zotzen"] },
+      collection: { title: "🆉View collection for this item", tags: ["_r:collection", "_r:zotzen"] },
+    }
     if (args.getInterface && subparsers) {
-      const argparser = subparsers.add_parser("attachLink", { "help": "HELPTEXT" });
+      const argparser = subparsers.add_parser("attach-link", { "help": "Utility function: attach a link to an item" });
       argparser.set_defaults({ "func": this.attach_link.name });
       argparser.add_argument("--key", {
-        "action": "store_true",
-        "help": "HELPTEXT"
+        "nargs": 1,
+        "action": "store",
+        "help": "Required.xx"
       });
       argparser.add_argument("--url", {
-        "action": "store_true",
-        "help": "HELPTEXT"
+        "nargs": 1,
+        "action": "store",
+        "help": "Required."
       });
       argparser.add_argument("--title", {
-        "action": "store_true",
-        "help": "HELPTEXT"
+        "nargs": 1,
+        "action": "store",
+        "help": "Optional"
       });
       argparser.add_argument("--tags", {
         "nargs": "*",
         "action": "store",
-        "help": "HELPTEXT"
-      })
+        "help": "Optional"
+      });
+      Object.keys(decoration).forEach(option => {
+        argparser.add_argument(`--${option}`, {
+          "action": "store_true",
+          "help": `Optional 'decoration/default title prefix': Use '${decoration[option].title}' as prefix for title, with tags: ${JSON.stringify(decoration[option].tags)}`,
+        });
+      });
+      argparser.add_argument(`--id`, {
+        "nargs": 1,
+        "action": "store",
+        "help": `Optional 'decoration/default title prefix': Provide a zenodo id to add record, deposit and doi.`,
+      });
       return { status: 0, message: "success" }
 
     }
@@ -1653,12 +1686,33 @@ module.exports = class Zotero {
     args.key = this.value(args.key)
     args.key = this.extractKeyAndSetGroup(args.key)
     args.title = this.value(args.title)
-    args.tags = this.array(args.tags)
-    console.log("attach", args.key, args.url)
-    // ACTION: run code
-    const data = await this.attachLinkToItem(args.key, args.url, { title: args.title, tags: args.tags })
+    let tags = []
+    if (args.tags)
+      tags.push(args.tags)
+    args.url = this.value(args.url)
+    console.log("attach", args.key, args.url, Array.isArray(args.tags))
+    //console.log("TEMPORARY=" + JSON.stringify(args.tags, null, 2))
+    var dataout = []
+    if (args.id) {
+      const data1 = await this.attach_link({ key: args.key, url: "https://zenodo.org/deposit/" + args.id, title: args.title, tags: args.tags, deposit: true })
+      dataout.push(data1)
+      const data2 = await this.attach_link({ key: args.key, url: "https://zenodo.org/record/" + args.id, title: args.title, tags: args.tags, record: true })
+      dataout.push(data2)
+      const data3 = await this.attach_link({ key: args.key, url: "https://doi.org/10.5281/zenodo." + args.id, title: args.title, tags: args.tags, doi: true })
+      dataout.push(data3)
+    } else {
+      Object.keys(decoration).forEach(option => {
+        if (args[option]) {
+          args.title = args.title ? decoration[option].title + " " + args.title : decoration[option].title
+          args.tags ? args.tags.push(decoration[option].tags) : args.tags = decoration[option].tags
+        }
+      })
+      // ACTION: run code
+      const data = await this.attachLinkToItem(args.key, args.url, { title: args.title, tags: args.tags })
+      dataout.push(data)
+    }
     // ACTION: return values
-    return this.message(0, "exist status", data)
+    return this.message(0, "exist status", dataout)
   }
 
   // TODO: Implement
@@ -1844,16 +1898,17 @@ module.exports = class Zotero {
     this.reconfigure(args)
     // ACTION: define CLI interface
     if (args.getInterface && subparsers) {
-      const argparser = subparsers.add_parser("attachNote", { "help": "HELPTEXT" });
+      const argparser = subparsers.add_parser("attach-note", { "help": "Utility function: Attach note to item" });
       argparser.set_defaults({ "func": this.attach_note.name });
       argparser.add_argument("--key", {
         "action": "store_true",
         "help": "HELPTEXT"
       });
-      argparser.add_argument("--file", {
+      // TODO: Allow file argument (html file)
+      /*argparser.add_argument("--file", {
         "action": "store_true",
         "help": "HELPTEXT"
-      });
+      });*/
       argparser.add_argument("--description", {
         "action": "store_true",
         "help": "HELPTEXT"
@@ -2217,6 +2272,8 @@ module.exports = class Zotero {
     // Utility functions    
     this.update_doi({ getInterface: true }, subparsers)
     this.enclose_item_in_collection({ getInterface: true }, subparsers)
+    this.attach_link({ getInterface: true }, subparsers)
+    this.attach_note({ getInterface: true }, subparsers)
 
     // Functions for get, post, put, patch, delete. (Delete query to API with uri.)
     this.__get({ getInterface: true }, subparsers)
