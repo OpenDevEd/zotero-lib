@@ -844,13 +844,10 @@ module.exports = class Zotero {
             parser_item.add_argument('--removetags', { nargs: '*', help: 'Remove tags from item. (Convenience method: patch item->data->tags.)' });
             return { status: 0, message: "success" };
         }
-        let output = [];
-        if (args.key) {
-            args.key = this.extractKeyAndSetGroup(args.key);
-            if (!args.key) {
-                const msg = this.message(0, 'Unable to extract group/key from the string provided.');
-                return msg;
-            }
+        let output = [][args.key, args.group_id] = this.getGroupAndKey(args);
+        if (!args.key) {
+            const msg = this.message(0, 'Unable to extract group/key from the string provided.');
+            return msg;
         }
         const item = await this.get(`/items/${args.key}`);
         output.push({ "record": item });
@@ -1320,11 +1317,8 @@ module.exports = class Zotero {
         if (!args.collection) {
             args.collection = "";
         }
-        const group_id = args.group_id ? args.group_id :
-            this.extractGroupAndSetGroup(args.key) ? this.extractGroupAndSetGroup(args.key) :
-                this.extractGroupAndSetGroup(args.collection) ? this.extractGroupAndSetGroup(args.collection) : this.config.group_id;
+        const [group_id, key] = this.getGroupAndKey(args);
         const base_collection = this.value(this.extractKeyAndSetGroup(args.collection));
-        const key = this.value(this.extractKeyAndSetGroup(args.key));
         console.log(`Key = ${key}; group_id = ${group_id}; ${this.extractGroupAndSetGroup(args.key)}; ${this.extractGroupAndSetGroup(args.collection)}`);
         const zotero = new Zotero({ group_id: group_id });
         const response = await zotero.item({ key: key });
@@ -1418,6 +1412,15 @@ module.exports = class Zotero {
         console.log("TEMPORARY=" + JSON.stringify(output, null, 2));
         return this.message(0, "Succes", output);
     }
+    getGroupAndKey(args) {
+        // Precendence: explicit argument - otherwise from args.key, otherwise from args.collection
+        // TODO: Check this with "  private extractKeyGroupVariable " - because that sets this.config.group_id - does that matter?
+        const group_id = args.group_id ? args.group_id :
+            args.key && this.extractGroupAndSetGroup(args.key) ? this.extractGroupAndSetGroup(args.key) :
+                args.collection && this.extractGroupAndSetGroup(args.collection) ? this.extractGroupAndSetGroup(args.collection) : this.config.group_id;
+        const key = this.value(this.extractKeyAndSetGroup(args.key));
+        return [group_id, key];
+    }
     // Update the DOI of the item provided.
     async update_doi(args, subparsers) {
         this.reconfigure(args);
@@ -1508,7 +1511,7 @@ module.exports = class Zotero {
             kerko_url: { title: "👀View item in Evidence Library", tags: ["_r:kerko", "_r:zotzen"] },
             googledoc: { title: "📝View Google Doc and download alternative formats", tags: ["_r:googleDoc", "_r:zotzen"] },
             deposit: { title: "🔄View entry on Zenodo (deposit)", tags: ["_r:zenodoDeposit", "_r:zotzen"] },
-            record: { title: "🔄View entry on Zenodo (record)", tags: ["_r:zenodoDeposit", "_r:zotzen"] },
+            record: { title: "🔄View entry on Zenodo (record)", tags: ["_r:zenodoRecord", "_r:zotzen"] },
             doi: { title: "🔄Look up this DOI (once activated)", tags: ["_r:doi", "_r:zotzen"] },
             primarycollection: { title: "🆉View primary collection for this item", tags: ["_r:primary_collection", "_r:zotzen"] },
             collection: { title: "🆉View collection for this item", tags: ["_r:collection", "_r:zotzen"] },
