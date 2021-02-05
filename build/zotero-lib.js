@@ -2121,7 +2121,7 @@ module.exports = class Zotero {
             help: 'Configuration file (toml format). Note that ./zotero-cli.toml and ~/.config/zotero-cli/zotero-cli.toml is picked up automatically.'
         });
         parser.add_argument('--config-json', {
-            type: parser.file,
+            type: parser.string,
             help: 'Configuration string in json format.'
         });
         parser.add_argument('--user-id', {
