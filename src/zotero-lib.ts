@@ -59,7 +59,7 @@ const arg = new class {
 module.exports = class Zotero {
 
   // The following config keys are expected/allowed, with both "-" and "_". The corresponding variables have _
-  config_keys = ["user-id", "group-id", "library-type", "api-key", "indent", "verbose", "debug", "config"]
+  config_keys = ["user-id", "group-id", "library-type", "api-key", "indent", "verbose", "debug", "config", "config-json"]
   config: any
 
   base = "https://api.zotero.org"
@@ -138,8 +138,10 @@ module.exports = class Zotero {
 
     // STEP 2. Apply --config_json option
     if (args.config_json) {
+      console.log(`Setting from config_json`)
       const confobj = typeof (args.config_json) == "string" ? JSON.parse(args.config_json) : args.config_json
       Object.keys(confobj).forEach(x => {
+        console.log(`Setting: ${x}`)
         this.config[x] = confobj[x]
       })
     }
@@ -357,6 +359,7 @@ module.exports = class Zotero {
   }
 
   public async __get(args, subparsers?) {
+    this.reconfigure(args)
     /** Expose 'get' 
   * Make a direct query to the API using 'GET uri'. 
   */
@@ -395,6 +398,7 @@ module.exports = class Zotero {
   }
 
   public async __post(args, subparsers?) {
+    this.reconfigure(args)
     /** Expose 'post'. Make a direct query to the API using 'POST uri [--data data]'. */
     if (args.getInterface && subparsers) {
       const argparser = subparsers.add_parser("__post", { "help": "Expose 'post'. Make a direct query to the API using 'POST uri [--data data]'." })
@@ -424,6 +428,7 @@ module.exports = class Zotero {
   }
 
   public async __put(args, subparsers?) {
+    this.reconfigure(args)
     /** Make a direct query to the API using 'PUT uri [--data data]'. */
     if (args.getInterface && subparsers) {
       const argparser = subparsers.add_parser("__put", { "help": "Expose 'put'. Make a direct query to the API using 'PUT uri [--data data]'." })
@@ -466,6 +471,7 @@ module.exports = class Zotero {
 
 
   public async __patch(args, subparsers?) {
+    this.reconfigure(args)
     /** Make a direct query to the API using 'PATCH uri [--data data]'. */
     if (args.getInterface && subparsers) {
       const argparser = subparsers.add_parser("__patch", { "help": "Expose 'patch'. Make a direct query to the API using 'PATCH uri [--data data]'." })
@@ -499,6 +505,7 @@ module.exports = class Zotero {
   }
 
   public async __delete(args, subparsers?) {
+    this.reconfigure(args)
     /** Make a direct delete query to the API using 'DELETE uri'. */
     if (args.getInterface && subparsers) {
       const argparser = subparsers.add_parser("__delete", { "help": "Expose 'delete'. Make a direct delete query to the API using 'DELETE uri'." })
@@ -517,6 +524,7 @@ module.exports = class Zotero {
 
 
   public async key(args, subparsers?) {
+    this.reconfigure(args)
     /** Show details about this API key. (API: /keys ) */
     if (args.getInterface && subparsers) {
       const parser_key = subparsers.add_parser("key", { "help": "Show details about an API key. (API: /keys )" })
@@ -694,6 +702,7 @@ module.exports = class Zotero {
   // If I call $collections(subparser) -> add options to subparser
   // $collections(null) -> perform cllections action (using args)
   public async collections(args, subparsers?) {
+    this.reconfigure(args)
     /* Retrieve a list of collections or create a collection. (API: /collections, /collections/top, /collections/<collectionKey>/collections). Use 'collections --help' for details. */
     if (args.getInterface && subparsers) {
       //async $collections
@@ -844,13 +853,13 @@ module.exports = class Zotero {
   // <userOrGroupPrefix>/items/top	Top-level items in the library, excluding trashed items
 
   async items(args, subparsers?) {
+    this.reconfigure(args)
     /** 
   Retrieve list of items from API. (API: /items, /items/top, /collections/COLLECTION/items/top). 
   Use 'items --help' for details. 
   By default, all items are retrieved. With --top or limit (via --filter) the default number of items are retrieved. 
     */
     let items
-    this.reconfigure(args)
     if (args.getInterface && subparsers) {
       //async items
       const parser_items = subparsers.add_parser("items", { "help": "Retrieve items, retrieve items within collections, with filter is required. Count items. By default, all items are retrieved. With --top or limit (via --filter) the default number of items are retrieved. (API: /items, /items/top, /collections/COLLECTION/items/top)" })
@@ -1583,6 +1592,7 @@ module.exports = class Zotero {
 
 
   private getGroupAndKey(args: any) {
+    this.reconfigure(args)
     // Precendence: explicit argument - otherwise from args.key, otherwise from args.collection
     // TODO: Check this with "  private extractKeyGroupVariable " - because that sets this.config.group_id - does that matter?
     const group_id = args.group_id ? args.group_id :

@@ -12,7 +12,7 @@ const fs = require('fs')
 
 async function main() {
   implicit_specification: {
-    console.log("  implicit_specification")
+    console.log("implicit_specification")
     // OPTION 1. You have a .config/zotero-cli/zotero-cli.toml
     // Get an instance of Zotero (with default group)
     const zotero = new Zotero()
@@ -36,10 +36,15 @@ async function main() {
     const zotero = new Zotero()
     const response = await zotero.key({ api_key: apikey })
   }
-  api_key_v2: {
+  api_key_v2a: {
     console.log("config_json: { api_key }")
     const zotero = new Zotero()
     const response = await zotero.key({ config_json: { api_key: apikey } })
+  }
+  api_key_v2b: {
+    console.log("config_json: '{ api_key }'")
+    const zotero = new Zotero()
+    const response = await zotero.key({ config_json: `{ "api_key": "${apikey}" }` })
   }
   api_key_v3: {
     console.log("zotero_api_key")
