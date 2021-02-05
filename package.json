@@ -1,9 +1,11 @@
 {
   "name": "zotero-lib",
-  "version": "1.0.29",
+  "version": "1.0.30",
   "description": "",
   "main": "build/zotero-lib.js",
-  "bin": "build/zotero-cli.js",
+  "bin": {
+    "zotero-lib": "build/zotero-cli.js"
+  },
   "scripts": {
     "start": "node ./build/zotero-cli.js",
     "lib": "node ./build/zotero-lib.js",
