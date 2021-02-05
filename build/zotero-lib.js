@@ -49,7 +49,7 @@ const arg = new class {
 module.exports = class Zotero {
     constructor(args) {
         // The following config keys are expected/allowed, with both "-" and "_". The corresponding variables have _
-        this.config_keys = ["user-id", "group-id", "library-type", "api-key", "indent", "verbose", "debug"];
+        this.config_keys = ["user-id", "group-id", "library-type", "api-key", "indent", "verbose", "debug", "config"];
         this.base = "https://api.zotero.org";
         this.output = '';
         this.headers = {
@@ -74,7 +74,10 @@ module.exports = class Zotero {
         Called during initialisation.
     
         INPUT:
-    
+        args = {}
+        
+        or
+        
         args = {
           config: "zotero-lib.toml"
         }
@@ -82,55 +85,102 @@ module.exports = class Zotero {
         or
     
         args = {
-          user-id: "XXX",
-          group-id: "123",
-          library-type: "group",
+          user_id: "XXX",
+          group_id: "123",
+          library_type: "group",
           indent = 4,
-          api-key: "XXX"
+          "api-key": "XXX"
+        }
+    
+        or
+    
+        args = {
+          zotero_user_id: "XXX",
+          zotero_group_id: "123",
+          zotero_library_type: "group",
+          zotero_indent = 4,
+          "zotero-api-key": "XXX"
         }
     
         OUTPUT:
     
         this.config = {
-          user-id: "XXX",
-          group-id: "123",
-          library-type: "group",
+          user_id: "XXX",
+          group_id: "123",
+          library_type: "group",
           indent = 4,
-          api-key: "XXX"
+          api_key: "XXX"
         }
         */
+        // STEP 1. Read config file
         if (readconfigfile || args.config) {
             const config = [args.config, 'zotero-cli.toml', `${os.homedir()}/.config/zotero-cli/zotero-cli.toml`].find(cfg => fs.existsSync(cfg));
             this.config = config ? toml.parse(fs.readFileSync(config, 'utf-8')) : {};
         }
+        // STEP 2. Apply --config_json option
+        if (args.config_json) {
+            const confobj = typeof (args.config_json) == "string" ? JSON.parse(args.config_json) : args.config_json;
+            Object.keys(confobj).forEach(x => {
+                this.config[x] = confobj[x];
+            });
+        }
+        // STEP 3. Canonical forms.
         // Change "-" to "_"
         this.config_keys.forEach(key => {
-            const undersc = key.replace("-", "_");
-            if (key != undersc) {
+            const key_zotero = "zotero-" + key;
+            const key_underscore = key.replace("-", "_");
+            const key_zotero_underscore = key_zotero.replace("-", "_");
+            /*
+            api-key
+            api_key
+            zotero-api-key
+            zotero_api_key
+            --> api_key
+            */
+            if (key != key_underscore) {
+                // Fix existing config
                 if (this.config[key]) {
-                    this.config[undersc] = this.config[key];
+                    this.config[key_underscore] = this.config[key];
+                    delete this.config[key];
                 }
-                delete this.config[key];
+                // Fix existing arg
                 if (args[key]) {
-                    args[undersc] = args[key];
+                    args[key_underscore] = args[key];
+                    delete args[key];
                 }
-                delete args[key];
             }
-            // copy selected values
-            if (args[undersc]) {
-                this.config[undersc] = args[undersc];
+            else {
+                // Key is underscored already - nothing to do.
+            }
+            // Now we just have the underscore form of the key.
+            // If there is a "zotero-" form, copy to "zotero_" form.
+            if (args[key_zotero]) {
+                args[key_zotero_underscore] = args[key_zotero];
+                delete args[key_zotero];
+            }
+            // If there is a key_zotero_underscore, let it override key_underscore
+            if (args[key_zotero_underscore]) {
+                args[key_underscore] = args[key_zotero_underscore];
+                // retain the key.
+            }
+            // finally, copy available value to config:
+            if (args[key_underscore]) {
+                args[key_underscore] = this.value(args[key_underscore]);
+                this.config[key_underscore] = args[key_underscore];
             }
         });
         /*
-            // Overwrite config with values from args
-            // Dont use all object keys, but just designated keys
-            // Object.keys(args).forEach(key => {
-            config_keys.forEach(key => {
-              if (args[key]) {
-                this.config[key] = args[key]
-              }
-            })
+        if (!args.config && args.zotero_config)
+          args.config = args.zotero_config
+        if (!args.api_key && args.zotero_api_key)
+          args.api_key = args.zotero_api_key
         */
+        /*
+        // STEP 4. If --api_key is given, then use it.
+        if (args.api_key)
+          this.config.api_key = args.api_key
+        */
+        // We're done with reading the config.
         // Now use the config:
         if (this.config.api_key) {
             this.headers['Zotero-API-Key'] = this.config.api_key;
@@ -1507,6 +1557,7 @@ module.exports = class Zotero {
         this.reconfigure(args);
         // public async attachLinkToItem(PARENT, URL, options: { title?: string, tags?: any } = { title: "Click to open", tags: [] }) {
         // ACTION: define CLI interface
+        // TODO: There's a problem here... the following just offer docorations. We need to have inputs too...
         const decoration = {
             kerko_url: { title: "👀View item in Evidence Library", tags: ["_r:kerko", "_r:zotzen"] },
             googledoc: { title: "📝View Google Doc and download alternative formats", tags: ["_r:googleDoc", "_r:zotzen"] },
@@ -1527,29 +1578,45 @@ module.exports = class Zotero {
             argparser.add_argument("--url", {
                 "nargs": 1,
                 "action": "store",
-                "help": "Required."
+                "help": "Provide a URL here and/or use the specific URL options below. If you use both --url and on of the options below, both will be added."
             });
             argparser.add_argument("--title", {
                 "nargs": 1,
                 "action": "store",
-                "help": "Optional"
+                "help": "Optional. The options for specific URLs below can supply default titles."
             });
             argparser.add_argument("--tags", {
                 "nargs": "*",
                 "action": "store",
                 "help": "Optional"
             });
+            // TODO: There's a problem here... the following just offer docorations. We need to have inputs too...
+            // This should probably just be the title used if there is no title, or --decorate is given.
             Object.keys(decoration).forEach(option => {
                 argparser.add_argument(`--${option}`, {
-                    "action": "store_true",
-                    "help": `Optional 'decoration/default title prefix': Use '${decoration[option].title}' as prefix for title, with tags: ${JSON.stringify(decoration[option].tags)}`,
+                    "nargs": 1,
+                    "action": "store",
+                    "help": `Provide a specific URL for '${option}'. The prefix '${decoration[option].title}' will be added to a title (if provided) and the following tags are added: ${JSON.stringify(decoration[option].tags)}`,
                 });
             });
+            // ... otherwise --id adds the three zenodo options, which otherwise are specified ...
             argparser.add_argument(`--id`, {
                 "nargs": 1,
                 "action": "store",
                 "help": `Optional 'decoration/default title prefix': Provide a zenodo id to add record, deposit and doi.`,
             });
+            argparser.add_argument(`--decorate`, {
+                "action": "store_true",
+                "help": `Optional 'decoration/default title prefix'. Without title, this is used anyway. But if you give a title, specify this option to have the prefix anyway.`,
+            });
+            // ... individually
+            // --zenodorecord
+            // --zenododeposit
+            // --doi
+            // --kerko-url
+            // --googledoc
+            // .... ok... no... the url would give this... but... e.g. with kerko-url, the url given should be postfixed with the item...
+            // with --zenodorecord... the zenodo-id should be obtained from the item if possible...
             return { status: 0, message: "success" };
         }
         // ACTION: check arguments
@@ -1568,24 +1635,37 @@ module.exports = class Zotero {
         console.log("attach", args.key, args.url, Array.isArray(args.tags));
         //console.log("TEMPORARY=" + JSON.stringify(args.tags, null, 2))
         var dataout = [];
+        // add links based on args.id
         if (args.id) {
             const data1 = await this.attach_link({ key: args.key, url: "https://zenodo.org/deposit/" + args.id, title: args.title, tags: args.tags, deposit: true });
-            dataout.push(data1);
+            dataout.push({ id_deposit: data1 });
             const data2 = await this.attach_link({ key: args.key, url: "https://zenodo.org/record/" + args.id, title: args.title, tags: args.tags, record: true });
-            dataout.push(data2);
+            dataout.push({ id_record: data2 });
             const data3 = await this.attach_link({ key: args.key, url: "https://doi.org/10.5281/zenodo." + args.id, title: args.title, tags: args.tags, doi: true });
-            dataout.push(data3);
+            dataout.push({ id_doi: data3 });
         }
-        else {
-            Object.keys(decoration).forEach(option => {
-                if (args[option]) {
-                    args.title = args.title ? decoration[option].title + " " + args.title : decoration[option].title;
-                    args.tags ? args.tags.push(decoration[option].tags) : args.tags = decoration[option].tags;
-                }
-            });
-            // ACTION: run code
-            const data = await this.attachLinkToItem(args.key, args.url, { title: args.title, tags: args.tags });
-            dataout.push(data);
+        // add links on keys in decoration
+        const arr = Object.keys(decoration);
+        for (const i in arr) {
+            const option = arr[i];
+            if (args[option]) {
+                console.log(`Link: ${option} => ${args[option]}`);
+                let title = this.value(decoration[option].title);
+                let tags = decoration[option].tags;
+                title = args.title ? title + " " + args.title : title;
+                tags = args.tags ? tags.push(args.tags) : tags;
+                // ACTION: run code
+                const data = await this.attachLinkToItem(this.value(args.key), this.value(args[option]), { title: title, tags: tags });
+                dataout.push({
+                    decoration: option,
+                    data: data
+                });
+            }
+        }
+        // Add link based on URL
+        if (args.url) {
+            const datau = await this.attachLinkToItem(this.value(args.key), this.value(args.url), { title: this.value(args.title), tags: args.tags });
+            dataout.push({ url_based: datau });
         }
         // ACTION: return values
         return this.message(0, "exist status", dataout);
@@ -1725,17 +1805,12 @@ module.exports = class Zotero {
         //return `zotero-cli --group $gp items --collection $collRefs --filter "{\\\"format\\\": \\\"json\\\", \\\"include\\\": \\\"data,bib\\\", \\\"style\\\": \\\"apa\\\"}" `;
         // ACTION: define CLI interface
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("getbib", { "help": "HELPTEXT" });
-            argparser.set_defaults({ "func": this.getbib.name });
-            argparser.add_argument("--switch", {
-                "action": "store_true",
-                "help": "HELPTEXT"
-            });
-            argparser.add_argument("--arguments", {
+            const argparser = subparsers.add_parser("getbib", {
+                "help": "HELPTEXT",
                 "nargs": "*",
                 "action": "store",
-                "help": "HELPTEXT"
             });
+            argparser.set_defaults({ "func": this.getbib.name });
             return { status: 0, message: "success" };
         }
         // ACTION: check arguments
@@ -2044,6 +2119,10 @@ module.exports = class Zotero {
         parser.add_argument('--config', {
             type: parser.file,
             help: 'Configuration file (toml format). Note that ./zotero-cli.toml and ~/.config/zotero-cli/zotero-cli.toml is picked up automatically.'
+        });
+        parser.add_argument('--config-json', {
+            type: parser.file,
+            help: 'Configuration string in json format.'
         });
         parser.add_argument('--user-id', {
             type: parser.integer, help: 'The id of the user library.'
