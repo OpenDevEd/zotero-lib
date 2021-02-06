@@ -150,8 +150,8 @@ module.exports = class Zotero {
     // Change "-" to "_"
     this.config_keys.forEach(key => {
       const key_zotero = "zotero-" + key
-      const key_underscore = key.replace("-", "_")
-      const key_zotero_underscore = key_zotero.replace("-", "_")
+      const key_underscore = key.replace(/\-/g, "_")
+      const key_zotero_underscore = key_zotero.replace(/\-/g, "_")
       /*
       api-key
       api_key
