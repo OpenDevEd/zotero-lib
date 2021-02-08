@@ -126,51 +126,7 @@ module.exports = class Zotero {
                 this.config[x] = confobj[x];
             });
         }
-        // STEP 3. Canonical forms.
-        // Change "-" to "_"
-        this.config_keys.forEach(key => {
-            const key_zotero = "zotero-" + key;
-            const key_underscore = key.replace(/\-/g, "_");
-            const key_zotero_underscore = key_zotero.replace(/\-/g, "_");
-            /*
-            api-key
-            api_key
-            zotero-api-key
-            zotero_api_key
-            --> api_key
-            */
-            if (key != key_underscore) {
-                // Fix existing config
-                if (this.config[key]) {
-                    this.config[key_underscore] = this.config[key];
-                    delete this.config[key];
-                }
-                // Fix existing arg
-                if (args[key]) {
-                    args[key_underscore] = args[key];
-                    delete args[key];
-                }
-            }
-            else {
-                // Key is underscored already - nothing to do.
-            }
-            // Now we just have the underscore form of the key.
-            // If there is a "zotero-" form, copy to "zotero_" form.
-            if (args[key_zotero]) {
-                args[key_zotero_underscore] = args[key_zotero];
-                delete args[key_zotero];
-            }
-            // If there is a key_zotero_underscore, let it override key_underscore
-            if (args[key_zotero_underscore]) {
-                args[key_underscore] = args[key_zotero_underscore];
-                // retain the key.
-            }
-            // finally, copy available value to config:
-            if (args[key_underscore]) {
-                args[key_underscore] = this.value(args[key_underscore]);
-                this.config[key_underscore] = args[key_underscore];
-            }
-        });
+        this.config = this.canonicalConfig(this.config, args);
         /*
         if (!args.config && args.zotero_config)
           args.config = args.zotero_config
@@ -207,6 +163,52 @@ module.exports = class Zotero {
             this.config.indent = 2;
         return this.message(0, "success");
     }
+    canonicalConfig(config, args) {
+        this.config_keys.forEach(key => {
+            const key_zotero = "zotero-" + key;
+            const key_underscore = key.replace(/\-/g, "_");
+            const key_zotero_underscore = key_zotero.replace(/\-/g, "_");
+            /*
+            api-key
+            api_key
+            zotero-api-key
+            zotero_api_key
+            --> api_key
+            */
+            if (key != key_underscore) {
+                // Fix existing config
+                if (config[key]) {
+                    config[key_underscore] = config[key];
+                    delete config[key];
+                }
+                // Fix existing arg
+                if (args[key]) {
+                    args[key_underscore] = args[key];
+                    delete args[key];
+                }
+            }
+            else {
+                // Key is underscored already - nothing to do.
+            }
+            // Now we just have the underscore form of the key.
+            // If there is a "zotero-" form, copy to "zotero_" form.
+            if (args[key_zotero]) {
+                args[key_zotero_underscore] = args[key_zotero];
+                delete args[key_zotero];
+            }
+            // If there is a key_zotero_underscore, let it override key_underscore
+            if (args[key_zotero_underscore]) {
+                args[key_underscore] = args[key_zotero_underscore];
+                // retain the key.
+            }
+            // finally, copy available value to config:
+            if (args[key_underscore]) {
+                args[key_underscore] = this.value(args[key_underscore]);
+                config[key_underscore] = args[key_underscore];
+            }
+        });
+        return config;
+    }
     showConfig() {
         console.log("showConfig=" + JSON.stringify(this.config, null, 2));
         return this.config;
@@ -215,12 +217,13 @@ module.exports = class Zotero {
         // Changing this to a more limited reconfigure
         // this.configure(args, false)
         // console.log("Reconfigure")
-        let newargs;
-        this.config_keys.forEach(item => {
-            if (args[item])
-                newargs[item] = args[item];
-        });
-        this.configure(args, false);
+        const newargs = this.canonicalConfig({}, args);
+        /* this.config_keys.forEach(item => {
+          console.log("Reconf " + item)
+          if (args[item])
+            newargs[item] = args[item]
+        }) */
+        this.configure(newargs, false);
     }
     message(stat = 0, msg = "None", data = null) {
         return {
@@ -563,7 +566,7 @@ module.exports = class Zotero {
             key = key.toString();
             const res = key.match(/^zotero\:\/\/select\/groups\/(library|\d+)\/(items|collections)\/([A-Z01-9]+)/);
             if (res) {
-                // console.log("TEMPORARY="+JSON.stringify(   res       ,null,2))         
+                //console.log("extractKeyGroupVariable -> res=" + JSON.stringify(res, null, 2))
                 if (res[2] == "library") {
                     console.log('You cannot specify zotero-select links (zotero://...) to select user libraries.');
                     return null;
@@ -576,8 +579,10 @@ module.exports = class Zotero {
                 }
             }
             else {
+                //console.log("extractKeyGroupVariable: direct return")
                 out = key;
             }
+            //console.log("extractKeyGroupVariable:result=" + out)
             return out;
         }
     }
@@ -903,7 +908,12 @@ module.exports = class Zotero {
             parser_item.add_argument('--removetags', { nargs: '*', help: 'Remove tags from item. (Convenience method: patch item->data->tags.)' });
             return { status: 0, message: "success" };
         }
-        let output = [][args.key, args.group_id] = this.getGroupAndKey(args);
+        let output = [];
+        //console.log("args in ... TEMPORARY=" + JSON.stringify(args.key, null, 2))
+        const [my_group_id, my_key] = this.getGroupAndKey(args);
+        args.group_id = my_group_id;
+        args.key = my_key;
+        //console.log("args out ... TEMPORARY=" + JSON.stringify(args.key, null, 2))
         if (!args.key) {
             const msg = this.message(0, 'Unable to extract group/key from the string provided.');
             return msg;
@@ -1472,13 +1482,15 @@ module.exports = class Zotero {
         return this.message(0, "Succes", output);
     }
     getGroupAndKey(args) {
+        //console.log("getGroupAndKey TEMPORARY=" + JSON.stringify(args, null, 2))
         this.reconfigure(args);
         // Precendence: explicit argument - otherwise from args.key, otherwise from args.collection
         // TODO: Check this with "  private extractKeyGroupVariable " - because that sets this.config.group_id - does that matter?
-        const group_id = args.group_id ? args.group_id :
+        const group_id = this.value(args.group_id ? args.group_id :
             args.key && this.extractGroupAndSetGroup(args.key) ? this.extractGroupAndSetGroup(args.key) :
-                args.collection && this.extractGroupAndSetGroup(args.collection) ? this.extractGroupAndSetGroup(args.collection) : this.config.group_id;
+                args.collection && this.extractGroupAndSetGroup(args.collection) ? this.extractGroupAndSetGroup(args.collection) : this.config.group_id);
         const key = this.value(this.extractKeyAndSetGroup(args.key));
+        //console.log(`getGroupAndKey ${args.key} -> ${group_id} / ${key}`)
         return [group_id, key];
     }
     // Update the DOI of the item provided.
