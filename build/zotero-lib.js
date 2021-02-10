@@ -674,18 +674,20 @@ module.exports = class Zotero {
         // args.top (boolean, optional)
         // args.create_child (string, optional)
         // perform tests: args.key
-        console.log("console args =" + JSON.stringify(args, null, 2));
+        // console.log("console args =" + JSON.stringify(args, null, 2))
         if (args.key) {
             args.key = this.extractKeyAndSetGroup(this.value(args.key));
         }
         else {
             return this.message(0, 'Unable to extract group/key from the string provided.');
         }
-        args.create_child = this.array(args.create_child);
+        if (args.create_child)
+            args.create_child = this.array(args.create_child);
         // perform test: args.create_child
         // If create_child=true, then create the child and exit.
         console.log("collection...." + args.key);
         if (args.create_child) {
+            console.log("args.create_child");
             const response = await this.post('/collections', JSON.stringify(args.create_child.map(c => { return { name: c, parentCollection: args.key }; })));
             const resp = JSON.parse(response);
             console.log("response=" + JSON.stringify(resp, null, 2));
@@ -703,6 +705,7 @@ module.exports = class Zotero {
             // This leaves an array.
         }
         else {
+            console.log("get...");
             // test for args.top: Not required.
             // If create_child==false:
             let collections = null;
