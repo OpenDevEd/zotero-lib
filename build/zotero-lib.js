@@ -539,6 +539,9 @@ module.exports = class Zotero {
     }
     array(value) {
         let out = [];
+        if (value === undefined) {
+            return value;
+        }
         if (value) {
             if (!Array.isArray(value)) {
                 out = [value];
@@ -681,11 +684,15 @@ module.exports = class Zotero {
         else {
             return this.message(0, 'Unable to extract group/key from the string provided.');
         }
-        if (args.create_child)
-            args.create_child = this.array(args.create_child);
+        // console.log("ARRAYOF: "+typeof(this.array(args.create_child)))
+        // if (args.create_child) {
+        args.create_child = this.array(args.create_child);
+        //} else {
+        //  console.log("TEMPORARY="+JSON.stringify(   args.create_child         ,null,2))      
+        //}
         // perform test: args.create_child
         // If create_child=true, then create the child and exit.
-        console.log("collection...." + args.key);
+        // console.log("collection...." + args.key)
         if (args.create_child) {
             console.log("args.create_child");
             const response = await this.post('/collections', JSON.stringify(args.create_child.map(c => { return { name: c, parentCollection: args.key }; })));

@@ -8,7 +8,7 @@ async function main() {
     var zotero = new Zotero({
         verbose: true,
         "group-id": 2259720,
-        api_key: "..."
+        api_key: "egjTysVlgTWzEjO4sevC6RXS"
     })
     let collections = await zotero.collections({
         key: "HP6NALR4",
