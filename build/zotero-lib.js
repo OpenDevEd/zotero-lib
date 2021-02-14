@@ -1088,7 +1088,8 @@ module.exports = class Zotero {
             const parser_create = subparsers.add_parser("create", { "help": "Create a new item or items. (API: /items/new) You can retrieve a template with the --template option. Use this option to create both top-level items, as well as child items (including notes and links)." });
             parser_create.set_defaults({ "func": this.create_item.name });
             parser_create.add_argument('--template', { help: "Retrieve a template for the item you wish to create. You can retrieve the template types using the main argument 'types'." });
-            parser_create.add_argument('items', { nargs: '*', help: 'Json files for the items to be created.' });
+            parser_create.add_argument('--files', { nargs: '*', help: 'Text files with JSON for the items to be created.' });
+            parser_create.add_argument('--items', { nargs: '*', help: 'JSON string(s) for the item(s) to be created.' });
             return { status: 0, message: "success" };
         }
         if (args.template) {
