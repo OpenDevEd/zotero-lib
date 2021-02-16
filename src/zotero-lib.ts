@@ -285,6 +285,8 @@ module.exports = class Zotero {
   // Function to get more than 100 records, i.e. chunked retrieval.
   async all(uri, params = {}) {
     console.log("all=" + uri)
+    console.log("TEMPORARY="+JSON.stringify( params           ,null,2))
+     
     let chunk = await this.get(uri, { resolveWithFullResponse: true, params })
       .catch(error => {
         console.log("Error in all: " + error)
@@ -661,7 +663,8 @@ module.exports = class Zotero {
 
   public async attachNoteToItem(PARENT, options: { content?: string, tags?: any } = { content: "Note note.", tags: [] }) {
     const tags = this.objectifyTags(options.tags)
-    const noteText = options.content.replace(/\n/, "\\n").replace(/\"/, '\\\"')
+    // const noteText = options.content.replace(/\n/g, "\\n").replace(/\"/g, '\\\"')
+    const noteText = options.content.replace(/\n/g, "<br>")
     const json = {
       "parentItem": PARENT,
       "itemType": "note",
@@ -870,6 +873,7 @@ module.exports = class Zotero {
   // <userOrGroupPrefix>/items/top	Top-level items in the library, excluding trashed items
 
   async items(args, subparsers?) {
+    //console.log("items-----")
     this.reconfigure(args)
     /** 
   Retrieve list of items from API. (API: /items, /items/top, /collections/COLLECTION/items/top). 
@@ -890,6 +894,9 @@ module.exports = class Zotero {
       return { status: 0, message: "success" }
     }
 
+    if (typeof(args.filter) === "string") {
+      args.filter = JSON.parse(args.filter)
+    }
 
     if (args.count && args.validate) {
       const msg = this.message(0, '--count cannot be combined with --validate')
@@ -922,9 +929,12 @@ module.exports = class Zotero {
         const msg = this.message(0, 'You can only retrieve up to 100 items with with params.limit.')
         return msg
       }
+      //console.log("get-----")
       items = await this.get(`${collection}/items`, { params })
     } else {
-      items = await this.all(`${collection}/items`, params)
+      //console.log("all-----")
+      items = await this.all(`${collection}/items`, params )
+      //console.log("TEMPORARY="+JSON.stringify(      items      ,null,2))       
     }
 
     if (args.validate) {
