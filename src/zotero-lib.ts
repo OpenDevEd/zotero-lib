@@ -2305,12 +2305,12 @@ module.exports = class Zotero {
         if (args.verbose)
           console.log("ARGS=" + JSON.stringify(args, null, 2))
         const result = await this[args.func](args)
-        if (args.show) {
-          if (args.verbose)
-            console.log("Result=")
-          console.log(JSON.stringify(result, null, this.config.indent))
-          if (args.verbose)
-            console.log("Output=" + this.output)
+        if (args.verbose) {
+          const myout = {
+            result: result,
+            output: this.output
+          }
+          console.log("{Result, output}="+JSON.stringify(myout, null, this.config.indent))
         }
         if (args.out)
           fs.writeFileSync(args.out, JSON.stringify(result, null, this.config.indent))
