@@ -528,7 +528,7 @@ module.exports = class Zotero {
     show(v) {
         // TODO: Look at the type of v: if string, then print, if object, then stringify
         // this.print(JSON.stringify(v, null, this.config.indent).replace(new RegExp(this.config.api_key, 'g'), '<API-KEY>'))
-        this.print("show=" + JSON.stringify(v, null, this.config.indent));
+        this.print(JSON.stringify(v, null, this.config.indent));
     }
     value(value) {
         if (Array.isArray(value)) {
