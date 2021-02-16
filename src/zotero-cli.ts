@@ -11,11 +11,11 @@ module.exports = {
 }
 
 async function main() {
-  console.log("Command-line: config")
+  //console.log("Command-line: config")
   const zotero = await new Zotero()
-  console.log("Command-line: start")
+  //console.log("Command-line: start")
   await zotero.commandlineinterface().then(
-    console.log("Command-line: done")
+    //console.log("Command-line: done")
   ).catch(err => {
     console.error('error:', err)
     process.exit(1)

@@ -285,8 +285,8 @@ module.exports = class Zotero {
   // Function to get more than 100 records, i.e. chunked retrieval.
   async all(uri, params = {}) {
     console.log("all=" + uri)
-    console.log("TEMPORARY="+JSON.stringify( params           ,null,2))
-     
+    console.log("TEMPORARY=" + JSON.stringify(params, null, 2))
+
     let chunk = await this.get(uri, { resolveWithFullResponse: true, params })
       .catch(error => {
         console.log("Error in all: " + error)
@@ -332,7 +332,7 @@ module.exports = class Zotero {
 
     uri = `${this.base}${prefix}${uri}${params ? '?' + params : ''}`
     if (this.config.verbose) console.error('GET', uri)
-    console.log('GET: ', uri)
+    //  console.log('GET: ', uri)
 
     const res = await request({
       uri,
@@ -894,7 +894,7 @@ module.exports = class Zotero {
       return { status: 0, message: "success" }
     }
 
-    if (typeof(args.filter) === "string") {
+    if (typeof (args.filter) === "string") {
       args.filter = JSON.parse(args.filter)
     }
 
@@ -933,7 +933,7 @@ module.exports = class Zotero {
       items = await this.get(`${collection}/items`, { params })
     } else {
       //console.log("all-----")
-      items = await this.all(`${collection}/items`, params )
+      items = await this.all(`${collection}/items`, params)
       //console.log("TEMPORARY="+JSON.stringify(      items      ,null,2))       
     }
 
@@ -1678,7 +1678,8 @@ module.exports = class Zotero {
       if (update.statusCode == 204) {
         console.log("update successfull - getting record")
         const zoteroRecord = await this.item({ key: args.key })
-        console.log("Result=" + JSON.stringify(zoteroRecord, null, 2))
+        if (args.verbose)
+          console.log("Result=" + JSON.stringify(zoteroRecord, null, 2))
         return zoteroRecord
       } else {
         console.log("update failed")
@@ -2268,7 +2269,6 @@ module.exports = class Zotero {
    */
   public async commandlineinterface() {
     // --- main ---
-    console.log("zotero-cli args...")
     var args = this.getArguments()
     //const zotero = new Zotero()
     if (args.version) {
@@ -2292,7 +2292,8 @@ module.exports = class Zotero {
       // using default=2 above prevents the overrides from being picked up                                                                                                     
       if (args.indent === null) args.indent = 2
 
-      this.showConfig()
+      if (args.verbose)
+        this.showConfig()
       // call the actual command        
       if (!args.func) {
         console.log("No arguments provided. Use -h for help.")
@@ -2301,11 +2302,15 @@ module.exports = class Zotero {
       try {
         //await this['$' + args.command.replace(/-/g, '_')]()
         // await this[args.command.replace(/-/g, '_')]()
-        console.log("ARGS=" + JSON.stringify(args, null, 2))
+        if (args.verbose)
+          console.log("ARGS=" + JSON.stringify(args, null, 2))
         const result = await this[args.func](args)
         if (args.show) {
-          console.log("Result=" + JSON.stringify(result, null, this.config.indent))
-          console.log("Output=" + this.output)
+          if (args.verbose)
+            console.log("Result=")
+          console.log(JSON.stringify(result, null, this.config.indent))
+          if (args.verbose)
+            console.log("Output=" + this.output)
         }
         if (args.out)
           fs.writeFileSync(args.out, JSON.stringify(result, null, this.config.indent))
@@ -2328,7 +2333,6 @@ module.exports = class Zotero {
   }
 
   getArguments() {
-    console.log("args in")
     const parser = new ArgumentParser({ "description": "Zotero command line utility" });
     parser.add_argument(
       '--api-key', {
