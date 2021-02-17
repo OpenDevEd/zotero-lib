@@ -1055,7 +1055,13 @@ module.exports = class Zotero {
         this.output = JSON.stringify(output, null, 2);
         // return this.message(0,"Success", output)
         this.finalActions(result);
-        return result;
+        const return_value = args.fullresponse ? {
+            status: 0,
+            message: "success",
+            output: output,
+            result: result
+        } : result;
+        return return_value;
         // TODO: What if this fails? Zotero will return, e.g.   "message": "404 - {\"type\":\"Buffer\",\"data\":[78,111,116,32,102,111,117,110,100]}",
         // console.log(Buffer.from(obj.data).toString())
         // Need to return a proper message.
