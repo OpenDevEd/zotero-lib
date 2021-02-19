@@ -1141,7 +1141,7 @@ module.exports = class Zotero {
     this.output = JSON.stringify(output, null, 2)
 
     // return this.message(0,"Success", output)
-    this.finalActions(result)
+    await this.finalActions(result)
     const return_value = args.fullresponse ?  {
       status: 0,
       message: "success",
