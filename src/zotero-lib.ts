@@ -1037,6 +1037,8 @@ module.exports = class Zotero {
     if (args.addfile) {
       const attachmentTemplate = await this.get('/items/new?itemType=attachment&linkMode=imported_file', { userOrGroupPrefix: false })
       for (const filename of args.addfile) {
+        if (args.debug)
+          console.log("Adding file: " + args.adding)
         if (!fs.existsSync(filename)) {
           const msg = this.message(0, `Ignoring non-existing file: ${filename}.`)
           return msg
@@ -1141,12 +1143,13 @@ module.exports = class Zotero {
     this.output = JSON.stringify(output, null, 2)
 
     // return this.message(0,"Success", output)
-    await this.finalActions(result)
-    const return_value = args.fullresponse ?  {
+    const finalactions = await this.finalActions(result)
+    const return_value = args.fullresponse ? {
       status: 0,
       message: "success",
       output: output,
-      result: result
+      result: result,
+      final: finalactions
     } : result
     return return_value
     // TODO: What if this fails? Zotero will return, e.g.   "message": "404 - {\"type\":\"Buffer\",\"data\":[78,111,116,32,102,111,117,110,100]}",
@@ -2316,7 +2319,7 @@ module.exports = class Zotero {
             result: result,
             output: this.output
           }
-          console.log("{Result, output}="+JSON.stringify(myout, null, this.config.indent))
+          console.log("{Result, output}=" + JSON.stringify(myout, null, this.config.indent))
         }
         if (args.out)
           fs.writeFileSync(args.out, JSON.stringify(result, null, this.config.indent))
