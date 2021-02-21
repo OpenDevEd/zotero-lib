@@ -995,8 +995,7 @@ module.exports = class Zotero {
         type: subparsers.json,
         help: 'Provide a filter as described in the Zotero API documentation under read requests / parameters. To retrieve multiple items you have use "itemkey"; for example: \'{"format": "json,bib", "itemkey": "A,B,C"}\'. See https://www.zotero.org/support/dev/web_api/v3/basics#search_syntax.'
       })
-      parser_item.add_argument('--addfile      const zotero = new Zotero({ group_id: result.data.zoteroGroup })
-      s', { nargs: '*', help: 'Upload attachments to the item. (/items/new)' })
+      parser_item.add_argument('--addfiles', { nargs: '*', help: 'Upload attachments to the item. (/items/new)' })
       parser_item.add_argument('--savefiles', { nargs: '*', help: 'Download all attachments from the item (/items/KEY/file).' })
       parser_item.add_argument('--addtocollection', { nargs: '*', help: 'Add item to collections. (Convenience method: patch item->data->collections.)' })
       parser_item.add_argument('--removefromcollection', { nargs: '*', help: 'Remove item from collections. (Convenience method: patch item->data->collections.)' })
