@@ -995,7 +995,8 @@ module.exports = class Zotero {
         type: subparsers.json,
         help: 'Provide a filter as described in the Zotero API documentation under read requests / parameters. To retrieve multiple items you have use "itemkey"; for example: \'{"format": "json,bib", "itemkey": "A,B,C"}\'. See https://www.zotero.org/support/dev/web_api/v3/basics#search_syntax.'
       })
-      parser_item.add_argument('--addfile', { nargs: '*', help: 'Upload attachments to the item. (/items/new)' })
+      parser_item.add_argument('--addfile      const zotero = new Zotero({ group_id: result.data.zoteroGroup })
+      s', { nargs: '*', help: 'Upload attachments to the item. (/items/new)' })
       parser_item.add_argument('--savefiles', { nargs: '*', help: 'Download all attachments from the item (/items/KEY/file).' })
       parser_item.add_argument('--addtocollection', { nargs: '*', help: 'Add item to collections. (Convenience method: patch item->data->collections.)' })
       parser_item.add_argument('--removefromcollection', { nargs: '*', help: 'Remove item from collections. (Convenience method: patch item->data->collections.)' })
@@ -1034,11 +1035,12 @@ module.exports = class Zotero {
       }))
     }
 
-    if (args.addfile) {
+    if (args.addfiles) {
+      console.log("Adding files..." )
       const attachmentTemplate = await this.get('/items/new?itemType=attachment&linkMode=imported_file', { userOrGroupPrefix: false })
-      for (const filename of args.addfile) {
+      for (const filename of args.addfiles) {
         if (args.debug)
-          console.log("Adding file: " + args.adding)
+          console.log("Adding file: " + filename)
         if (!fs.existsSync(filename)) {
           const msg = this.message(0, `Ignoring non-existing file: ${filename}.`)
           return msg
