@@ -1026,7 +1026,8 @@ module.exports = class Zotero {
         if (item.data.filename) {
           console.log(`Downloading file ${item.data.filename}`)
           // TODO: 
-          // await this.attachment({key: item.key, save: item.data.filename})
+          // ??? await this.attachment({key: item.key, save: item.data.filename})
+          // TODO: Is 'binary' correct?
           fs.writeFileSync(item.data.filename, await this.get(`/items/${item.key}/file`), 'binary')
         } else {
           console.log(`Not downloading file ${item.key}/${item.data.itemType}/${item.data.linkMode}/${item.data.title}`)
