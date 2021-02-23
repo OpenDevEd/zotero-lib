@@ -1036,7 +1036,7 @@ module.exports = class Zotero {
     }
 
     if (args.addfiles) {
-      console.log("Adding files..." )
+      console.log("Adding files...")
       const attachmentTemplate = await this.get('/items/new?itemType=attachment&linkMode=imported_file', { userOrGroupPrefix: false })
       for (const filename of args.addfiles) {
         if (args.debug)
@@ -1688,6 +1688,10 @@ module.exports = class Zotero {
       const update = await this.update_item(updateargs)
       if (update.statusCode == 204) {
         console.log("update successfull - getting record")
+        var options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        var today = new Date();
+        const message = `Attached new DOI ${args.doi} on ${today.toLocaleDateString("en-US", options)}`
+        await this.attachNoteToItem(args.key, { content: message, tags: ["_r:message"] })
         const zoteroRecord = await this.item({ key: args.key })
         if (args.verbose)
           console.log("Result=" + JSON.stringify(zoteroRecord, null, 2))
