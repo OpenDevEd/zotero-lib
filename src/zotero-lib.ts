@@ -1649,6 +1649,40 @@ module.exports = class Zotero {
     return [group_id, key]
   }
 
+
+  // Update the DOI of the item provided.
+  public async get_doi(args, subparsers?) {
+    this.reconfigure(args)
+    // We dont know what kind of item this is - gotta get the item to see
+    if (args.getInterface && subparsers) {
+      const argparser = subparsers.add_parser("get-doi", { "help": "Utility function: Get the DOI for the item." });
+      argparser.set_defaults({ "func": this.get_doi.name });
+      argparser.add_argument("--key", {
+        "nargs": 1,
+        "action": "store",
+        "help": "The Zotero item key for the item to be updated."
+      })
+      return { status: 0, message: "success" }
+    }
+    args.fullresponse = false
+    const item = await this.item(args)
+    let doi = ""
+    if ('doi' in item) {
+      doi = item.doi
+    } else {
+      item.extra.split("\n").forEach(element => {
+        var mymatch = element.match(/^DOI\:\s*(.*?)\s*$/)
+        if (mymatch) {
+          doi = mymatch[1]
+        };
+      });
+    }
+    console.log(`DOI: ${doi}, ${typeof (doi)}`)
+    // ACTION: return values
+    doi = "doi->" + doi
+    return doi
+  }
+
   // Update the DOI of the item provided.
   public async update_doi(args, subparsers?) {
     this.reconfigure(args)
@@ -1788,7 +1822,11 @@ module.exports = class Zotero {
       argparser.add_argument(`--id`, {
         "nargs": 1,
         "action": "store",
-        "help": `Optional 'decoration/default title prefix': Provide a zenodo id to add record, deposit and doi.`,
+        "help": `Provide a Zenodo id to add links for Zenodo record, deposit and doi.`,
+      });
+      argparser.add_argument(`--zenodo`, {
+        "action": "store_true",
+        "help": `Determine Zenodo id from Zotero item and then add links for Zenodo record, deposit and doi.`,
       });
       argparser.add_argument(`--decorate`, {
         "action": "store_true",
@@ -1820,17 +1858,30 @@ module.exports = class Zotero {
     if (args.tags)
       tags.push(args.tags)
     args.url = this.value(args.url)
-    console.log("attach", args.key, args.url, Array.isArray(args.tags))
+    //console.log("attach", args.key, args.url, Array.isArray(args.tags))
     //console.log("TEMPORARY=" + JSON.stringify(args.tags, null, 2))
     var dataout = []
+    if (args.zenodo) {
+      let xdoi = await this.get_doi(args)
+      xdoi = "x" + xdoi
+      const mymatch = xdoi.match(/zenodo\.(\d+)/)
+      const id = mymatch[1]
+      //args.id = id
+      args.id = id
+      console.log(`${id}, ${xdoi}, ${typeof (xdoi)}`)
+    }
     // add links based on args.id
     if (args.id) {
-      const data1 = await this.attach_link({ key: args.key, url: "https://zenodo.org/deposit/" + args.id, title: args.title, tags: args.tags, deposit: true })
-      dataout.push({ id_deposit: data1 })
-      const data2 = await this.attach_link({ key: args.key, url: "https://zenodo.org/record/" + args.id, title: args.title, tags: args.tags, record: true })
-      dataout.push({ id_record: data2 })
-      const data3 = await this.attach_link({ key: args.key, url: "https://doi.org/10.5281/zenodo." + args.id, title: args.title, tags: args.tags, doi: true })
-      dataout.push({ id_doi: data3 })
+      const id = args.id
+      const xargs = args
+      delete xargs.deposit, xargs.record, xargs.doi
+      const data1 = await this.attach_link({
+        key: xargs.key,
+        deposit: "https://zenodo.org/deposit/" + id,
+        record: "https://zenodo.org/record/" + id,
+        doi: "https://doi.org/10.5281/zenodo." + id
+      })
+      dataout.push({ id_out: data1 })
     }
     // add links on keys in decoration
     const arr = Object.keys(decoration)
@@ -2417,6 +2468,7 @@ module.exports = class Zotero {
     this.key({ getInterface: true }, subparsers)
 
     // Utility functions    
+    this.get_doi({ getInterface: true }, subparsers)
     this.update_doi({ getInterface: true }, subparsers)
     this.enclose_item_in_collection({ getInterface: true }, subparsers)
     this.attach_link({ getInterface: true }, subparsers)
