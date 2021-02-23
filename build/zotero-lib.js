@@ -1746,7 +1746,7 @@ module.exports = class Zotero {
             const xargs = args;
             delete xargs.deposit, xargs.record, xargs.doi;
             const data1 = await this.attach_link({
-                key: args.key,
+                key: xargs.key,
                 deposit: "https://zenodo.org/deposit/" + id,
                 record: "https://zenodo.org/record/" + id,
                 doi: "https://doi.org/10.5281/zenodo." + id
