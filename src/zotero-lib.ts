@@ -1490,7 +1490,7 @@ module.exports = class Zotero {
    * Utility functions. 
    */
 
-  async enclose_item_in_collection(args, subparsers?) {
+  public async enclose_item_in_collection(args, subparsers?) {
     this.reconfigure(args)
     if (args.getInterface && subparsers) {
       const argparser = subparsers.add_parser("enclose-item", { "help": "Utility function: Enlose the item in a collection and create further subcollections." });

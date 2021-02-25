@@ -12,11 +12,12 @@ const { mainModule } = require('process')
 main()
 
 async function main() {
-  const targetgroup = "2129771"
-  const targetcollections = ["AXGBBNGJ"]
-  const [sourcegroup, sourcekey] = ["2447227", "ZAKRMJ4F"]
-  check_existence(sourcegroup, sourcekey, targetgroup)
-  //copy_item(sourcegroup, sourcekey, targetgroup, targetcollections)
+  console.log(process.argv[2])
+  const targetgroup = "2405685" 
+  const targetcollections = ["C5U3ZBQP"]
+  const [sourcegroup, sourcekey] = ["2339240", process.argv[2]]
+  //check_existence(sourcegroup, sourcekey, targetgroup)
+  copy_item(sourcegroup, sourcekey, targetgroup, targetcollections)
 }
 
 async function check_existence(sourcegroup, sourcekey, targetgroup) {
