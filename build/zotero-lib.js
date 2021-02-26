@@ -460,6 +460,7 @@ module.exports = class Zotero {
         uri = `${this.base}${prefix}${uri}`;
         if (this.config.verbose)
             console.error('DELETE', uri);
+        //      console.log("TEMPORARY="+JSON.stringify(      uri      ,null,2))
         return await request({
             method: 'DELETE',
             uri,
@@ -477,9 +478,13 @@ module.exports = class Zotero {
         }
         let out = [];
         for (const uri of args.uri) {
+            //console.log(uri)
             const response = await this.get(uri);
+            //console.log(response)
             out.push[await this.delete(uri, response.version)];
         }
+        console.log("TEMPORARY=" + JSON.stringify(out, null, 2));
+        process.exit(1);
         return out;
     }
     async key(args, subparsers) {
@@ -821,6 +826,11 @@ module.exports = class Zotero {
             //async items
             const parser_items = subparsers.add_parser("items", { "help": "Retrieve items, retrieve items within collections, with filter is required. Count items. By default, all items are retrieved. With --top or limit (via --filter) the default number of items are retrieved. (API: /items, /items/top, /collections/COLLECTION/items/top)" });
             parser_items.set_defaults({ "func": this.items.name });
+            /* parser_items.add_argument('itemKeys', {
+               nargs: "*",
+               action: 'store_true',
+               help: 'items for validation'
+             }) */
             parser_items.add_argument('--count', { action: 'store_true', help: 'Return the number of items.' });
             // argparser.add_argument('--all', { action: 'store_true', help: 'obsolete' })
             parser_items.add_argument('--filter', { type: subparsers.json, help: 'Provide a filter as described in the Zotero API documentation under read requests / parameters. For example: \'{"format": "json,bib", "limit": 100, "start": 100}\'.' });
@@ -867,26 +877,32 @@ module.exports = class Zotero {
             items = await this.all(`${collection}/items`, params);
             //console.log("TEMPORARY="+JSON.stringify(      items      ,null,2))       
         }
+        // console.log("TEMPORARY=" + JSON.stringify(items, null, 2))
         if (args.validate) {
-            if (!fs.existsSync(args.validate))
-                throw new Error(`${args.validate} does not exist`);
-            const oneSchema = fs.lstatSync(args.validate).isFile();
-            let validate = oneSchema ? ajv.compile(JSON.parse(fs.readFileSync(args.validate, 'utf-8'))) : null;
-            const validators = {};
-            // still a bit rudimentary
-            for (const item of items) {
-                if (!oneSchema) {
-                    validate = validators[item.itemType] = validators[item.itemType] || ajv.compile(JSON.parse(fs.readFileSync(path.join(args.validate, `${item.itemType}.json`), 'utf-8')));
-                }
-                if (!validate(item))
-                    this.show(validate.errors);
+            this.validate(args, items);
+        }
+        if (args.show)
+            this.show(items);
+        return items;
+    }
+    async validate(args, items) {
+        if (!fs.existsSync(args.validate))
+            throw new Error(`${args.validate} does not exist`);
+        const oneSchema = fs.lstatSync(args.validate).isFile();
+        let validate = oneSchema ? ajv.compile(JSON.parse(fs.readFileSync(args.validate, 'utf-8'))) : null;
+        const validators = {};
+        // still a bit rudimentary
+        for (const item of items) {
+            if (!oneSchema) {
+                validate = validators[item.itemType] = validators[item.itemType] || ajv.compile(JSON.parse(fs.readFileSync(path.join(args.validate, `${item.itemType}.json`), 'utf-8')));
+            }
+            if (!validate(item)) {
+                this.show(validate.errors);
+            }
+            else {
+                console.log(`item ok! ${item.key}`);
             }
         }
-        else {
-            if (args.show)
-                this.show(items);
-        }
-        return items;
     }
     // https://www.zotero.org/support/dev/web_api/v3/basics
     // <userOrGroupPrefix>/items/<itemKey>	A specific item in the library
@@ -925,6 +941,7 @@ module.exports = class Zotero {
             parser_item.add_argument('--removefromcollection', { nargs: '*', help: 'Remove item from collections. (Convenience method: patch item->data->collections.)' });
             parser_item.add_argument('--addtags', { nargs: '*', help: 'Add tags to item. (Convenience method: patch item->data->tags.)' });
             parser_item.add_argument('--removetags', { nargs: '*', help: 'Remove tags from item. (Convenience method: patch item->data->tags.)' });
+            parser_item.add_argument('--validate', { type: subparsers.path, help: 'json-schema file for all itemtypes, or directory with schema files, one per itemtype.' });
             return { status: 0, message: "success" };
         }
         let output = [];
@@ -1054,9 +1071,14 @@ module.exports = class Zotero {
                 result = result.data;
             }
         }
+        if (args.validate) {
+            this.validate(args, [result]);
+        }
         //this.show(result)
         // console.log(JSON.stringify(args))
-        this.output = JSON.stringify(output, null, 2);
+        this.output = JSON.stringify(output);
+        if (args.show)
+            console.log("item -> resul=" + JSON.stringify(result, null, 2));
         // return this.message(0,"Success", output)
         const finalactions = await this.finalActions(result);
         const return_value = args.fullresponse ? {
