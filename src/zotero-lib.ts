@@ -59,7 +59,7 @@ const arg = new class {
 module.exports = class Zotero {
 
   // The following config keys are expected/allowed, with both "-" and "_". The corresponding variables have _
-  config_keys = ["user-id", "group-id", "library-type", "api-key", "indent", "verbose", "debug", "config", "config-json"]
+  config_keys = ["user-id", "group-id", "library-type", "api-key", "indent", "verbose", "debug", "config", "config-json","zotero-schema"]
   config: any
 
   base = "https://api.zotero.org"
@@ -87,48 +87,6 @@ module.exports = class Zotero {
 
   public async configure(args, readconfigfile = false) {
     // pick up config: The function reads args and populates config
-    /* 
-    Called during initialisation.
-
-    INPUT:
-    args = {}    
-    
-    or
-    
-    args = {
-      config: "zotero-lib.toml"
-    }
-
-    or
-
-    args = {
-      user_id: "XXX",
-      group_id: "123",
-      library_type: "group",
-      indent = 4,
-      "api-key": "XXX"
-    } 
-
-    or
-
-    args = {
-      zotero_user_id: "XXX",
-      zotero_group_id: "123",
-      zotero_library_type: "group",
-      zotero_indent = 4,
-      "zotero-api-key": "XXX"
-    } 
-
-    OUTPUT:
-
-    this.config = {
-      user_id: "XXX",
-      group_id: "123",
-      library_type: "group",
-      indent = 4,
-      api_key: "XXX"
-    }
-    */
 
     // STEP 1. Read config file
     if (readconfigfile || args.config) {
@@ -503,8 +461,8 @@ module.exports = class Zotero {
     uri = `${this.base}${prefix}${uri}`
     if (this.config.verbose) console.error('DELETE', uri)
 
-//      console.log("TEMPORARY="+JSON.stringify(      uri      ,null,2))
-       
+    //      console.log("TEMPORARY="+JSON.stringify(      uri      ,null,2))
+
 
     return await request({
       method: 'DELETE',
@@ -524,16 +482,15 @@ module.exports = class Zotero {
     }
     let out = []
     for (const uri of args.uri) {
-     //console.log(uri)
+      //console.log(uri)
       const response = await this.get(uri)
       //console.log(response)
       out.push[await this.delete(uri, response.version)]
     }
-    console.log("TEMPORARY="+JSON.stringify(        out    ,null,2))
-     process.exit(1)
+    console.log("TEMPORARY=" + JSON.stringify(out, null, 2))
+    process.exit(1)
     return out
   }
-
 
 
   public async key(args, subparsers?) {
@@ -902,7 +859,8 @@ module.exports = class Zotero {
       parser_items.add_argument('--filter', { type: subparsers.json, help: 'Provide a filter as described in the Zotero API documentation under read requests / parameters. For example: \'{"format": "json,bib", "limit": 100, "start": 100}\'.' })
       parser_items.add_argument('--collection', { help: 'Retrive list of items for collection. You can provide the collection key as a zotero-select link (zotero://...) to also set the group-id.' })
       parser_items.add_argument('--top', { action: 'store_true', help: 'Retrieve top-level items in the library/collection (excluding child items / attachments, excluding trashed items).' })
-      parser_items.add_argument('--validate', { type: subparsers.path, help: 'json-schema file for all itemtypes, or directory with schema files, one per itemtype.' })
+      parser_items.add_argument('--validate', { action: 'store_true', help: 'Validate the record against a schema. If your config contains zotero-schema, then that file is used. Otherwise supply one with --validate-with' })
+      parser_items.add_argument('--validate-with', { type: subparsers.path, help: 'json-schema file for all itemtypes, or directory with schema files, one per itemtype.' })
       return { status: 0, message: "success" }
     }
 
@@ -951,8 +909,8 @@ module.exports = class Zotero {
 
     // console.log("TEMPORARY=" + JSON.stringify(items, null, 2))
 
-    if (args.validate) {
-      this.validate(args, items);
+    if (args.validate || args.validate_with) {
+      this.validate_items(args, items);
     }
 
     if (args.show)
@@ -960,19 +918,29 @@ module.exports = class Zotero {
     return items
   }
 
-  private async validate(args: any, items: any) {
-    if (!fs.existsSync(args.validate))
-      throw new Error(`${args.validate} does not exist`);
+  private async validate_items(args: any, items: any) {
+    let schema_path = ""
+    if (args.validate_with) {       
+      if (!fs.existsSync(args.validate_with))
+        throw new Error(`You have provided a schema with --validate-with that does not exist: ${args.validate_with} does not exist`);
+      else
+        schema_path = args.validate_with
+    } else {
+      console.log("TEMPORARY="+JSON.stringify(     this.config       ,null,2))    
+      if (!fs.existsSync(this.config.zotero_schema))
+        throw new Error(`You have asked for validation, but '${this.config.zotero_schema}' does not exist`)
+      else
+        schema_path = this.config.zotero_schema
+    }
+    const oneSchema = fs.lstatSync(schema_path).isFile();
 
-    const oneSchema = fs.lstatSync(args.validate).isFile();
-
-    let validate = oneSchema ? ajv.compile(JSON.parse(fs.readFileSync(args.validate, 'utf-8'))) : null;
+    let validate = oneSchema ? ajv.compile(JSON.parse(fs.readFileSync(schema_path, 'utf-8'))) : null;
 
     const validators = {};
     // still a bit rudimentary
     for (const item of items) {
       if (!oneSchema) {
-        validate = validators[item.itemType] = validators[item.itemType] || ajv.compile(JSON.parse(fs.readFileSync(path.join(args.validate, `${item.itemType}.json`), 'utf-8')));
+        validate = validators[item.itemType] = validators[item.itemType] || ajv.compile(JSON.parse(fs.readFileSync(path.join(schema_path, `${item.itemType}.json`), 'utf-8')));
       }
 
       if (!validate(item)) {
@@ -1023,7 +991,8 @@ module.exports = class Zotero {
       parser_item.add_argument('--removefromcollection', { nargs: '*', help: 'Remove item from collections. (Convenience method: patch item->data->collections.)' })
       parser_item.add_argument('--addtags', { nargs: '*', help: 'Add tags to item. (Convenience method: patch item->data->tags.)' })
       parser_item.add_argument('--removetags', { nargs: '*', help: 'Remove tags from item. (Convenience method: patch item->data->tags.)' })
-      parser_item.add_argument('--validate', { type: subparsers.path, help: 'json-schema file for all itemtypes, or directory with schema files, one per itemtype.' })
+      parser_item.add_argument('--validate', { action: 'store_true', help: 'Validate the record against a schema. If your config contains zotero-schema, then that file is used. Otherwise supply one with --validate-with' })
+      parser_item.add_argument('--validate-with', { type: subparsers.path, help: 'json-schema file for all itemtypes, or directory with schema files, one per itemtype.' })
       return { status: 0, message: "success" }
     }
 
@@ -1164,9 +1133,8 @@ module.exports = class Zotero {
       }
     }
 
-
-    if (args.validate) {
-      this.validate(args, [result]);
+    if (args.validate || args.validate_with) {
+      this.validate_items(args, [result]);
     }
 
     //this.show(result)
@@ -1174,7 +1142,7 @@ module.exports = class Zotero {
     this.output = JSON.stringify(output)
 
     if (args.show)
-      console.log("item -> resul=" + JSON.stringify(  result          , null, 2))
+      console.log("item -> resul=" + JSON.stringify(result, null, 2))
 
 
     // return this.message(0,"Success", output)
