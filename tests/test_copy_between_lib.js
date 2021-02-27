@@ -62,6 +62,7 @@ async function copy_item(sourcegroup, sourcekey, targetgroup, targetcollections)
   delete item.dateModified
   delete item.collections
   item.collections = targetcollections
+  /*
   if (item.relations) {
     if (item.relations["owl:sameAs"]) {
       if (Array.isArray(item.relations["owl:sameAs"])) {
@@ -73,8 +74,13 @@ async function copy_item(sourcegroup, sourcekey, targetgroup, targetcollections)
     } else {
       item.relations["owl:sameAs"] = []
     }
+    // This is a risky move, in case the item has already been copied and a same owl:sameAs already exists.
+    // That seems to lead to the new item being suppressed in the Zotero client.
+    // Unfortunately there doesn't seem to be a way for the API to access the 'relations' or 'extra' field via a search.
+    // The only option is to download the entire library, and then check against it directly.
     item.relations["owl:sameAs"].push(`http://zotero.org/groups/${sourcegroup}/items/${sourcekey}`)
   }
+  */
   const newitem = await zotero.create_item({ group_id: targetgroup, item: item })
   console.log("TEMPORARY=" + JSON.stringify(newitem, null, 2))
   const itemnote = zotero.attach_note({ group_id: targetgroup, key: newitem.key, description: note, tags: ["_r:copiedNote"] });
