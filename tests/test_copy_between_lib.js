@@ -14,7 +14,8 @@ main()
 async function main() {
   console.log(process.argv[2])
   const targetgroup = "2405685" 
-  const targetcollections = ["C5U3ZBQP"]
+  // const targetcollections = ["C5U3ZBQP"]
+  const targetcollections = ["8NAIANHI"]
   const [sourcegroup, sourcekey] = ["2339240", process.argv[2]]
   //check_existence(sourcegroup, sourcekey, targetgroup)
   copy_item(sourcegroup, sourcekey, targetgroup, targetcollections)

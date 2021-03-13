@@ -1574,9 +1574,10 @@ module.exports = class Zotero {
             const update = await this.update_item(updateargs);
             if (update.statusCode == 204) {
                 console.log("update successfull - getting record");
-                var options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                // const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
                 var today = new Date();
-                const message = `Attached new DOI ${args.doi} on ${today.toLocaleDateString("en-US", options)}`;
+                // const message = `Attached new DOI ${args.doi} on ${today.toLocaleDateString("en-US", options)}`
+                const message = `Attached new DOI ${args.doi} on ${today.toLocaleDateString()}`;
                 await this.attachNoteToItem(args.key, { content: message, tags: ["_r:message"] });
                 const zoteroRecord = await this.item({ key: args.key });
                 if (args.verbose)
@@ -1936,22 +1937,24 @@ module.exports = class Zotero {
             const argparser = subparsers.add_parser("attach-note", { "help": "Utility function: Attach note to item" });
             argparser.set_defaults({ "func": this.attach_note.name });
             argparser.add_argument("--key", {
-                "action": "store_true",
-                "help": "HELPTEXT"
+                "action": "store",
+                "nargs": 1,
+                "help": "The item key to which the note is attached."
             });
             // TODO: Allow file argument (html file)
             /*argparser.add_argument("--file", {
               "action": "store_true",
               "help": "HELPTEXT"
             });*/
-            argparser.add_argument("--description", {
-                "action": "store_true",
-                "help": "HELPTEXT"
+            argparser.add_argument("--notetext", {
+                "action": "store",
+                "nargs": 1,
+                "help": "The text of the note"
             });
             argparser.add_argument("--tags", {
                 "nargs": "*",
                 "action": "store",
-                "help": "HELPTEXT"
+                "help": "Tags to be attached to the note"
             });
             return { status: 0, message: "success" };
         }
@@ -1960,9 +1963,13 @@ module.exports = class Zotero {
         }
         if (args.arguments) {
         }
+        args.notetext = this.as_value(args.notetext);
+        args.key = this.extractKeyAndSetGroup(this.as_value(args.key));
+        //console.log(args.key)
+        //process.exit(1)
         // TODO: Read from --file
         // ACTION: run code
-        const data = await this.attachNoteToItem(args.key, { content: args.description, tags: args.tags });
+        const data = await this.attachNoteToItem(args.key, { content: args.notetext, tags: args.tags });
         // ACTION: return values
         return this.message(0, "exist status", data);
     }
