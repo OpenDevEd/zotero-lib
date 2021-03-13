@@ -36,3 +36,7 @@ This code builds on earlier code for https://github.com/OpenDevEd/zotero-cli, wh
 The directory tests/ contains a number of tests that illustrate the
 use of the npm library. The file tests/test_cli.sh has examples for
 use of the library from the command line.
+
+# Also see:
+
+https://github.com/tnajdek/zotero-api-client (With hindsight we might have built on zotero-api-client - we might still rebuild our code to use zotero-api-client.)
