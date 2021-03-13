@@ -2067,7 +2067,7 @@ module.exports = class Zotero {
 
     // ACTION: return values
     const data = {}
-    return this.message(0, "exist status", data)
+    return this.message(0, "exit status", data)
   }
 
   // TODO: Implement
@@ -2088,6 +2088,11 @@ module.exports = class Zotero {
         "help": "HELPTEXT"
       });*/
       argparser.add_argument("--notetext", {
+        "action": "store",
+        "nargs": 1,
+        "help": "The text of the note"
+      });
+      argparser.add_argument("--notefile", {
         "action": "store",
         "nargs": 1,
         "help": "The text of the note"
@@ -2113,7 +2118,8 @@ module.exports = class Zotero {
     //process.exit(1)
     // TODO: Read from --file
     // ACTION: run code
-    const data = await this.attachNoteToItem(args.key, { content: args.notetext, tags: args.tags })
+    const notefiletext = args.notefile ? fs.readFileSync(args.notefile) : ""
+    const data = await this.attachNoteToItem(args.key, { content: args.notetext + notefiletext, tags: args.tags })
     // ACTION: return values
     return this.message(0, "exist status", data)
   }
