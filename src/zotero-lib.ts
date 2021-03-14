@@ -1896,11 +1896,11 @@ module.exports = class Zotero {
       if (args.url || args.kerko_url_key) {
         const argx = {
           key: this.as_value(args.key),
-          value: this.as_value(args.url) ? this.as_value(args.url) : this.as_value(args.kerko_url_key) ?  this.as_value(args.kerko_url_key) + this.as_value(args.key) : ""
+          value: this.as_value(args.url) ? this.as_value(args.url) : this.as_value(args.kerko_url_key) ? this.as_value(args.kerko_url_key) + this.as_value(args.key) : ""
         }
         const datau = await this.update_url(argx)
-        console.log("TEMPORARY...="+JSON.stringify( datau           ,null,2))
-         
+        console.log("TEMPORARY...=" + JSON.stringify(datau, null, 2))
+
         dataout.push({ url_field: datau })
       } else {
         console.log("You have to set url or kerko_url_key for update-url-field to work")
@@ -2063,7 +2063,7 @@ module.exports = class Zotero {
     // console.log("TEMPORARY (update_url)="+JSON.stringify(   args         ,null,2))     
     const update = await this.update_item(args)
     // console.log("TEMPORARY="+JSON.stringify( update           ,null,2))
-     
+
     return update
   }
 
