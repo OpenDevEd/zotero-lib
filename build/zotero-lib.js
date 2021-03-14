@@ -1630,6 +1630,7 @@ module.exports = class Zotero {
         // TODO: There's a problem here... the following just offer docorations. We need to have inputs too...
         const decoration = {
             kerko_url: { title: "👀View item in Evidence Library", tags: ["_r:kerko", "_r:zotzen"] },
+            kerko_url_key: { title: "👀View item in Evidence Library", tags: ["_r:kerko", "_r:zotzen"] },
             googledoc: { title: "📝View Google Doc and download alternative formats", tags: ["_r:googleDoc", "_r:zotzen"] },
             deposit: { title: "🔄View entry on Zenodo (deposit)", tags: ["_r:zenodoDeposit", "_r:zotzen"] },
             record: { title: "🔄View entry on Zenodo (record)", tags: ["_r:zenodoRecord", "_r:zotzen"] },
@@ -1650,6 +1651,10 @@ module.exports = class Zotero {
                 "action": "store",
                 "help": "Provide a URL here and/or use the specific URL options below. If you use both --url and on of the options below, both will be added."
             });
+            argparser.add_argument("--update-url-field", {
+                "action": "store_true",
+                "help": "Update/overwrite the url field of the item. The url used is --url (if set) or --kerko-link-key."
+            });
             argparser.add_argument("--title", {
                 "nargs": 1,
                 "action": "store",
@@ -1663,10 +1668,11 @@ module.exports = class Zotero {
             // TODO: There's a problem here... the following just offer docorations. We need to have inputs too...
             // This should probably just be the title used if there is no title, or --decorate is given.
             Object.keys(decoration).forEach(option => {
+                const extra_text = option === "kerko_url_key" ? " The item key will be added automatically." : "";
                 argparser.add_argument(`--${option}`, {
                     "nargs": 1,
                     "action": "store",
-                    "help": `Provide a specific URL for '${option}'. The prefix '${decoration[option].title}' will be added to a title (if provided) and the following tags are added: ${JSON.stringify(decoration[option].tags)}`,
+                    "help": `Provide a specific URL for '${option}'.${extra_text} The prefix '${decoration[option].title}' will be added to a title (if provided) and the following tags are added: ${JSON.stringify(decoration[option].tags)}`,
                 });
             });
             // ... otherwise --id adds the three zenodo options, which otherwise are specified ...
@@ -1741,8 +1747,9 @@ module.exports = class Zotero {
                 let tags = decoration[option].tags;
                 title = args.title ? title + " " + args.title : title;
                 tags = args.tags ? tags.push(args.tags) : tags;
+                const addkey = option === "kerko_url_key" ? this.as_value(args.key) : "";
                 // ACTION: run code
-                const data = await this.attachLinkToItem(this.as_value(args.key), this.as_value(args[option]), { title: title, tags: tags });
+                const data = await this.attachLinkToItem(this.as_value(args.key), this.as_value(args[option]) + addkey, { title: title, tags: tags });
                 dataout.push({
                     decoration: option,
                     data: data
@@ -1753,6 +1760,20 @@ module.exports = class Zotero {
         if (args.url) {
             const datau = await this.attachLinkToItem(this.as_value(args.key), this.as_value(args.url), { title: this.as_value(args.title), tags: args.tags });
             dataout.push({ url_based: datau });
+        }
+        if (args.update_url_field) {
+            if (args.url || args.kerko_url_key) {
+                const argx = {
+                    key: this.as_value(args.key),
+                    value: this.as_value(args.url) ? this.as_value(args.url) : this.as_value(args.kerko_url_key) ? this.as_value(args.kerko_url_key) + this.as_value(args.key) : ""
+                };
+                const datau = await this.update_url(argx);
+                console.log("TEMPORARY...=" + JSON.stringify(datau, null, 2));
+                dataout.push({ url_field: datau });
+            }
+            else {
+                console.log("You have to set url or kerko_url_key for update-url-field to work");
+            }
         }
         // ACTION: return values
         return this.message(0, "exist status", dataout);
@@ -1884,7 +1905,7 @@ module.exports = class Zotero {
         // system("./zotUpdateField.pl --update --group $a --item $c --key url --value \"\\\"https://docs.opendeved.net/lib/$c\\\"\"");    
         if (args.getInterface && subparsers) {
             const argparser = subparsers.add_parser("field", { "help": "Utility function: Update a field for a specific item." });
-            argparser.set_defaults({ "func": this.field.name });
+            argparser.set_defaults({ "func": this.update_url.name });
             argparser.add_argument("--key", {
                 "nargs": 1,
                 "action": "store",
@@ -1900,8 +1921,13 @@ module.exports = class Zotero {
             });
             return { status: 0, message: "success" };
         }
-        args.field = "url";
+        // args.field = "url"
+        args.json = {
+            url: args.value
+        };
+        // console.log("TEMPORARY (update_url)="+JSON.stringify(   args         ,null,2))     
         const update = await this.update_item(args);
+        // console.log("TEMPORARY="+JSON.stringify( update           ,null,2))
         return update;
     }
     // TODO: Implement
@@ -1927,7 +1953,7 @@ module.exports = class Zotero {
         // ACTION: run code
         // ACTION: return values
         const data = {};
-        return this.message(0, "exist status", data);
+        return this.message(0, "exit status", data);
     }
     // TODO: Implement
     async attach_note(args, subparsers) {
@@ -1951,6 +1977,11 @@ module.exports = class Zotero {
                 "nargs": 1,
                 "help": "The text of the note"
             });
+            argparser.add_argument("--notefile", {
+                "action": "store",
+                "nargs": 1,
+                "help": "The text of the note"
+            });
             argparser.add_argument("--tags", {
                 "nargs": "*",
                 "action": "store",
@@ -1969,7 +2000,8 @@ module.exports = class Zotero {
         //process.exit(1)
         // TODO: Read from --file
         // ACTION: run code
-        const data = await this.attachNoteToItem(args.key, { content: args.notetext, tags: args.tags });
+        const notefiletext = args.notefile ? fs.readFileSync(args.notefile) : "";
+        const data = await this.attachNoteToItem(args.key, { content: args.notetext + notefiletext, tags: args.tags });
         // ACTION: return values
         return this.message(0, "exist status", data);
     }
