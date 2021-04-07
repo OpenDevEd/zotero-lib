@@ -6,10 +6,8 @@ const fs = require('fs')
 
 async function main() {
   const arg = {
-    "user": "bjoern@opendeved.net",
+    "zgroup": "2129771",
     "zkey": "8FW7PINZ",
-    "gdoc": "19rPYBNkX7bMKRuGhVLrIjQaVFQcpR7b1drqx6sdHVRs",
-    "token": "e87a5ea6-9227-11eb-98fe-c39e64cea131",
     "group": "2129771",
     "keys": "8FW7PINZ,3W7W6P24"
   };
@@ -60,7 +58,8 @@ response.array.forEach(element => {
     )
   */
   const evlib = {
-    2129771: "https://docs.opendeved.net/lib/"
+    2129771: "https://docs.opendeved.net/lib/",
+    2405685: "https://docs.edtechhub.org/lib/"
   }
   var resp = response.map(
     element =>
