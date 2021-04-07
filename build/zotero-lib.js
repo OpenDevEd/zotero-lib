@@ -922,102 +922,106 @@ module.exports = class Zotero {
         args.group_id = my_group_id;
         args.key = my_key;
         //console.log("args out ... TEMPORARY=" + JSON.stringify(args.key, null, 2))
-        if (!args.key) {
+        // TODO: Need to implement filter as a command line option --filter="{...}"
+        if (!args.key && !(args.filter && args.filter.itemKey)) {
             const msg = this.message(0, 'Unable to extract group/key from the string provided.');
             return msg;
         }
-        const item = await this.get(`/items/${args.key}`);
-        output.push({ "record": item });
-        if (args.savefiles) {
-            let children = await this.get(`/items/${args.key}/children`);
-            output.push({ "children": children });
-            await Promise.all(children.filter(item => item.data.itemType === 'attachment').map(async (item) => {
-                if (item.data.filename) {
-                    console.log(`Downloading file ${item.data.filename}`);
-                    // TODO: 
-                    // ??? await this.attachment({key: item.key, save: item.data.filename})
-                    // TODO: Is 'binary' correct?
-                    fs.writeFileSync(item.data.filename, await this.get(`/items/${item.key}/file`), 'binary');
-                }
-                else {
-                    console.log(`Not downloading file ${item.key}/${item.data.itemType}/${item.data.linkMode}/${item.data.title}`);
-                }
-            }));
-        }
-        if (args.addfiles) {
-            console.log("Adding files...");
-            const attachmentTemplate = await this.get('/items/new?itemType=attachment&linkMode=imported_file', { userOrGroupPrefix: false });
-            for (const filename of args.addfiles) {
-                if (args.debug)
-                    console.log("Adding file: " + filename);
-                if (!fs.existsSync(filename)) {
-                    const msg = this.message(0, `Ignoring non-existing file: ${filename}.`);
-                    return msg;
-                }
-                let attach = attachmentTemplate;
-                attach.title = path.basename(filename);
-                attach.filename = path.basename(filename);
-                attach.contentType = `application/${path.extname(filename).slice(1)}`;
-                attach.parentItem = args.key;
-                const stat = fs.statSync(filename);
-                const uploadItem = JSON.parse(await this.post('/items', JSON.stringify([attach])));
-                const uploadAuth = JSON.parse(await this.post(`/items/${uploadItem.successful[0].key}/file?md5=${md5.sync(filename)}&filename=${attach.filename}&filesize=${fs.statSync(filename)['size']}&mtime=${stat.mtimeMs}`, '{}', { 'If-None-Match': '*' }));
-                let request_post = null;
-                if (uploadAuth.exists !== 1) {
-                    const uploadResponse = await request({
-                        method: 'POST',
-                        uri: uploadAuth.url,
-                        body: Buffer.concat([Buffer.from(uploadAuth.prefix), fs.readFileSync(filename), Buffer.from(uploadAuth.suffix)]),
-                        headers: { 'Content-Type': uploadAuth.contentType }
-                    });
-                    if (args.verbose) {
-                        console.log("uploadResponse=");
-                        this.show(uploadResponse);
+        var item;
+        if (args.key) {
+            item = await this.get(`/items/${args.key}`);
+            output.push({ "record": item });
+            if (args.savefiles) {
+                let children = await this.get(`/items/${args.key}/children`);
+                output.push({ "children": children });
+                await Promise.all(children.filter(item => item.data.itemType === 'attachment').map(async (item) => {
+                    if (item.data.filename) {
+                        console.log(`Downloading file ${item.data.filename}`);
+                        // TODO: 
+                        // ??? await this.attachment({key: item.key, save: item.data.filename})
+                        // TODO: Is 'binary' correct?
+                        fs.writeFileSync(item.data.filename, await this.get(`/items/${item.key}/file`), 'binary');
                     }
-                    request_post = await this.post(`/items/${uploadItem.successful[0].key}/file?upload=${uploadAuth.uploadKey}`, '{}', { 'Content-Type': 'application/x-www-form-urlencoded', 'If-None-Match': '*' });
-                }
-                output.push({ "file": request_post });
+                    else {
+                        console.log(`Not downloading file ${item.key}/${item.data.itemType}/${item.data.linkMode}/${item.data.title}`);
+                    }
+                }));
             }
-        }
-        if (args.addtocollection) {
-            //console.log("-->" + args.addtocollection)
-            //args.addtocollection = this.extractKeyAndSetGroup(args.addtocollection)
-            //console.log("-->" + args.addtocollection)
-            let newCollections = item.data.collections;
-            args.addtocollection.forEach(itemKey => {
-                if (!newCollections.includes(itemKey)) {
-                    newCollections.push(itemKey);
+            if (args.addfiles) {
+                console.log("Adding files...");
+                const attachmentTemplate = await this.get('/items/new?itemType=attachment&linkMode=imported_file', { userOrGroupPrefix: false });
+                for (const filename of args.addfiles) {
+                    if (args.debug)
+                        console.log("Adding file: " + filename);
+                    if (!fs.existsSync(filename)) {
+                        const msg = this.message(0, `Ignoring non-existing file: ${filename}.`);
+                        return msg;
+                    }
+                    let attach = attachmentTemplate;
+                    attach.title = path.basename(filename);
+                    attach.filename = path.basename(filename);
+                    attach.contentType = `application/${path.extname(filename).slice(1)}`;
+                    attach.parentItem = args.key;
+                    const stat = fs.statSync(filename);
+                    const uploadItem = JSON.parse(await this.post('/items', JSON.stringify([attach])));
+                    const uploadAuth = JSON.parse(await this.post(`/items/${uploadItem.successful[0].key}/file?md5=${md5.sync(filename)}&filename=${attach.filename}&filesize=${fs.statSync(filename)['size']}&mtime=${stat.mtimeMs}`, '{}', { 'If-None-Match': '*' }));
+                    let request_post = null;
+                    if (uploadAuth.exists !== 1) {
+                        const uploadResponse = await request({
+                            method: 'POST',
+                            uri: uploadAuth.url,
+                            body: Buffer.concat([Buffer.from(uploadAuth.prefix), fs.readFileSync(filename), Buffer.from(uploadAuth.suffix)]),
+                            headers: { 'Content-Type': uploadAuth.contentType }
+                        });
+                        if (args.verbose) {
+                            console.log("uploadResponse=");
+                            this.show(uploadResponse);
+                        }
+                        request_post = await this.post(`/items/${uploadItem.successful[0].key}/file?upload=${uploadAuth.uploadKey}`, '{}', { 'Content-Type': 'application/x-www-form-urlencoded', 'If-None-Match': '*' });
+                    }
+                    output.push({ "file": request_post });
                 }
-            });
-            const addto = await this.patch(`/items/${args.key}`, JSON.stringify({ collections: newCollections }), item.version);
-            output.push({ "addtocollection": addto });
-        }
-        if (args.removefromcollection) {
-            args.removefromcollection = this.extractKeyAndSetGroup(args.removefromcollection);
-            let newCollections = item.data.collections;
-            args.removefromcollection.forEach(itemKey => {
-                const index = newCollections.indexOf(itemKey);
-                if (index > -1) {
-                    newCollections.splice(index, 1);
-                }
-            });
-            const removefrom = await this.patch(`/items/${args.key}`, JSON.stringify({ collections: newCollections }), item.version);
-            output.push({ "removefromcollection": removefrom });
-        }
-        if (args.addtags) {
-            let newTags = item.data.tags;
-            args.addtags.forEach(tag => {
-                if (!newTags.find(newTag => newTag.tag === tag)) {
-                    newTags.push({ tag });
-                }
-            });
-            const res = await this.patch(`/items/${args.key}`, JSON.stringify({ tags: newTags }), item.version);
-            output.push({ "addtags": res });
-        }
-        if (args.removetags) {
-            let newTags = item.data.tags.filter(tag => !args.removetags.includes(tag.tag));
-            const res = await this.patch(`/items/${args.key}`, JSON.stringify({ tags: newTags }), item.version);
-            output.push({ "removetags": res });
+            }
+            if (args.addtocollection) {
+                //console.log("-->" + args.addtocollection)
+                //args.addtocollection = this.extractKeyAndSetGroup(args.addtocollection)
+                //console.log("-->" + args.addtocollection)
+                let newCollections = item.data.collections;
+                args.addtocollection.forEach(itemKey => {
+                    if (!newCollections.includes(itemKey)) {
+                        newCollections.push(itemKey);
+                    }
+                });
+                const addto = await this.patch(`/items/${args.key}`, JSON.stringify({ collections: newCollections }), item.version);
+                output.push({ "addtocollection": addto });
+            }
+            if (args.removefromcollection) {
+                args.removefromcollection = this.extractKeyAndSetGroup(args.removefromcollection);
+                let newCollections = item.data.collections;
+                args.removefromcollection.forEach(itemKey => {
+                    const index = newCollections.indexOf(itemKey);
+                    if (index > -1) {
+                        newCollections.splice(index, 1);
+                    }
+                });
+                const removefrom = await this.patch(`/items/${args.key}`, JSON.stringify({ collections: newCollections }), item.version);
+                output.push({ "removefromcollection": removefrom });
+            }
+            if (args.addtags) {
+                let newTags = item.data.tags;
+                args.addtags.forEach(tag => {
+                    if (!newTags.find(newTag => newTag.tag === tag)) {
+                        newTags.push({ tag });
+                    }
+                });
+                const res = await this.patch(`/items/${args.key}`, JSON.stringify({ tags: newTags }), item.version);
+                output.push({ "addtags": res });
+            }
+            if (args.removetags) {
+                let newTags = item.data.tags.filter(tag => !args.removetags.includes(tag.tag));
+                const res = await this.patch(`/items/${args.key}`, JSON.stringify({ tags: newTags }), item.version);
+                output.push({ "removetags": res });
+            }
         }
         const params = args.filter || {};
         let result;
@@ -1028,7 +1032,7 @@ module.exports = class Zotero {
         }
         else {
             if (args.addtocollection || args.removefromcollection
-                || args.removetags || args.addtags) {
+                || args.removetags || args.addtags || args.filter) {
                 result = await this.get(`/items/${args.key}`, { params });
             }
             else {
@@ -1040,7 +1044,8 @@ module.exports = class Zotero {
                 //return result
             }
             else {
-                result = result.data;
+                if (result && result.data)
+                    result = result.data;
             }
         }
         if (args.validate || args.validate_with) {
