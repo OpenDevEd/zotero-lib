@@ -1909,7 +1909,7 @@ module.exports = class Zotero {
         this.reconfigure(args);
         // system("./zotUpdateField.pl --update --group $a --item $c --key url --value \"\\\"https://docs.opendeved.net/lib/$c\\\"\"");    
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("field", { "help": "Utility function: Update a field for a specific item." });
+            const argparser = subparsers.add_parser("update-url", { "help": "Utility function: Update a field for a specific item." });
             argparser.set_defaults({ "func": this.update_url.name });
             argparser.add_argument("--key", {
                 "nargs": 1,
