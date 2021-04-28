@@ -91,14 +91,13 @@ module.exports = class Zotero {
     // Read config (which also sets the Zotero-API-Key value in the header)
     // TODO: readConfig may need to perform an async operation...
     const message = this.configure(args, true);
-    logger.info('message: %O', message);
-    if (message['status'] == 'success') {
-    }
+    // if (message['status'] === 0) {
+    // }
   }
 
   // zotero: any
 
-  public async configure(args, readconfigfile = false) {
+  public configure(args, readconfigfile = false) {
     // pick up config: The function reads args and populates config
 
     // STEP 1. Read config file
@@ -153,13 +152,16 @@ module.exports = class Zotero {
         0,
         'Both user/group are null. You must provide exactly one of --user-id or --group-id'
       );
+
     // TODO:
     // if (this.config.user_id !== null && this.config.group_id !== null) return this.message(0,'Both user/group are specified. You must provide exactly one of --user-id or --group-id')
+
+    // TODO: discuss - we'd not be doing this, constructor should not do async ops
     // user_id==0 is generic; retrieve the real user id via the api_key
-    if (this.config.user_id === 0)
-      this.config.user_id = (
-        await this.get(`/keys/${args.api_key}`, { userOrGroupPrefix: false })
-      ).userID;
+    // if (this.config.user_id === 0)
+    //   this.config.user_id = (
+    //     await this.get(`/keys/${args.api_key}`, { userOrGroupPrefix: false })
+    //   ).userID;
 
     // using default=2 above prevents the overrides from being picked up
     if (args.indent === null) args.indent = 2;
@@ -354,7 +356,7 @@ module.exports = class Zotero {
 
     uri = `${this.base}${prefix}${uri}${params ? '?' + params : ''}`;
     if (this.config.verbose) console.error('GET', uri);
-    //  console.log('GET: ', uri)
+    logger.info('get uri: %s', uri);
 
     const res = await request({
       uri,
