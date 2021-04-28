@@ -3,6 +3,7 @@
 *.swp
 node_modules
 .env
+build/*
 BaCkUp
 BaCkUp/*
 */BaCkUp/*

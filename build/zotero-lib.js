@@ -1,9 +1,12 @@
 #!/usr/bin/env node
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 //import { stringify } from "@iarna/toml";
 //import * as argparse from 'argparse';
 require('dotenv').config();
 require('docstring');
 const os = require('os');
+const logger = require("./logger");
 // import { ArgumentParser } from 'argparse'
 const { ArgumentParser } = require('argparse');
 const toml = require('@iarna/toml');
@@ -13,7 +16,6 @@ const request = require('request-promise');
 //const { LinkHeader } = require('http-link-header');
 const LinkHeader = require('http-link-header');
 const Ajv = require('ajv');
-const { parse } = require("args-any");
 // import { parse as TOML } from '@iarna/toml'
 // import fs = require('fs')
 // import path = require('path')
@@ -24,38 +26,49 @@ const { parse } = require("args-any");
 const ajv = new Ajv();
 const md5 = require('md5-file');
 function sleep(msecs) {
-    return new Promise(resolve => setTimeout(resolve, msecs));
+    return new Promise((resolve) => setTimeout(resolve, msecs));
 }
-const arg = new class {
-    integer(v) {
-        if (isNaN(parseInt(v)))
-            throw new Error(`${JSON.stringify(v)} is not an integer`);
-        return parseInt(v);
-    }
-    file(v) {
-        if (!fs.existsSync(v) || !fs.lstatSync(v).isFile())
-            throw new Error(`${JSON.stringify(v)} is not a file`);
-        return v;
-    }
-    path(v) {
-        if (!fs.existsSync(v))
-            throw new Error(`${JSON.stringify(v)} does not exist`);
-        return v;
-    }
-    json(v) {
-        return JSON.parse(v);
-    }
-};
+// const arg = new (class {
+//   integer(v) {
+//     if (isNaN(parseInt(v)))
+//       throw new Error(`${JSON.stringify(v)} is not an integer`);
+//     return parseInt(v);
+//   }
+//   file(v) {
+//     if (!fs.existsSync(v) || !fs.lstatSync(v).isFile())
+//       throw new Error(`${JSON.stringify(v)} is not a file`);
+//     return v;
+//   }
+//   path(v) {
+//     if (!fs.existsSync(v))
+//       throw new Error(`${JSON.stringify(v)} does not exist`);
+//     return v;
+//   }
+//   json(v) {
+//     return JSON.parse(v);
+//   }
+// })();
 module.exports = class Zotero {
     constructor(args) {
         // The following config keys are expected/allowed, with both "-" and "_". The corresponding variables have _
-        this.config_keys = ["user-id", "group-id", "library-type", "api-key", "indent", "verbose", "debug", "config", "config-json", "zotero-schema"];
-        this.base = "https://api.zotero.org";
+        this.config_keys = [
+            'user-id',
+            'group-id',
+            'library-type',
+            'api-key',
+            'indent',
+            'verbose',
+            'debug',
+            'config',
+            'config-json',
+            'zotero-schema',
+        ];
+        this.base = 'https://api.zotero.org';
         this.output = '';
         this.headers = {
             'User-Agent': 'Zotero-CLI',
             'Zotero-API-Version': '3',
-            'Zotero-API-Key': ''
+            'Zotero-API-Key': '',
         };
         if (!args) {
             args = {};
@@ -64,7 +77,8 @@ module.exports = class Zotero {
         // Read config (which also sets the Zotero-API-Key value in the header)
         // TODO: readConfig may need to perform an async operation...
         const message = this.configure(args, true);
-        if (message["status"] == "success") {
+        logger.info('message: %O', message);
+        if (message['status'] == 'success') {
         }
     }
     // zotero: any
@@ -72,14 +86,20 @@ module.exports = class Zotero {
         // pick up config: The function reads args and populates config
         // STEP 1. Read config file
         if (readconfigfile || args.config) {
-            const config = [args.config, 'zotero-cli.toml', `${os.homedir()}/.config/zotero-cli/zotero-cli.toml`].find(cfg => fs.existsSync(cfg));
+            const config = [
+                args.config,
+                'zotero-cli.toml',
+                `${os.homedir()}/.config/zotero-cli/zotero-cli.toml`,
+            ].find((cfg) => fs.existsSync(cfg));
             this.config = config ? toml.parse(fs.readFileSync(config, 'utf-8')) : {};
         }
         // STEP 2. Apply --config_json option
         if (args.config_json) {
             console.log(`Setting from config_json`);
-            const confobj = typeof (args.config_json) == "string" ? JSON.parse(args.config_json) : args.config_json;
-            Object.keys(confobj).forEach(x => {
+            const confobj = typeof args.config_json == 'string'
+                ? JSON.parse(args.config_json)
+                : args.config_json;
+            Object.keys(confobj).forEach((x) => {
                 console.log(`Setting: ${x}`);
                 this.config[x] = confobj[x];
             });
@@ -105,7 +125,7 @@ module.exports = class Zotero {
             return this.message(1, 'No API key provided in args or config');
         }
         if (args.verbose)
-            console.log("config=" + JSON.stringify(this.config, null, 2));
+            console.log('config=' + JSON.stringify(this.config, null, 2));
         // Check that one and only one is defined:
         if (this.config.user_id === null && this.config.group_id === null)
             return this.message(0, 'Both user/group are null. You must provide exactly one of --user-id or --group-id');
@@ -119,13 +139,13 @@ module.exports = class Zotero {
             args.indent = 2;
         if (this.config.indent === null)
             this.config.indent = 2;
-        return this.message(0, "success");
+        return this.message(0, 'success');
     }
     canonicalConfig(config, args) {
-        this.config_keys.forEach(key => {
-            const key_zotero = "zotero-" + key;
-            const key_underscore = key.replace(/\-/g, "_");
-            const key_zotero_underscore = key_zotero.replace(/\-/g, "_");
+        this.config_keys.forEach((key) => {
+            const key_zotero = 'zotero-' + key;
+            const key_underscore = key.replace(/\-/g, '_');
+            const key_zotero_underscore = key_zotero.replace(/\-/g, '_');
             /*
             api-key
             api_key
@@ -168,7 +188,7 @@ module.exports = class Zotero {
         return config;
     }
     showConfig() {
-        console.log("showConfig=" + JSON.stringify(this.config, null, 2));
+        console.log('showConfig=' + JSON.stringify(this.config, null, 2));
         return this.config;
     }
     async reconfigure(args) {
@@ -183,11 +203,11 @@ module.exports = class Zotero {
         }) */
         this.configure(newargs, false);
     }
-    message(stat = 0, msg = "None", data = null) {
+    message(stat = 0, msg = 'None', data = null) {
         return {
-            "status": stat,
-            "message": msg,
-            "data": data
+            status: stat,
+            message: msg,
+            data: data,
         };
     }
     finalActions(output) {
@@ -204,25 +224,35 @@ module.exports = class Zotero {
             console.log.apply(console, args);
         }
         else {
-            this.output += args.map(m => {
-                const type = typeof m;
-                if (type === 'string' || m instanceof String || type === 'number' || type === 'undefined' || type === 'boolean' || m === null)
-                    return m;
-                if (m instanceof Error)
-                    return `<Error: ${m.message || m.name}${m.stack ? `\n${m.stack}` : ''}>`;
-                if (m && type === 'object' && m.message)
-                    return `<Error: ${m.message}#\n${m.stack}>`;
-                return JSON.stringify(m, null, this.config.indent);
-            }).join(' ') + '\n';
+            this.output +=
+                args
+                    .map((m) => {
+                    const type = typeof m;
+                    if (type === 'string' ||
+                        m instanceof String ||
+                        type === 'number' ||
+                        type === 'undefined' ||
+                        type === 'boolean' ||
+                        m === null)
+                        return m;
+                    if (m instanceof Error)
+                        return `<Error: ${m.message || m.name}${m.stack ? `\n${m.stack}` : ''}>`;
+                    if (m && type === 'object' && m.message)
+                        return `<Error: ${m.message}#\n${m.stack}>`;
+                    return JSON.stringify(m, null, this.config.indent);
+                })
+                    .join(' ') + '\n';
         }
     }
     // Function to get more than 100 records, i.e. chunked retrieval.
     async all(uri, params = {}) {
-        console.log("all=" + uri);
-        console.log("TEMPORARY=" + JSON.stringify(params, null, 2));
-        let chunk = await this.get(uri, { resolveWithFullResponse: true, params })
-            .catch(error => {
-            console.log("Error in all: " + error);
+        console.log('all=' + uri);
+        console.log('TEMPORARY=' + JSON.stringify(params, null, 2));
+        let chunk = await this.get(uri, {
+            resolveWithFullResponse: true,
+            params,
+        }).catch((error) => {
+            console.log('Error in all: ' + error);
         });
         let data = chunk.body;
         //console.log("ALL-TEMPORARY=" + JSON.stringify(data, null, 2))
@@ -239,7 +269,8 @@ module.exports = class Zotero {
                 resolveWithFullResponse: true,
             });
             data = data.concat(chunk.body);
-            link = chunk.headers.link && LinkHeader.parse(chunk.headers.link).rel('next');
+            link =
+                chunk.headers.link && LinkHeader.parse(chunk.headers.link).rel('next');
         }
         return data;
     }
@@ -256,12 +287,16 @@ module.exports = class Zotero {
             options.json = true;
         let prefix = '';
         if (options.userOrGroupPrefix)
-            prefix = this.config.user_id ? `/users/${this.config.user_id}` : `/groups/${this.config.group_id}`;
-        const params = Object.keys(options.params).map(param => {
+            prefix = this.config.user_id
+                ? `/users/${this.config.user_id}`
+                : `/groups/${this.config.group_id}`;
+        const params = Object.keys(options.params)
+            .map((param) => {
             let values = options.params[param];
             values = this.as_array(values);
-            return values.map(v => `${param}=${encodeURI(v)}`).join('&');
-        }).join('&');
+            return values.map((v) => `${param}=${encodeURI(v)}`).join('&');
+        })
+            .join('&');
         uri = `${this.base}${prefix}${uri}${params ? '?' + params : ''}`;
         if (this.config.verbose)
             console.error('GET', uri);
@@ -272,19 +307,23 @@ module.exports = class Zotero {
             encoding: null,
             json: options.json,
             resolveWithFullResponse: options.resolveWithFullResponse,
-        }).then().catch(error => {
+        })
+            .then()
+            .catch((error) => {
             if (this.config.verbose) {
                 console.log(`Error in zotero.get = ${JSON.stringify(error, null, 2)}`);
             }
             // console.log(`Error in zotero.get = ${JSON.stringify(error.error.data, null, 2)}`)
-            let message = error.error && error.error.data && Array.isArray(error.error.data) ? Buffer.from(error.error).toString() : "N/A";
+            let message = error.error && error.error.data && Array.isArray(error.error.data)
+                ? Buffer.from(error.error).toString()
+                : 'N/A';
             message = Buffer.from(error.error).toString();
             const shortError = {
-                "name": error.name,
-                "statusCode": error.statusCode,
-                "message": message,
-                "uri": uri,
-                json: options.json
+                name: error.name,
+                statusCode: error.statusCode,
+                message: message,
+                uri: uri,
+                json: options.json,
             };
             //console.log("DEBUG", (new Error().stack));
             //console.log(shortError)
@@ -297,14 +336,19 @@ module.exports = class Zotero {
     async __get(args, subparsers) {
         this.reconfigure(args);
         /** Expose 'get'
-      * Make a direct query to the API using 'GET uri'.
-      */
+         * Make a direct query to the API using 'GET uri'.
+         */
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("__get", { "help": "Expose 'get'. Make a direct query to the API using 'GET uri'." });
-            argparser.set_defaults({ "func": this.__get.name });
-            argparser.add_argument('--root', { action: 'store_true', help: 'TODO: document' });
+            const argparser = subparsers.add_parser('__get', {
+                help: "Expose 'get'. Make a direct query to the API using 'GET uri'.",
+            });
+            argparser.set_defaults({ func: this.__get.name });
+            argparser.add_argument('--root', {
+                action: 'store_true',
+                help: 'TODO: document',
+            });
             argparser.add_argument('uri', { nargs: '+', help: 'TODO: document' });
-            return { status: 0, message: "success" };
+            return { status: 0, message: 'success' };
         }
         let out = [];
         for (const uri of args.uri) {
@@ -318,8 +362,10 @@ module.exports = class Zotero {
     }
     // TODO: Add       resolveWithFullResponse: options.resolveWithFullResponse,
     async post(uri, data, headers = {}) {
-        const prefix = this.config.user_id ? `/users/${this.config.user_id}` : `/groups/${this.config.group_id}`;
-        console.log("POST" + uri);
+        const prefix = this.config.user_id
+            ? `/users/${this.config.user_id}`
+            : `/groups/${this.config.group_id}`;
+        console.log('POST' + uri);
         uri = `${this.base}${prefix}${uri}`;
         if (this.config.verbose)
             console.error('POST', uri);
@@ -334,11 +380,16 @@ module.exports = class Zotero {
         this.reconfigure(args);
         /** Expose 'post'. Make a direct query to the API using 'POST uri [--data data]'. */
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("__post", { "help": "Expose 'post'. Make a direct query to the API using 'POST uri [--data data]'." });
-            argparser.set_defaults({ "func": this.__post.name });
+            const argparser = subparsers.add_parser('__post', {
+                help: "Expose 'post'. Make a direct query to the API using 'POST uri [--data data]'.",
+            });
+            argparser.set_defaults({ func: this.__post.name });
             argparser.add_argument('uri', { nargs: 1, help: 'TODO: document' });
-            argparser.add_argument('--data', { required: true, help: 'Escaped JSON string for post data' });
-            return { status: 0, message: "success" };
+            argparser.add_argument('--data', {
+                required: true,
+                help: 'Escaped JSON string for post data',
+            });
+            return { status: 0, message: 'success' };
         }
         const res = await this.post(args.uri, args.data);
         this.print(res);
@@ -346,7 +397,9 @@ module.exports = class Zotero {
     }
     // TODO: Add       resolveWithFullResponse: options.resolveWithFullResponse,
     async put(uri, data) {
-        const prefix = this.config.user_id ? `/users/${this.config.user_id}` : `/groups/${this.config.group_id}`;
+        const prefix = this.config.user_id
+            ? `/users/${this.config.user_id}`
+            : `/groups/${this.config.group_id}`;
         uri = `${this.base}${prefix}${uri}`;
         if (this.config.verbose)
             console.error('PUT', uri);
@@ -361,21 +414,28 @@ module.exports = class Zotero {
         this.reconfigure(args);
         /** Make a direct query to the API using 'PUT uri [--data data]'. */
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("__put", { "help": "Expose 'put'. Make a direct query to the API using 'PUT uri [--data data]'." });
-            argparser.set_defaults({ "func": this.__put.name });
+            const argparser = subparsers.add_parser('__put', {
+                help: "Expose 'put'. Make a direct query to the API using 'PUT uri [--data data]'.",
+            });
+            argparser.set_defaults({ func: this.__put.name });
             argparser.add_argument('uri', { nargs: 1, help: 'TODO: document' });
-            argparser.add_argument('--data', { required: true, help: 'Escaped JSON string for post data' });
-            return { status: 0, message: "success" };
+            argparser.add_argument('--data', {
+                required: true,
+                help: 'Escaped JSON string for post data',
+            });
+            return { status: 0, message: 'success' };
         }
         const res = await this.put(args.uri, args.data);
         this.print(res);
         return res;
     }
-    // patch does not return any data. 
+    // patch does not return any data.
     // TODO: 'request-response' is deprecated - replace by something else? (axios?)
     // TODO: Errors are not handled - add this to patch (below) but needs adding to others.
     async patch(uri, data, version) {
-        const prefix = this.config.user_id ? `/users/${this.config.user_id}` : `/groups/${this.config.group_id}`;
+        const prefix = this.config.user_id
+            ? `/users/${this.config.user_id}`
+            : `/groups/${this.config.group_id}`;
         const headers = Object.assign(Object.assign({}, this.headers), { 'Content-Type': 'application/json' });
         if (typeof version !== 'undefined')
             headers['If-Unmodified-Since-Version'] = version;
@@ -387,9 +447,11 @@ module.exports = class Zotero {
             uri,
             headers,
             body: data,
-            resolveWithFullResponse: true
-        }).then().catch(error => {
-            console.log("TEMPORARY=" + JSON.stringify(error, null, 2));
+            resolveWithFullResponse: true,
+        })
+            .then()
+            .catch((error) => {
+            console.log('TEMPORARY=' + JSON.stringify(error, null, 2));
             return error;
         });
         return res;
@@ -398,12 +460,20 @@ module.exports = class Zotero {
         this.reconfigure(args);
         /** Make a direct query to the API using 'PATCH uri [--data data]'. */
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("__patch", { "help": "Expose 'patch'. Make a direct query to the API using 'PATCH uri [--data data]'." });
-            argparser.set_defaults({ "func": this.__patch.name });
+            const argparser = subparsers.add_parser('__patch', {
+                help: "Expose 'patch'. Make a direct query to the API using 'PATCH uri [--data data]'.",
+            });
+            argparser.set_defaults({ func: this.__patch.name });
             argparser.add_argument('uri', { nargs: 1, help: 'TODO: document' });
-            argparser.add_argument('--data', { required: true, help: 'Escaped JSON string for post data' });
-            argparser.add_argument('--version', { required: true, help: 'Version of Zotero record (obtained previously)' });
-            return { status: 0, message: "success" };
+            argparser.add_argument('--data', {
+                required: true,
+                help: 'Escaped JSON string for post data',
+            });
+            argparser.add_argument('--version', {
+                required: true,
+                help: 'Version of Zotero record (obtained previously)',
+            });
+            return { status: 0, message: 'success' };
         }
         const res = await this.patch(args.uri, args.data, args.version);
         this.print(res);
@@ -411,7 +481,9 @@ module.exports = class Zotero {
     }
     // TODO: Add       resolveWithFullResponse: options.resolveWithFullResponse,
     async delete(uri, version) {
-        const prefix = this.config.user_id ? `/users/${this.config.user_id}` : `/groups/${this.config.group_id}`;
+        const prefix = this.config.user_id
+            ? `/users/${this.config.user_id}`
+            : `/groups/${this.config.group_id}`;
         const headers = Object.assign(Object.assign({}, this.headers), { 'Content-Type': 'application/json' });
         if (typeof version !== 'undefined')
             headers['If-Unmodified-Since-Version'] = version;
@@ -429,10 +501,12 @@ module.exports = class Zotero {
         this.reconfigure(args);
         /** Make a direct delete query to the API using 'DELETE uri'. */
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("__delete", { "help": "Expose 'delete'. Make a direct delete query to the API using 'DELETE uri'." });
-            argparser.set_defaults({ "func": this.__delete.name });
+            const argparser = subparsers.add_parser('__delete', {
+                help: "Expose 'delete'. Make a direct delete query to the API using 'DELETE uri'.",
+            });
+            argparser.set_defaults({ func: this.__delete.name });
             argparser.add_argument('uri', { nargs: '+', help: 'Request uri' });
-            return { status: 0, message: "success" };
+            return { status: 0, message: 'success' };
         }
         let out = [];
         for (const uri of args.uri) {
@@ -441,7 +515,7 @@ module.exports = class Zotero {
             //console.log(response)
             out.push[await this.delete(uri, response.version)];
         }
-        console.log("TEMPORARY=" + JSON.stringify(out, null, 2));
+        console.log('TEMPORARY=' + JSON.stringify(out, null, 2));
         process.exit(1);
         return out;
     }
@@ -449,27 +523,43 @@ module.exports = class Zotero {
         this.reconfigure(args);
         /** Show details about this API key. (API: /keys ) */
         if (args.getInterface && subparsers) {
-            const parser_key = subparsers.add_parser("key", { "help": "Show details about an API key. (API: /keys )" });
-            parser_key.set_defaults({ "func": this.key.name });
-            parser_key.add_argument('--key', { nargs: 1, help: 'Provide the API key. Otherwise the API key given in the config is used. API: /keys' });
-            parser_key.add_argument('--groups', { action: 'store_true', help: 'Show groups available to this key (API: /users/<userID>/groups)' });
-            parser_key.add_argument('--terse', { action: 'store_true', help: 'Produce a simplified listing of groups' });
-            return { status: 0, message: "success" };
+            const parser_key = subparsers.add_parser('key', {
+                help: 'Show details about an API key. (API: /keys )',
+            });
+            parser_key.set_defaults({ func: this.key.name });
+            parser_key.add_argument('--key', {
+                nargs: 1,
+                help: 'Provide the API key. Otherwise the API key given in the config is used. API: /keys',
+            });
+            parser_key.add_argument('--groups', {
+                action: 'store_true',
+                help: 'Show groups available to this key (API: /users/<userID>/groups)',
+            });
+            parser_key.add_argument('--terse', {
+                action: 'store_true',
+                help: 'Produce a simplified listing of groups',
+            });
+            return { status: 0, message: 'success' };
         }
         if (!args.api_key) {
             args.api_key = this.config.api_key;
         }
-        const res = await this.get(`/keys/${args.api_key}`, { userOrGroupPrefix: false });
+        const res = await this.get(`/keys/${args.api_key}`, {
+            userOrGroupPrefix: false,
+        });
         this.show(res);
         let res2 = [];
         if (args.groups) {
             // TODO: This only retrieves 100 libraries. Need to an 'all' query.
-            res2 = await this.get(`/users/${res.userID}/groups`, { params: { limit: 100 }, userOrGroupPrefix: false });
-            // /users/<userID>/groups      
+            res2 = await this.get(`/users/${res.userID}/groups`, {
+                params: { limit: 100 },
+                userOrGroupPrefix: false,
+            });
+            // /users/<userID>/groups
             if (args.terse) {
                 console.log(`Number of groups: ${res2.length}`);
-                const res3 = res2.sort((a, b) => (a.data.name > b.data.name) ? 1 : ((b.data.name > a.data.name) ? -1 : 0));
-                res3.forEach(element => {
+                const res3 = res2.sort((a, b) => a.data.name > b.data.name ? 1 : b.data.name > a.data.name ? -1 : 0);
+                res3.forEach((element) => {
                     const data = element.data;
                     console.log(`${data.id}\t${data.name} ${data.owner} ${data.type}`);
                 });
@@ -486,7 +576,8 @@ module.exports = class Zotero {
     // End of standard API calls
     // Utility functions. private?
     async count(uri, params = {}) {
-        return (await this.get(uri, { resolveWithFullResponse: true, params })).headers['total-results'];
+        return (await this.get(uri, { resolveWithFullResponse: true, params }))
+            .headers['total-results'];
     }
     show(v) {
         // TODO: Look at the type of v: if string, then print, if object, then stringify
@@ -523,18 +614,18 @@ module.exports = class Zotero {
         // zotero://select/groups/(\d+)/(items|collections)/([A-Z01-9]+)
         // TO DO - make this function array->array and string->string.
         if (Array.isArray(key)) {
-            key = key.map(mykey => {
+            key = key.map((mykey) => {
                 return this.extractKeyGroupVariable(mykey, n);
             });
             return key;
         }
         else {
-            let out = "";
+            let out = '';
             key = key.toString();
             const res = key.match(/^zotero\:\/\/select\/groups\/(library|\d+)\/(items|collections)\/([A-Z01-9]+)/);
             if (res) {
                 //console.log("extractKeyGroupVariable -> res=" + JSON.stringify(res, null, 2))
-                if (res[2] == "library") {
+                if (res[2] == 'library') {
                     console.log('You cannot specify zotero-select links (zotero://...) to select user libraries.');
                     return null;
                 }
@@ -565,43 +656,49 @@ module.exports = class Zotero {
         let tagsarr = [];
         if (tags) {
             tags = this.as_array(tags);
-            console.log(typeof (tags));
-            tags.forEach(mytag => {
+            console.log(typeof tags);
+            tags.forEach((mytag) => {
                 tagsarr.push({ tag: mytag, type: 0 });
             });
         }
         return tagsarr;
     }
-    async attachNoteToItem(PARENT, options = { content: "Note note.", tags: [] }) {
+    async attachNoteToItem(PARENT, options = {
+        content: 'Note note.',
+        tags: [],
+    }) {
         const tags = this.objectifyTags(options.tags);
         // const noteText = options.content.replace(/\n/g, "\\n").replace(/\"/g, '\\\"')
-        const noteText = options.content.replace(/\n/g, "<br>");
+        const noteText = options.content.replace(/\n/g, '<br>');
         const json = {
-            "parentItem": PARENT,
-            "itemType": "note",
-            "note": noteText,
-            "tags": tags,
-            "collections": [],
-            "relations": {}
+            parentItem: PARENT,
+            itemType: 'note',
+            note: noteText,
+            tags: tags,
+            collections: [],
+            relations: {},
         };
         return await this.create_item({ item: json });
     }
     // TODO: Rewrite other function args like this.
     // Rather than fn(args) have fn({......})
-    async attachLinkToItem(PARENT, URL, options = { title: "Click to open", tags: [] }) {
+    async attachLinkToItem(PARENT, URL, options = {
+        title: 'Click to open',
+        tags: [],
+    }) {
         const tags = this.objectifyTags(options.tags);
-        console.log("Linktitle=" + options.title);
+        console.log('Linktitle=' + options.title);
         const json = {
-            "parentItem": PARENT,
-            "itemType": "attachment",
-            "linkMode": "linked_url",
-            "title": options.title,
-            "url": URL,
-            "note": "",
-            "contentType": "",
-            "charset": "",
-            "tags": tags,
-            "relations": {}
+            parentItem: PARENT,
+            itemType: 'attachment',
+            linkMode: 'linked_url',
+            title: options.title,
+            url: URL,
+            note: '',
+            contentType: '',
+            charset: '',
+            tags: tags,
+            relations: {},
         };
         return await this.create_item({ item: json });
     }
@@ -614,7 +711,7 @@ module.exports = class Zotero {
     // <userOrGroupPrefix>/collections/<collectionKey>	A specific collection in the library
     // <userOrGroupPrefix>/collections/<collectionKey>/collections	Subcollections within a specific collection in the library
     // TODO: --create-child should go into 'collection'.
-    // zotero-cli, 
+    // zotero-cli,
     // If I call $collections(subparser) -> add options to subparser
     // $collections(null) -> perform cllections action (using args)
     async collections(args, subparsers) {
@@ -622,12 +719,24 @@ module.exports = class Zotero {
         /* Retrieve a list of collections or create a collection. (API: /collections, /collections/top, /collections/<collectionKey>/collections). Use 'collections --help' for details. */
         if (args.getInterface && subparsers) {
             //async $collections
-            const parser_collections = subparsers.add_parser("collections", { "help": "Retrieve sub-collections and create new collections." });
-            parser_collections.set_defaults({ "func": "collections" });
-            parser_collections.add_argument('--top', { action: 'store_true', help: 'Show only collection at top level.' });
-            parser_collections.add_argument('--key', { nargs: 1, required: true, help: 'Show all the child collections of collection with key. You can provide the key as zotero-select link (zotero://...) to also set the group-id.' });
-            parser_collections.add_argument('--create-child', { nargs: '*', help: 'Create child collections of key (or at the top level if no key is specified) with the names specified.' });
-            return { status: 0, message: "success" };
+            const parser_collections = subparsers.add_parser('collections', {
+                help: 'Retrieve sub-collections and create new collections.',
+            });
+            parser_collections.set_defaults({ func: 'collections' });
+            parser_collections.add_argument('--top', {
+                action: 'store_true',
+                help: 'Show only collection at top level.',
+            });
+            parser_collections.add_argument('--key', {
+                nargs: 1,
+                required: true,
+                help: 'Show all the child collections of collection with key. You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
+            });
+            parser_collections.add_argument('--create-child', {
+                nargs: '*',
+                help: 'Create child collections of key (or at the top level if no key is specified) with the names specified.',
+            });
+            return { status: 0, message: 'success' };
         }
         /*
         The above means that I can call:
@@ -638,7 +747,7 @@ module.exports = class Zotero {
         Zotero.$item(args)
         */
         // Provide guidance to the user:  This function requires:
-        // args.key (string, required) 
+        // args.key (string, required)
         // args.top (boolean, optional)
         // args.create_child (string, optional)
         // perform tests: args.key
@@ -653,31 +762,33 @@ module.exports = class Zotero {
         // if (args.create_child) {
         args.create_child = this.as_array(args.create_child);
         //} else {
-        //  console.log("TEMPORARY="+JSON.stringify(   args.create_child         ,null,2))      
+        //  console.log("TEMPORARY="+JSON.stringify(   args.create_child         ,null,2))
         //}
         // perform test: args.create_child
         // If create_child=true, then create the child and exit.
         // console.log("collection...." + args.key)
         if (args.create_child) {
-            console.log("args.create_child");
-            const response = await this.post('/collections', JSON.stringify(args.create_child.map(c => { return { name: c, parentCollection: args.key }; })));
+            console.log('args.create_child');
+            const response = await this.post('/collections', JSON.stringify(args.create_child.map((c) => {
+                return { name: c, parentCollection: args.key };
+            })));
             const resp = JSON.parse(response);
-            console.log("response=" + JSON.stringify(resp, null, 2));
+            console.log('response=' + JSON.stringify(resp, null, 2));
             if (resp.successful) {
                 this.print('Collections created: ', resp.successful);
-                console.log("collection....done");
+                console.log('collection....done');
                 return resp.successful;
             }
             else {
-                console.log("collection....failed");
-                console.log("response=" + JSON.stringify(resp, null, 2));
+                console.log('collection....failed');
+                console.log('response=' + JSON.stringify(resp, null, 2));
                 return resp;
             }
             // TODO: In all functions where data is returned, add '.successful' - Zotero always wraps in that.
             // This leaves an array.
         }
         else {
-            console.log("get...");
+            console.log('get...');
             // test for args.top: Not required.
             // If create_child==false:
             let collections = null;
@@ -690,10 +801,9 @@ module.exports = class Zotero {
             this.show(collections);
             this.finalActions(collections);
             if (args.terse) {
-                console.log("test");
-                collections = collections.map(element => Object({ "key": element.data.key, "name": element.data.name }));
+                console.log('test');
+                collections = collections.map((element) => Object({ key: element.data.key, name: element.data.name }));
             }
-            ;
             return collections;
         }
     }
@@ -711,14 +821,31 @@ module.exports = class Zotero {
         this.reconfigure(args);
         if (args.getInterface && subparsers) {
             //async $collection
-            const parser_collection = subparsers.add_parser("collection", { "help": "Retrieve collection information, display tags, add/remove items. (API: /collections/KEY or /collections/KEY/tags). (Note: Retrieve items is a collection: use 'items --collection KEY'.) " });
-            parser_collection.set_defaults({ "func": this.collection.name });
-            parser_collection.add_argument('--key', { nargs: 1, help: 'The key of the collection (required). You can provide the key as zotero-select link (zotero://...) to also set the group-id.' });
-            parser_collection.add_argument('--tags', { action: 'store_true', help: 'Display tags present in the collection.' });
-            parser_collection.add_argument('itemkeys', { nargs: '*', help: 'Item keys for items to be added or removed from this collection.' });
-            parser_collection.add_argument('--add', { nargs: '*', help: 'Add items to this collection. Note that adding items to collections with \'item --addtocollection\' may require fewer API queries. (Convenience method: patch item->data->collections.)' });
-            parser_collection.add_argument('--remove', { nargs: '*', help: 'Convenience method: Remove items from this collection. Note that removing items from collections with \'item --removefromcollection\' may require fewer API queries. (Convenience method: patch item->data->collections.)' });
-            return { status: 0, message: "success" };
+            const parser_collection = subparsers.add_parser('collection', {
+                help: "Retrieve collection information, display tags, add/remove items. (API: /collections/KEY or /collections/KEY/tags). (Note: Retrieve items is a collection: use 'items --collection KEY'.) ",
+            });
+            parser_collection.set_defaults({ func: this.collection.name });
+            parser_collection.add_argument('--key', {
+                nargs: 1,
+                help: 'The key of the collection (required). You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
+            });
+            parser_collection.add_argument('--tags', {
+                action: 'store_true',
+                help: 'Display tags present in the collection.',
+            });
+            parser_collection.add_argument('itemkeys', {
+                nargs: '*',
+                help: 'Item keys for items to be added or removed from this collection.',
+            });
+            parser_collection.add_argument('--add', {
+                nargs: '*',
+                help: "Add items to this collection. Note that adding items to collections with 'item --addtocollection' may require fewer API queries. (Convenience method: patch item->data->collections.)",
+            });
+            parser_collection.add_argument('--remove', {
+                nargs: '*',
+                help: "Convenience method: Remove items from this collection. Note that removing items from collections with 'item --removefromcollection' may require fewer API queries. (Convenience method: patch item->data->collections.)",
+            });
+            return { status: 0, message: 'success' };
         }
         if (args.key) {
             args.key = this.extractKeyAndSetGroup(args.key);
@@ -750,7 +877,9 @@ module.exports = class Zotero {
                 const item = await this.get(`/items/${itemKey}`);
                 if (item.data.collections.includes(args.key))
                     continue;
-                await this.patch(`/items/${itemKey}`, JSON.stringify({ collections: item.data.collections.concat(args.key) }), item.version);
+                await this.patch(`/items/${itemKey}`, JSON.stringify({
+                    collections: item.data.collections.concat(args.key),
+                }), item.version);
             }
         }
         if (args.remove) {
@@ -782,23 +911,42 @@ module.exports = class Zotero {
         let items;
         if (args.getInterface && subparsers) {
             //async items
-            const parser_items = subparsers.add_parser("items", { "help": "Retrieve items, retrieve items within collections, with filter is required. Count items. By default, all items are retrieved. With --top or limit (via --filter) the default number of items are retrieved. (API: /items, /items/top, /collections/COLLECTION/items/top)" });
-            parser_items.set_defaults({ "func": this.items.name });
+            const parser_items = subparsers.add_parser('items', {
+                help: 'Retrieve items, retrieve items within collections, with filter is required. Count items. By default, all items are retrieved. With --top or limit (via --filter) the default number of items are retrieved. (API: /items, /items/top, /collections/COLLECTION/items/top)',
+            });
+            parser_items.set_defaults({ func: this.items.name });
             /* parser_items.add_argument('itemKeys', {
                nargs: "*",
                action: 'store_true',
                help: 'items for validation'
              }) */
-            parser_items.add_argument('--count', { action: 'store_true', help: 'Return the number of items.' });
+            parser_items.add_argument('--count', {
+                action: 'store_true',
+                help: 'Return the number of items.',
+            });
             // argparser.add_argument('--all', { action: 'store_true', help: 'obsolete' })
-            parser_items.add_argument('--filter', { type: subparsers.json, help: 'Provide a filter as described in the Zotero API documentation under read requests / parameters. For example: \'{"format": "json,bib", "limit": 100, "start": 100}\'.' });
-            parser_items.add_argument('--collection', { help: 'Retrive list of items for collection. You can provide the collection key as a zotero-select link (zotero://...) to also set the group-id.' });
-            parser_items.add_argument('--top', { action: 'store_true', help: 'Retrieve top-level items in the library/collection (excluding child items / attachments, excluding trashed items).' });
-            parser_items.add_argument('--validate', { action: 'store_true', help: 'Validate the record against a schema. If your config contains zotero-schema, then that file is used. Otherwise supply one with --validate-with' });
-            parser_items.add_argument('--validate-with', { type: subparsers.path, help: 'json-schema file for all itemtypes, or directory with schema files, one per itemtype.' });
-            return { status: 0, message: "success" };
+            parser_items.add_argument('--filter', {
+                type: subparsers.json,
+                help: 'Provide a filter as described in the Zotero API documentation under read requests / parameters. For example: \'{"format": "json,bib", "limit": 100, "start": 100}\'.',
+            });
+            parser_items.add_argument('--collection', {
+                help: 'Retrive list of items for collection. You can provide the collection key as a zotero-select link (zotero://...) to also set the group-id.',
+            });
+            parser_items.add_argument('--top', {
+                action: 'store_true',
+                help: 'Retrieve top-level items in the library/collection (excluding child items / attachments, excluding trashed items).',
+            });
+            parser_items.add_argument('--validate', {
+                action: 'store_true',
+                help: 'Validate the record against a schema. If your config contains zotero-schema, then that file is used. Otherwise supply one with --validate-with',
+            });
+            parser_items.add_argument('--validate-with', {
+                type: subparsers.path,
+                help: 'json-schema file for all itemtypes, or directory with schema files, one per itemtype.',
+            });
+            return { status: 0, message: 'success' };
         }
-        if (typeof (args.filter) === "string") {
+        if (typeof args.filter === 'string') {
             args.filter = JSON.parse(args.filter);
         }
         if (args.count && args.validate) {
@@ -834,7 +982,7 @@ module.exports = class Zotero {
         else {
             //console.log("all-----")
             items = await this.all(`${collection}/items`, params);
-            //console.log("TEMPORARY="+JSON.stringify(      items      ,null,2))       
+            //console.log("TEMPORARY="+JSON.stringify(      items      ,null,2))
         }
         // console.log("TEMPORARY=" + JSON.stringify(items, null, 2))
         if (args.validate || args.validate_with) {
@@ -845,7 +993,7 @@ module.exports = class Zotero {
         return items;
     }
     async validate_items(args, items) {
-        let schema_path = "";
+        let schema_path = '';
         if (args.validate_with) {
             if (!fs.existsSync(args.validate_with))
                 throw new Error(`You have provided a schema with --validate-with that does not exist: ${args.validate_with} does not exist`);
@@ -853,19 +1001,23 @@ module.exports = class Zotero {
                 schema_path = args.validate_with;
         }
         else {
-            console.log("TEMPORARY=" + JSON.stringify(this.config, null, 2));
+            console.log('TEMPORARY=' + JSON.stringify(this.config, null, 2));
             if (!fs.existsSync(this.config.zotero_schema))
                 throw new Error(`You have asked for validation, but '${this.config.zotero_schema}' does not exist`);
             else
                 schema_path = this.config.zotero_schema;
         }
         const oneSchema = fs.lstatSync(schema_path).isFile();
-        let validate = oneSchema ? ajv.compile(JSON.parse(fs.readFileSync(schema_path, 'utf-8'))) : null;
+        let validate = oneSchema
+            ? ajv.compile(JSON.parse(fs.readFileSync(schema_path, 'utf-8')))
+            : null;
         const validators = {};
         // still a bit rudimentary
         for (const item of items) {
             if (!oneSchema) {
-                validate = validators[item.itemType] = validators[item.itemType] || ajv.compile(JSON.parse(fs.readFileSync(path.join(schema_path, `${item.itemType}.json`), 'utf-8')));
+                validate = validators[item.itemType] =
+                    validators[item.itemType] ||
+                        ajv.compile(JSON.parse(fs.readFileSync(path.join(schema_path, `${item.itemType}.json`), 'utf-8')));
             }
             if (!validate(item)) {
                 this.show(validate.errors);
@@ -894,27 +1046,56 @@ module.exports = class Zotero {
         // $item({"argparser": subparser}) returns CLI definition.
         if (args.getInterface && subparsers) {
             //async item
-            const parser_item = subparsers.add_parser("item", { "help": "Modify items: Add/remove tags, attach/save files, add to collection/remove, get child items. (API: /items/KEY/ or /items/KEY/children)" });
-            parser_item.set_defaults({ "func": this.item.name });
-            parser_item.add_argument('--key', {
-                "action": "store",
-                "required": true,
-                "help": 'The key of the item. You can provide the key as zotero-select link (zotero://...) to also set the group-id.'
+            const parser_item = subparsers.add_parser('item', {
+                help: 'Modify items: Add/remove tags, attach/save files, add to collection/remove, get child items. (API: /items/KEY/ or /items/KEY/children)',
             });
-            parser_item.add_argument('--children', { action: 'store_true', help: 'Retrieve list of children for the item.' });
+            parser_item.set_defaults({ func: this.item.name });
+            parser_item.add_argument('--key', {
+                action: 'store',
+                required: true,
+                help: 'The key of the item. You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
+            });
+            parser_item.add_argument('--children', {
+                action: 'store_true',
+                help: 'Retrieve list of children for the item.',
+            });
             parser_item.add_argument('--filter', {
                 type: subparsers.json,
-                help: 'Provide a filter as described in the Zotero API documentation under read requests / parameters. To retrieve multiple items you have use "itemkey"; for example: \'{"format": "json,bib", "itemkey": "A,B,C"}\'. See https://www.zotero.org/support/dev/web_api/v3/basics#search_syntax.'
+                help: 'Provide a filter as described in the Zotero API documentation under read requests / parameters. To retrieve multiple items you have use "itemkey"; for example: \'{"format": "json,bib", "itemkey": "A,B,C"}\'. See https://www.zotero.org/support/dev/web_api/v3/basics#search_syntax.',
             });
-            parser_item.add_argument('--addfiles', { nargs: '*', help: 'Upload attachments to the item. (/items/new)' });
-            parser_item.add_argument('--savefiles', { nargs: '*', help: 'Download all attachments from the item (/items/KEY/file).' });
-            parser_item.add_argument('--addtocollection', { nargs: '*', help: 'Add item to collections. (Convenience method: patch item->data->collections.)' });
-            parser_item.add_argument('--removefromcollection', { nargs: '*', help: 'Remove item from collections. (Convenience method: patch item->data->collections.)' });
-            parser_item.add_argument('--addtags', { nargs: '*', help: 'Add tags to item. (Convenience method: patch item->data->tags.)' });
-            parser_item.add_argument('--removetags', { nargs: '*', help: 'Remove tags from item. (Convenience method: patch item->data->tags.)' });
-            parser_item.add_argument('--validate', { action: 'store_true', help: 'Validate the record against a schema. If your config contains zotero-schema, then that file is used. Otherwise supply one with --validate-with' });
-            parser_item.add_argument('--validate-with', { type: subparsers.path, help: 'json-schema file for all itemtypes, or directory with schema files, one per itemtype.' });
-            return { status: 0, message: "success" };
+            parser_item.add_argument('--addfiles', {
+                nargs: '*',
+                help: 'Upload attachments to the item. (/items/new)',
+            });
+            parser_item.add_argument('--savefiles', {
+                nargs: '*',
+                help: 'Download all attachments from the item (/items/KEY/file).',
+            });
+            parser_item.add_argument('--addtocollection', {
+                nargs: '*',
+                help: 'Add item to collections. (Convenience method: patch item->data->collections.)',
+            });
+            parser_item.add_argument('--removefromcollection', {
+                nargs: '*',
+                help: 'Remove item from collections. (Convenience method: patch item->data->collections.)',
+            });
+            parser_item.add_argument('--addtags', {
+                nargs: '*',
+                help: 'Add tags to item. (Convenience method: patch item->data->tags.)',
+            });
+            parser_item.add_argument('--removetags', {
+                nargs: '*',
+                help: 'Remove tags from item. (Convenience method: patch item->data->tags.)',
+            });
+            parser_item.add_argument('--validate', {
+                action: 'store_true',
+                help: 'Validate the record against a schema. If your config contains zotero-schema, then that file is used. Otherwise supply one with --validate-with',
+            });
+            parser_item.add_argument('--validate-with', {
+                type: subparsers.path,
+                help: 'json-schema file for all itemtypes, or directory with schema files, one per itemtype.',
+            });
+            return { status: 0, message: 'success' };
         }
         let output = [];
         //console.log("args in ... TEMPORARY=" + JSON.stringify(args.key, null, 2))
@@ -930,14 +1111,16 @@ module.exports = class Zotero {
         var item;
         if (args.key) {
             item = await this.get(`/items/${args.key}`);
-            output.push({ "record": item });
+            output.push({ record: item });
             if (args.savefiles) {
                 let children = await this.get(`/items/${args.key}/children`);
-                output.push({ "children": children });
-                await Promise.all(children.filter(item => item.data.itemType === 'attachment').map(async (item) => {
+                output.push({ children: children });
+                await Promise.all(children
+                    .filter((item) => item.data.itemType === 'attachment')
+                    .map(async (item) => {
                     if (item.data.filename) {
                         console.log(`Downloading file ${item.data.filename}`);
-                        // TODO: 
+                        // TODO:
                         // ??? await this.attachment({key: item.key, save: item.data.filename})
                         // TODO: Is 'binary' correct?
                         fs.writeFileSync(item.data.filename, await this.get(`/items/${item.key}/file`), 'binary');
@@ -948,11 +1131,11 @@ module.exports = class Zotero {
                 }));
             }
             if (args.addfiles) {
-                console.log("Adding files...");
+                console.log('Adding files...');
                 const attachmentTemplate = await this.get('/items/new?itemType=attachment&linkMode=imported_file', { userOrGroupPrefix: false });
                 for (const filename of args.addfiles) {
                     if (args.debug)
-                        console.log("Adding file: " + filename);
+                        console.log('Adding file: ' + filename);
                     if (!fs.existsSync(filename)) {
                         const msg = this.message(0, `Ignoring non-existing file: ${filename}.`);
                         return msg;
@@ -970,16 +1153,23 @@ module.exports = class Zotero {
                         const uploadResponse = await request({
                             method: 'POST',
                             uri: uploadAuth.url,
-                            body: Buffer.concat([Buffer.from(uploadAuth.prefix), fs.readFileSync(filename), Buffer.from(uploadAuth.suffix)]),
-                            headers: { 'Content-Type': uploadAuth.contentType }
+                            body: Buffer.concat([
+                                Buffer.from(uploadAuth.prefix),
+                                fs.readFileSync(filename),
+                                Buffer.from(uploadAuth.suffix),
+                            ]),
+                            headers: { 'Content-Type': uploadAuth.contentType },
                         });
                         if (args.verbose) {
-                            console.log("uploadResponse=");
+                            console.log('uploadResponse=');
                             this.show(uploadResponse);
                         }
-                        request_post = await this.post(`/items/${uploadItem.successful[0].key}/file?upload=${uploadAuth.uploadKey}`, '{}', { 'Content-Type': 'application/x-www-form-urlencoded', 'If-None-Match': '*' });
+                        request_post = await this.post(`/items/${uploadItem.successful[0].key}/file?upload=${uploadAuth.uploadKey}`, '{}', {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'If-None-Match': '*',
+                        });
                     }
-                    output.push({ "file": request_post });
+                    output.push({ file: request_post });
                 }
             }
             if (args.addtocollection) {
@@ -987,59 +1177,62 @@ module.exports = class Zotero {
                 //args.addtocollection = this.extractKeyAndSetGroup(args.addtocollection)
                 //console.log("-->" + args.addtocollection)
                 let newCollections = item.data.collections;
-                args.addtocollection.forEach(itemKey => {
+                args.addtocollection.forEach((itemKey) => {
                     if (!newCollections.includes(itemKey)) {
                         newCollections.push(itemKey);
                     }
                 });
                 const addto = await this.patch(`/items/${args.key}`, JSON.stringify({ collections: newCollections }), item.version);
-                output.push({ "addtocollection": addto });
+                output.push({ addtocollection: addto });
             }
             if (args.removefromcollection) {
                 args.removefromcollection = this.extractKeyAndSetGroup(args.removefromcollection);
                 let newCollections = item.data.collections;
-                args.removefromcollection.forEach(itemKey => {
+                args.removefromcollection.forEach((itemKey) => {
                     const index = newCollections.indexOf(itemKey);
                     if (index > -1) {
                         newCollections.splice(index, 1);
                     }
                 });
                 const removefrom = await this.patch(`/items/${args.key}`, JSON.stringify({ collections: newCollections }), item.version);
-                output.push({ "removefromcollection": removefrom });
+                output.push({ removefromcollection: removefrom });
             }
             if (args.addtags) {
                 let newTags = item.data.tags;
-                args.addtags.forEach(tag => {
-                    if (!newTags.find(newTag => newTag.tag === tag)) {
+                args.addtags.forEach((tag) => {
+                    if (!newTags.find((newTag) => newTag.tag === tag)) {
                         newTags.push({ tag });
                     }
                 });
                 const res = await this.patch(`/items/${args.key}`, JSON.stringify({ tags: newTags }), item.version);
-                output.push({ "addtags": res });
+                output.push({ addtags: res });
             }
             if (args.removetags) {
-                let newTags = item.data.tags.filter(tag => !args.removetags.includes(tag.tag));
+                let newTags = item.data.tags.filter((tag) => !args.removetags.includes(tag.tag));
                 const res = await this.patch(`/items/${args.key}`, JSON.stringify({ tags: newTags }), item.version);
-                output.push({ "removetags": res });
+                output.push({ removetags: res });
             }
         }
         const params = args.filter || {};
         let result;
         if (args.children) {
-            console.log("children");
+            console.log('children');
             result = await this.get(`/items/${args.key}/children`, { params });
-            output.push({ "children_final": result });
+            output.push({ children_final: result });
         }
         else {
-            if (args.addtocollection || args.removefromcollection
-                || args.removetags || args.addtags || args.filter) {
+            if (args.addtocollection ||
+                args.removefromcollection ||
+                args.removetags ||
+                args.addtags ||
+                args.filter) {
                 result = await this.get(`/items/${args.key}`, { params });
             }
             else {
                 // Nothing about the item has changed:
                 result = item;
             }
-            output.push({ "item_final": result });
+            output.push({ item_final: result });
             if (args.fullresponse) {
                 //return result
             }
@@ -1055,16 +1248,18 @@ module.exports = class Zotero {
         // console.log(JSON.stringify(args))
         this.output = JSON.stringify(output);
         if (args.show)
-            console.log("item -> resul=" + JSON.stringify(result, null, 2));
+            console.log('item -> resul=' + JSON.stringify(result, null, 2));
         // return this.message(0,"Success", output)
         const finalactions = await this.finalActions(result);
-        const return_value = args.fullresponse ? {
-            status: 0,
-            message: "success",
-            output: output,
-            result: result,
-            final: finalactions
-        } : result;
+        const return_value = args.fullresponse
+            ? {
+                status: 0,
+                message: 'success',
+                output: output,
+                result: result,
+                final: finalactions,
+            }
+            : result;
         return return_value;
         // TODO: What if this fails? Zotero will return, e.g.   "message": "404 - {\"type\":\"Buffer\",\"data\":[78,111,116,32,102,111,117,110,100]}",
         // console.log(Buffer.from(obj.data).toString())
@@ -1078,11 +1273,21 @@ module.exports = class Zotero {
         this.reconfigure(args);
         if (args.getInterface && subparsers) {
             //async attachement
-            const parser_attachment = subparsers.add_parser("attachment", { "help": "Save file attachments for the item specified with --key KEY (API: /items/KEY/file). Also see 'item', which has options for adding/saving file attachments. " });
-            parser_attachment.set_defaults({ "func": this.attachment.name });
-            parser_attachment.add_argument('--key', { "action": "store", required: true, help: 'The key of the item. You can provide the key as zotero-select link (zotero://...) to also set the group-id.' });
-            parser_attachment.add_argument('--save', { "action": "store", required: true, help: 'Filename to save attachment to.' });
-            return { status: 0, message: "success" };
+            const parser_attachment = subparsers.add_parser('attachment', {
+                help: "Save file attachments for the item specified with --key KEY (API: /items/KEY/file). Also see 'item', which has options for adding/saving file attachments. ",
+            });
+            parser_attachment.set_defaults({ func: this.attachment.name });
+            parser_attachment.add_argument('--key', {
+                action: 'store',
+                required: true,
+                help: 'The key of the item. You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
+            });
+            parser_attachment.add_argument('--save', {
+                action: 'store',
+                required: true,
+                help: 'Filename to save attachment to.',
+            });
+            return { status: 0, message: 'success' };
         }
         if (args.key) {
             args.key = this.extractKeyAndSetGroup(args.key);
@@ -1104,23 +1309,36 @@ module.exports = class Zotero {
         // function.name({"argparser": subparser}) returns CLI definition.
         if (args.getInterface && subparsers) {
             //async create item
-            const parser_create = subparsers.add_parser("create", { "help": "Create a new item or items. (API: /items/new) You can retrieve a template with the --template option. Use this option to create both top-level items, as well as child items (including notes and links)." });
-            parser_create.set_defaults({ "func": this.create_item.name });
-            parser_create.add_argument('--template', { help: "Retrieve a template for the item you wish to create. You can retrieve the template types using the main argument 'types'." });
-            parser_create.add_argument('--files', { nargs: '*', help: 'Text files with JSON for the items to be created.' });
-            parser_create.add_argument('--items', { nargs: '*', help: 'JSON string(s) for the item(s) to be created.' });
-            return { status: 0, message: "success" };
+            const parser_create = subparsers.add_parser('create', {
+                help: 'Create a new item or items. (API: /items/new) You can retrieve a template with the --template option. Use this option to create both top-level items, as well as child items (including notes and links).',
+            });
+            parser_create.set_defaults({ func: this.create_item.name });
+            parser_create.add_argument('--template', {
+                help: "Retrieve a template for the item you wish to create. You can retrieve the template types using the main argument 'types'.",
+            });
+            parser_create.add_argument('--files', {
+                nargs: '*',
+                help: 'Text files with JSON for the items to be created.',
+            });
+            parser_create.add_argument('--items', {
+                nargs: '*',
+                help: 'JSON string(s) for the item(s) to be created.',
+            });
+            return { status: 0, message: 'success' };
         }
         if (args.template) {
-            const result = await this.get('/items/new', { userOrGroupPrefix: false, params: { itemType: args.template } });
+            const result = await this.get('/items/new', {
+                userOrGroupPrefix: false,
+                params: { itemType: args.template },
+            });
             this.show(result);
             //console.log("/"+result+"/")
             return result;
         }
-        else if ("files" in args && args.files.length > 0) {
+        else if ('files' in args && args.files.length > 0) {
             if (!args.files.length)
                 return this.message(0, 'Need at least one item (args.items) to create or use args.template');
-            const items = args.files.map(item => JSON.parse(fs.readFileSync(item, 'utf-8')));
+            const items = args.files.map((item) => JSON.parse(fs.readFileSync(item, 'utf-8')));
             //console.log("input")
             //this.show(items)
             const result = await this.post('/items', JSON.stringify(items));
@@ -1129,7 +1347,7 @@ module.exports = class Zotero {
             // TODO: see how to use pruneData
             return res;
         }
-        else if ("items" in args && args.items.length > 0) {
+        else if ('items' in args && args.items.length > 0) {
             const result = await this.post('/items', JSON.stringify(args.items));
             const res = JSON.parse(result);
             this.show(res);
@@ -1137,7 +1355,7 @@ module.exports = class Zotero {
             return res;
         }
         else if (args.item) {
-            const result = await this.post('/items', "[" + JSON.stringify(args.item) + "]");
+            const result = await this.post('/items', '[' + JSON.stringify(args.item) + ']');
             // console.log(result)
             const res = JSON.parse(result);
             this.show(res);
@@ -1152,31 +1370,48 @@ module.exports = class Zotero {
     pruneData(res, fullresponse = false) {
         if (fullresponse)
             return res;
-        return res.successful["0"].data;
+        return res.successful['0'].data;
     }
     async update_item(args, subparsers) {
         /** Update/replace an item (--key KEY), either update (API: patch /items/KEY) or replacing (using --replace, API: put /items/KEY). */
         this.reconfigure(args);
         if (args.getInterface && subparsers) {
             //update item
-            const parser_update = subparsers.add_parser("update", { "help": "Update/replace an item (--key KEY), either update (API: patch /items/KEY) or replacing (using --replace, API: put /items/KEY)." });
-            parser_update.set_defaults({ "func": this.update_item.name });
-            parser_update.add_argument('--key', { required: true, help: 'The key of the item. You can provide the key as zotero-select link (zotero://...) to also set the group-id.' });
-            parser_update.add_argument('--replace', { action: 'store_true', help: 'Replace the item by sumbitting the complete json.' });
-            parser_update.add_argument('--json', { nargs: 1, help: 'New item as JSON. For library use, an object is possible.' });
-            parser_update.add_argument('--file', { nargs: 1, help: 'Path of file in json format.' });
-            parser_update.add_argument('--version', { nargs: 1, help: 'You have to supply the version of the item via the --version argument or else the latest version will be used.' });
-            return { status: 0, message: "success" };
+            const parser_update = subparsers.add_parser('update', {
+                help: 'Update/replace an item (--key KEY), either update (API: patch /items/KEY) or replacing (using --replace, API: put /items/KEY).',
+            });
+            parser_update.set_defaults({ func: this.update_item.name });
+            parser_update.add_argument('--key', {
+                required: true,
+                help: 'The key of the item. You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
+            });
+            parser_update.add_argument('--replace', {
+                action: 'store_true',
+                help: 'Replace the item by sumbitting the complete json.',
+            });
+            parser_update.add_argument('--json', {
+                nargs: 1,
+                help: 'New item as JSON. For library use, an object is possible.',
+            });
+            parser_update.add_argument('--file', {
+                nargs: 1,
+                help: 'Path of file in json format.',
+            });
+            parser_update.add_argument('--version', {
+                nargs: 1,
+                help: 'You have to supply the version of the item via the --version argument or else the latest version will be used.',
+            });
+            return { status: 0, message: 'success' };
         }
         if (!args.replace) {
             args.replace = false;
         }
         //console.log("1")
         if (args.file && args.json) {
-            return this.message(0, "You cannot specify both file and json.", args);
+            return this.message(0, 'You cannot specify both file and json.', args);
         }
         if (!args.file && !args.json) {
-            return this.message(0, "You must specify either file or json.", args);
+            return this.message(0, 'You must specify either file or json.', args);
         }
         //console.log("2b")
         if (args.key) {
@@ -1198,10 +1433,10 @@ module.exports = class Zotero {
         }
         //console.log("3")
         //console.log("TEMPORARY args=" + JSON.stringify(args, null, 2))
-        let jsonstr = "";
+        let jsonstr = '';
         if (args.json) {
             args.json = this.as_value(args.json);
-            if (typeof (args.json) !== "string")
+            if (typeof args.json !== 'string')
                 jsonstr = JSON.stringify(args.json);
             else
                 jsonstr = args.json;
@@ -1228,14 +1463,16 @@ module.exports = class Zotero {
         return items;
     }
     // https://www.zotero.org/support/dev/web_api/v3/basics
-    // <userOrGroupPrefix>/publications/items	Items in My Publications  
+    // <userOrGroupPrefix>/publications/items	Items in My Publications
     async publications(args, subparsers) {
         /** Return a list of items in publications (user library only). (API: /publications/items) */
         this.reconfigure(args);
         // function.name({"argparser": subparser}) returns CLI definition.
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("publications", { "help": "Return a list of items in publications (user library only). (API: /publications/items)" });
-            argparser.set_defaults({ "func": this.publications.name });
+            const argparser = subparsers.add_parser('publications', {
+                help: 'Return a list of items in publications (user library only). (API: /publications/items)',
+            });
+            argparser.set_defaults({ func: this.publications.name });
             return;
         }
         const items = await this.get('/publications/items');
@@ -1248,8 +1485,10 @@ module.exports = class Zotero {
         this.reconfigure(args);
         // function.name({"argparser": subparser}) returns CLI definition.
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("types", { "help": "Retrieve a list of items types available in Zotero. (API: /itemTypes)." });
-            argparser.set_defaults({ "func": this.types.name });
+            const argparser = subparsers.add_parser('types', {
+                help: 'Retrieve a list of items types available in Zotero. (API: /itemTypes).',
+            });
+            argparser.set_defaults({ func: this.types.name });
             return;
         }
         const types = await this.get('/itemTypes', { userOrGroupPrefix: false });
@@ -1261,9 +1500,11 @@ module.exports = class Zotero {
         this.reconfigure(args);
         // function.name({"argparser": subparser}) returns CLI definition.
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("groups", { "help": "Retrieve the Zotero groups data to which the current library_id and api_key has access to. (API: /users/<user-id>/groups)" });
-            argparser.set_defaults({ "func": this.groups.name });
-            return this.message(0, "success", args);
+            const argparser = subparsers.add_parser('groups', {
+                help: 'Retrieve the Zotero groups data to which the current library_id and api_key has access to. (API: /users/<user-id>/groups)',
+            });
+            argparser.set_defaults({ func: this.groups.name });
+            return this.message(0, 'success', args);
         }
         let groups = await this.get('/groups');
         this.show(groups);
@@ -1277,21 +1518,33 @@ module.exports = class Zotero {
         this.reconfigure(args);
         // function.name({"argparser": subparser}) returns CLI definition.
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("fields", { "help": "Retrieve a template with the fields for --type TYPE (API: /itemTypeFields, /itemTypeCreatorTypes) or all item fields (API: /itemFields). Note that to retrieve a template, use 'create-item --template TYPE' rather than this command." });
-            argparser.set_defaults({ "func": this.fields.name });
-            argparser.add_argument('--type', { help: 'Display fields types for TYPE.' });
-            return { status: 0, message: "success" };
+            const argparser = subparsers.add_parser('fields', {
+                help: "Retrieve a template with the fields for --type TYPE (API: /itemTypeFields, /itemTypeCreatorTypes) or all item fields (API: /itemFields). Note that to retrieve a template, use 'create-item --template TYPE' rather than this command.",
+            });
+            argparser.set_defaults({ func: this.fields.name });
+            argparser.add_argument('--type', {
+                help: 'Display fields types for TYPE.',
+            });
+            return { status: 0, message: 'success' };
         }
         if (args.type) {
             const result = {
-                "itemTypeFields": await this.get('/itemTypeFields', { params: { itemType: args.type }, userOrGroupPrefix: false }),
-                "itemTypeCreatorTypes": await this.get('/itemTypeCreatorTypes', { params: { itemType: args.type }, userOrGroupPrefix: false })
+                itemTypeFields: await this.get('/itemTypeFields', {
+                    params: { itemType: args.type },
+                    userOrGroupPrefix: false,
+                }),
+                itemTypeCreatorTypes: await this.get('/itemTypeCreatorTypes', {
+                    params: { itemType: args.type },
+                    userOrGroupPrefix: false,
+                }),
             };
             this.show(result);
             return result;
         }
         else {
-            const result = { "itemFields": await this.get('/itemFields', { userOrGroupPrefix: false }) };
+            const result = {
+                itemFields: await this.get('/itemFields', { userOrGroupPrefix: false }),
+            };
             this.show(result);
             return result;
         }
@@ -1303,10 +1556,15 @@ module.exports = class Zotero {
         this.reconfigure(args);
         // function.name({"argparser": subparser}) returns CLI definition.
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("searches", { "help": "Return a list of the saved searches of the library. Create new saved searches. (API: /searches)" });
-            argparser.set_defaults({ "func": this.searches.name });
-            argparser.add_argument('--create', { nargs: 1, help: 'Path of JSON file containing the definitions of saved searches.' });
-            return { status: 0, message: "success" };
+            const argparser = subparsers.add_parser('searches', {
+                help: 'Return a list of the saved searches of the library. Create new saved searches. (API: /searches)',
+            });
+            argparser.set_defaults({ func: this.searches.name });
+            argparser.add_argument('--create', {
+                nargs: 1,
+                help: 'Path of JSON file containing the definitions of saved searches.',
+            });
+            return { status: 0, message: 'success' };
         }
         if (args.create) {
             let searchDef = [];
@@ -1331,11 +1589,18 @@ module.exports = class Zotero {
         this.reconfigure(args);
         // function.name({"argparser": subparser}) returns CLI definition.
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("tags", { "help": "Return a list of tags in the library. Options to filter and count tags. (API: /tags)" });
-            argparser.set_defaults({ "func": this.tags.name });
-            argparser.add_argument('--filter', { help: 'Tags of all types matching a specific name.' });
-            argparser.add_argument('--count', { action: 'store_true', help: 'TODO: document' });
-            return { status: 0, message: "success" };
+            const argparser = subparsers.add_parser('tags', {
+                help: 'Return a list of tags in the library. Options to filter and count tags. (API: /tags)',
+            });
+            argparser.set_defaults({ func: this.tags.name });
+            argparser.add_argument('--filter', {
+                help: 'Tags of all types matching a specific name.',
+            });
+            argparser.add_argument('--count', {
+                action: 'store_true',
+                help: 'TODO: document',
+            });
+            return { status: 0, message: 'success' };
         }
         let rawTags = null;
         if (args.filter) {
@@ -1344,7 +1609,7 @@ module.exports = class Zotero {
         else {
             rawTags = await this.all('/tags');
         }
-        const tags = rawTags.map(tag => tag.tag).sort();
+        const tags = rawTags.map((tag) => tag.tag).sort();
         if (args.count) {
             const tag_counts = {};
             for (const tag of tags) {
@@ -1364,24 +1629,26 @@ module.exports = class Zotero {
     async enclose_item_in_collection(args, subparsers) {
         this.reconfigure(args);
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("enclose-item", { "help": "Utility function: Enlose the item in a collection and create further subcollections." });
-            argparser.set_defaults({ "func": this.enclose_item_in_collection.name });
-            argparser.add_argument("--key", {
-                "nargs": 1,
-                "action": "store",
-                "help": "The Zotero item key for the item to be enclosed."
+            const argparser = subparsers.add_parser('enclose-item', {
+                help: 'Utility function: Enlose the item in a collection and create further subcollections.',
             });
-            argparser.add_argument("--collection", {
-                "nargs": 1,
-                "action": "store",
-                "help": "The Zotero collection key in which the new collection is created. (Otherwise created at top level.)"
+            argparser.set_defaults({ func: this.enclose_item_in_collection.name });
+            argparser.add_argument('--key', {
+                nargs: 1,
+                action: 'store',
+                help: 'The Zotero item key for the item to be enclosed.',
             });
-            argparser.add_argument("--title", {
-                "nargs": 1,
-                "action": "store",
-                "help": "The title for the new collection (otherwise it's derived from the item title)."
+            argparser.add_argument('--collection', {
+                nargs: 1,
+                action: 'store',
+                help: 'The Zotero collection key in which the new collection is created. (Otherwise created at top level.)',
             });
-            return { status: 0, message: "success" };
+            argparser.add_argument('--title', {
+                nargs: 1,
+                action: 'store',
+                help: "The title for the new collection (otherwise it's derived from the item title).",
+            });
+            return { status: 0, message: 'success' };
         }
         /*
         // Get an instance of Zotero (with default group)
@@ -1394,10 +1661,10 @@ module.exports = class Zotero {
         // Specify group via constructor
         let output = [];
         if (!args.key) {
-            return this.message(1, "You must provide --key/args.key", args);
+            return this.message(1, 'You must provide --key/args.key', args);
         }
         if (!args.collection) {
-            args.collection = "";
+            args.collection = '';
         }
         const [group_id, key] = this.getGroupAndKey(args);
         const base_collection = this.as_value(this.extractKeyAndSetGroup(args.collection));
@@ -1408,51 +1675,57 @@ module.exports = class Zotero {
         // TODO: Have automated test to see whether successful.
         output.push({ response1: response });
         if (!response) {
-            console.log("1 - item not found - item does not exist");
+            console.log('1 - item not found - item does not exist');
             return this.message();
         }
-        console.log("-->" + response.collections);
-        const child_name = args.title ? args.title :
-            ((response.reportNumber ? response.reportNumber + ". " : "") + response.title);
+        console.log('-->' + response.collections);
+        const child_name = args.title
+            ? args.title
+            : (response.reportNumber ? response.reportNumber + '. ' : '') +
+                response.title;
         //const new_coll = zotero.create_collection(group, base_collection, $name)
         // console.log("ch="+child_name)
         output.push({ child_name: child_name });
         // Everything below here should be done as Promise.all
-        console.log("collections -base");
+        console.log('collections -base');
         const new_coll = await zotero.collections({
             group_id: group_id,
             key: this.as_value(base_collection),
-            create_child: this.as_array(child_name)
+            create_child: this.as_array(child_name),
         });
         //console.log("TEMPORARY=" + JSON.stringify(new_coll, null, 2))
         output.push({ collection: new_coll });
-        console.log("Move item to collection");
+        console.log('Move item to collection');
         const ecoll = this.as_array(new_coll[0].key);
         const res = await zotero.item({
             key: key,
-            addtocollection: ecoll
+            addtocollection: ecoll,
         });
         output.push({ response2: res });
-        console.log("1-collections");
+        console.log('1-collections');
         const refcol_res = await zotero.collections({
             group_id: group_id,
             key: ecoll,
-            create_child: ["✅_References"]
+            create_child: ['✅_References'],
         });
         output.push({ collection: refcol_res });
         console.log(`1-links: ${group_id}:${key}`);
-        console.log("TEMPORARY=" + JSON.stringify(refcol_res, null, 2));
+        console.log('TEMPORARY=' + JSON.stringify(refcol_res, null, 2));
         const refcol = refcol_res[0].key;
         const link1 = await zotero.attach_link({
             group_id: group_id,
             key: key,
             url: `zotero://select/groups/${group_id}/collections/${refcol}`,
-            title: "✅View collection with references.",
-            tags: ["_r:viewRefs"]
+            title: '✅View collection with references.',
+            tags: ['_r:viewRefs'],
         });
         output.push({ link: link1 });
-        console.log("2-collection");
-        const refcol_citing = await zotero.collections({ group_id: group_id, key: ecoll, create_child: ["✅Citing articles"] });
+        console.log('2-collection');
+        const refcol_citing = await zotero.collections({
+            group_id: group_id,
+            key: ecoll,
+            create_child: ['✅Citing articles'],
+        });
         output.push({ collection: refcol_citing });
         const citingcol = refcol_citing[0].key;
         console.log(`2-link`);
@@ -1460,12 +1733,16 @@ module.exports = class Zotero {
             group_id: group_id,
             key: key,
             url: `zotero://select/groups/${group_id}/collections/${citingcol}`,
-            title: "✅View collection with citing articles (cited by).",
-            tags: ["_r:viewCitedBy"]
+            title: '✅View collection with citing articles (cited by).',
+            tags: ['_r:viewCitedBy'],
         });
         output.push({ link: link2 });
-        console.log("3-collection");
-        const refcol_rem = await zotero.collections({ group_id: group_id, key: ecoll, create_child: ["✅Removed references"] });
+        console.log('3-collection');
+        const refcol_rem = await zotero.collections({
+            group_id: group_id,
+            key: ecoll,
+            create_child: ['✅Removed references'],
+        });
         output.push({ collection: refcol_rem });
         const refremcol = refcol_rem[0].key;
         console.log(`3-link`);
@@ -1473,35 +1750,39 @@ module.exports = class Zotero {
             group_id: group_id,
             key: key,
             url: `zotero://select/groups/${group_id}/collections/${refremcol}`,
-            title: "✅View collection with removed references.",
-            tags: ["_r:viewRRemoved"]
+            title: '✅View collection with removed references.',
+            tags: ['_r:viewRRemoved'],
         });
         output.push({ link: link3 });
-        console.log("Note");
-        // say "Creating note for item key. Note key: "  
+        console.log('Note');
+        // say "Creating note for item key. Note key: "
         // ERROR HERE: key is still an array.
         const key2 = this.extractKeyAndSetGroup(key);
         const note = await zotero.attach_note({
             group_id: group_id,
             key: key2,
             description: `<h1>Bibliography</h1><p>Updated: date</p><p>Do not edit this note manually.</p><p><b>bibliography://select/groups/${group_id}/collections/${refcol}</b></p>`,
-            tags: ["_cites"]
+            tags: ['_cites'],
         });
         output.push({ note: note });
         const response3 = await zotero.item({ key: key });
         output.push({ response3: response3 });
         //console.log("-->" + response2.collections)
-        console.log("TEMPORARY=" + JSON.stringify(output, null, 2));
-        return this.message(0, "Succes", output);
+        console.log('TEMPORARY=' + JSON.stringify(output, null, 2));
+        return this.message(0, 'Succes', output);
     }
     getGroupAndKey(args) {
         //console.log("getGroupAndKey TEMPORARY=" + JSON.stringify(args, null, 2))
         this.reconfigure(args);
         // Precendence: explicit argument - otherwise from args.key, otherwise from args.collection
         // TODO: Check this with "  private extractKeyGroupVariable " - because that sets this.config.group_id - does that matter?
-        const group_id = this.as_value(args.group_id ? args.group_id :
-            args.key && this.extractGroupAndSetGroup(args.key) ? this.extractGroupAndSetGroup(args.key) :
-                args.collection && this.extractGroupAndSetGroup(args.collection) ? this.extractGroupAndSetGroup(args.collection) : this.config.group_id);
+        const group_id = this.as_value(args.group_id
+            ? args.group_id
+            : args.key && this.extractGroupAndSetGroup(args.key)
+                ? this.extractGroupAndSetGroup(args.key)
+                : args.collection && this.extractGroupAndSetGroup(args.collection)
+                    ? this.extractGroupAndSetGroup(args.collection)
+                    : this.config.group_id);
         const key = this.as_value(this.extractKeyAndSetGroup(args.key));
         //console.log(`getGroupAndKey ${args.key} -> ${group_id} / ${key}`)
         return [group_id, key];
@@ -1511,33 +1792,34 @@ module.exports = class Zotero {
         this.reconfigure(args);
         // We dont know what kind of item this is - gotta get the item to see
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("get-doi", { "help": "Utility function: Get the DOI for the item." });
-            argparser.set_defaults({ "func": this.get_doi.name });
-            argparser.add_argument("--key", {
-                "nargs": 1,
-                "action": "store",
-                "help": "The Zotero item key for the item to be updated."
+            const argparser = subparsers.add_parser('get-doi', {
+                help: 'Utility function: Get the DOI for the item.',
             });
-            return { status: 0, message: "success" };
+            argparser.set_defaults({ func: this.get_doi.name });
+            argparser.add_argument('--key', {
+                nargs: 1,
+                action: 'store',
+                help: 'The Zotero item key for the item to be updated.',
+            });
+            return { status: 0, message: 'success' };
         }
         args.fullresponse = false;
         const item = await this.item(args);
-        let doi = "";
+        let doi = '';
         if ('doi' in item) {
             doi = item.doi;
         }
         else {
-            item.extra.split("\n").forEach(element => {
+            item.extra.split('\n').forEach((element) => {
                 var mymatch = element.match(/^DOI\:\s*(.*?)\s*$/);
                 if (mymatch) {
                     doi = mymatch[1];
                 }
-                ;
             });
         }
-        console.log(`DOI: ${doi}, ${typeof (doi)}`);
+        console.log(`DOI: ${doi}, ${typeof doi}`);
         // ACTION: return values
-        doi = "doi->" + doi;
+        doi = 'doi->' + doi;
         return doi;
     }
     // Update the DOI of the item provided.
@@ -1545,19 +1827,21 @@ module.exports = class Zotero {
         this.reconfigure(args);
         // We dont know what kind of item this is - gotta get the item to see
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("update-doi", { "help": "Utility function: Update the DOI for the item." });
-            argparser.set_defaults({ "func": this.update_doi.name });
-            argparser.add_argument("--key", {
-                "nargs": 1,
-                "action": "store",
-                "help": "The Zotero item key for the item to be updated."
+            const argparser = subparsers.add_parser('update-doi', {
+                help: 'Utility function: Update the DOI for the item.',
             });
-            argparser.add_argument("--doi", {
-                "nargs": 1,
-                "action": "store",
-                "help": "The DOI for the item"
+            argparser.set_defaults({ func: this.update_doi.name });
+            argparser.add_argument('--key', {
+                nargs: 1,
+                action: 'store',
+                help: 'The Zotero item key for the item to be updated.',
             });
-            return { status: 0, message: "success" };
+            argparser.add_argument('--doi', {
+                nargs: 1,
+                action: 'store',
+                help: 'The DOI for the item',
+            });
+            return { status: 0, message: 'success' };
         }
         args.fullresponse = false;
         const item = await this.item(args);
@@ -1565,37 +1849,40 @@ module.exports = class Zotero {
         if (args.doi) {
             // TODO: should scan item.extra and check for existing DOI
             if (!item.doi)
-                console.log("TODO: zotero-lib - should scan item.extra and check for existing DOI");
+                console.log('TODO: zotero-lib - should scan item.extra and check for existing DOI');
             const extra = item.extra + `\nDOI: ${args.doi}`;
             const updateargs = {
                 key: args.key,
                 version: item.version,
                 json: item.doi ? { doi: args.doi } : { extra: extra },
                 fullresponse: false,
-                show: true
+                show: true,
             };
             // ACTION: check arguments
             // ACTION: run code
             const update = await this.update_item(updateargs);
             if (update.statusCode == 204) {
-                console.log("update successfull - getting record");
+                console.log('update successfull - getting record');
                 // const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
                 var today = new Date();
                 // const message = `Attached new DOI ${args.doi} on ${today.toLocaleDateString("en-US", options)}`
                 const message = `Attached new DOI ${args.doi} on ${today.toLocaleDateString()}`;
-                await this.attachNoteToItem(args.key, { content: message, tags: ["_r:message"] });
+                await this.attachNoteToItem(args.key, {
+                    content: message,
+                    tags: ['_r:message'],
+                });
                 const zoteroRecord = await this.item({ key: args.key });
                 if (args.verbose)
-                    console.log("Result=" + JSON.stringify(zoteroRecord, null, 2));
+                    console.log('Result=' + JSON.stringify(zoteroRecord, null, 2));
                 return zoteroRecord;
             }
             else {
-                console.log("update failed");
-                return this.message(1, "update failed");
+                console.log('update failed');
+                return this.message(1, 'update failed');
             }
         }
         else {
-            return this.message(1, "update failed - no doi provided");
+            return this.message(1, 'update failed - no doi provided');
         }
         // ACTION: return values
         // return 1
@@ -1604,16 +1891,16 @@ module.exports = class Zotero {
         this.reconfigure(args);
         // ACTION: define CLI interface
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("TEMPLATE", { "help": "HELPTEXT" });
-            argparser.set_defaults({ "func": this.TEMPLATE.name });
-            argparser.add_argument("--switch", {
-                "action": "store_true",
-                "help": "HELPTEXT"
+            const argparser = subparsers.add_parser('TEMPLATE', { help: 'HELPTEXT' });
+            argparser.set_defaults({ func: this.TEMPLATE.name });
+            argparser.add_argument('--switch', {
+                action: 'store_true',
+                help: 'HELPTEXT',
             });
-            argparser.add_argument("--arguments", {
-                "nargs": "*",
-                "action": "store",
-                "help": "HELPTEXT"
+            argparser.add_argument('--arguments', {
+                nargs: '*',
+                action: 'store',
+                help: 'HELPTEXT',
             });
         }
         // ACTION: check arguments
@@ -1624,9 +1911,8 @@ module.exports = class Zotero {
         // ACTION: run code
         // ACTION: return values
         const data = {};
-        return this.message(0, "exist status", data);
+        return this.message(0, 'exist status', data);
     }
-    ;
     // TODO: Implement
     async attach_link(args, subparsers) {
         this.reconfigure(args);
@@ -1634,65 +1920,93 @@ module.exports = class Zotero {
         // ACTION: define CLI interface
         // TODO: There's a problem here... the following just offer docorations. We need to have inputs too...
         const decoration = {
-            kerko_url: { title: "👀View item in Evidence Library", tags: ["_r:kerko", "_r:zotzen"] },
-            kerko_url_key: { title: "👀View item in Evidence Library", tags: ["_r:kerko", "_r:zotzen"] },
-            googledoc: { title: "📝View Google Doc and download alternative formats", tags: ["_r:googleDoc", "_r:zotzen"] },
-            deposit: { title: "🔄View entry on Zenodo (deposit)", tags: ["_r:zenodoDeposit", "_r:zotzen"] },
-            record: { title: "🔄View entry on Zenodo (record)", tags: ["_r:zenodoRecord", "_r:zotzen"] },
-            doi: { title: "🔄Look up this DOI (once activated)", tags: ["_r:doi", "_r:zotzen"] },
-            primarycollection: { title: "🆉View primary collection for this item", tags: ["_r:primary_collection", "_r:zotzen"] },
-            collection: { title: "🆉View collection for this item", tags: ["_r:collection", "_r:zotzen"] },
+            kerko_url: {
+                title: '👀View item in Evidence Library',
+                tags: ['_r:kerko', '_r:zotzen'],
+            },
+            kerko_url_key: {
+                title: '👀View item in Evidence Library',
+                tags: ['_r:kerko', '_r:zotzen'],
+            },
+            googledoc: {
+                title: '📝View Google Doc and download alternative formats',
+                tags: ['_r:googleDoc', '_r:zotzen'],
+            },
+            deposit: {
+                title: '🔄View entry on Zenodo (deposit)',
+                tags: ['_r:zenodoDeposit', '_r:zotzen'],
+            },
+            record: {
+                title: '🔄View entry on Zenodo (record)',
+                tags: ['_r:zenodoRecord', '_r:zotzen'],
+            },
+            doi: {
+                title: '🔄Look up this DOI (once activated)',
+                tags: ['_r:doi', '_r:zotzen'],
+            },
+            primarycollection: {
+                title: '🆉View primary collection for this item',
+                tags: ['_r:primary_collection', '_r:zotzen'],
+            },
+            collection: {
+                title: '🆉View collection for this item',
+                tags: ['_r:collection', '_r:zotzen'],
+            },
         };
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("attach-link", { "help": "Utility function: attach a link to an item" });
-            argparser.set_defaults({ "func": this.attach_link.name });
-            argparser.add_argument("--key", {
-                "nargs": 1,
-                "action": "store",
-                "help": "Required.xx"
+            const argparser = subparsers.add_parser('attach-link', {
+                help: 'Utility function: attach a link to an item',
             });
-            argparser.add_argument("--url", {
-                "nargs": 1,
-                "action": "store",
-                "help": "Provide a URL here and/or use the specific URL options below. If you use both --url and on of the options below, both will be added."
+            argparser.set_defaults({ func: this.attach_link.name });
+            argparser.add_argument('--key', {
+                nargs: 1,
+                action: 'store',
+                help: 'Required.xx',
             });
-            argparser.add_argument("--update-url-field", {
-                "action": "store_true",
-                "help": "Update/overwrite the url field of the item. The url used is --url (if set) or --kerko-link-key."
+            argparser.add_argument('--url', {
+                nargs: 1,
+                action: 'store',
+                help: 'Provide a URL here and/or use the specific URL options below. If you use both --url and on of the options below, both will be added.',
             });
-            argparser.add_argument("--title", {
-                "nargs": 1,
-                "action": "store",
-                "help": "Optional. The options for specific URLs below can supply default titles."
+            argparser.add_argument('--update-url-field', {
+                action: 'store_true',
+                help: 'Update/overwrite the url field of the item. The url used is --url (if set) or --kerko-link-key.',
             });
-            argparser.add_argument("--tags", {
-                "nargs": "*",
-                "action": "store",
-                "help": "Optional"
+            argparser.add_argument('--title', {
+                nargs: 1,
+                action: 'store',
+                help: 'Optional. The options for specific URLs below can supply default titles.',
+            });
+            argparser.add_argument('--tags', {
+                nargs: '*',
+                action: 'store',
+                help: 'Optional',
             });
             // TODO: There's a problem here... the following just offer docorations. We need to have inputs too...
             // This should probably just be the title used if there is no title, or --decorate is given.
-            Object.keys(decoration).forEach(option => {
-                const extra_text = option === "kerko_url_key" ? " The item key will be added automatically." : "";
+            Object.keys(decoration).forEach((option) => {
+                const extra_text = option === 'kerko_url_key'
+                    ? ' The item key will be added automatically.'
+                    : '';
                 argparser.add_argument(`--${option}`, {
-                    "nargs": 1,
-                    "action": "store",
-                    "help": `Provide a specific URL for '${option}'.${extra_text} The prefix '${decoration[option].title}' will be added to a title (if provided) and the following tags are added: ${JSON.stringify(decoration[option].tags)}`,
+                    nargs: 1,
+                    action: 'store',
+                    help: `Provide a specific URL for '${option}'.${extra_text} The prefix '${decoration[option].title}' will be added to a title (if provided) and the following tags are added: ${JSON.stringify(decoration[option].tags)}`,
                 });
             });
             // ... otherwise --id adds the three zenodo options, which otherwise are specified ...
             argparser.add_argument(`--id`, {
-                "nargs": 1,
-                "action": "store",
-                "help": `Provide a Zenodo id to add links for Zenodo record, deposit and doi.`,
+                nargs: 1,
+                action: 'store',
+                help: `Provide a Zenodo id to add links for Zenodo record, deposit and doi.`,
             });
             argparser.add_argument(`--zenodo`, {
-                "action": "store_true",
-                "help": `Determine Zenodo id from Zotero item and then add links for Zenodo record, deposit and doi.`,
+                action: 'store_true',
+                help: `Determine Zenodo id from Zotero item and then add links for Zenodo record, deposit and doi.`,
             });
             argparser.add_argument(`--decorate`, {
-                "action": "store_true",
-                "help": `Optional 'decoration/default title prefix'. Without title, this is used anyway. But if you give a title, specify this option to have the prefix anyway.`,
+                action: 'store_true',
+                help: `Optional 'decoration/default title prefix'. Without title, this is used anyway. But if you give a title, specify this option to have the prefix anyway.`,
             });
             // ... individually
             // --zenodorecord
@@ -1702,7 +2016,7 @@ module.exports = class Zotero {
             // --googledoc
             // .... ok... no... the url would give this... but... e.g. with kerko-url, the url given should be postfixed with the item...
             // with --zenodorecord... the zenodo-id should be obtained from the item if possible...
-            return { status: 0, message: "success" };
+            return { status: 0, message: 'success' };
         }
         // ACTION: check arguments
         if (args.switch) {
@@ -1722,12 +2036,12 @@ module.exports = class Zotero {
         var dataout = [];
         if (args.zenodo) {
             let xdoi = await this.get_doi(args);
-            xdoi = "x" + xdoi;
+            xdoi = 'x' + xdoi;
             const mymatch = xdoi.match(/zenodo\.(\d+)/);
             const id = mymatch[1];
             //args.id = id
             args.id = id;
-            console.log(`${id}, ${xdoi}, ${typeof (xdoi)}`);
+            console.log(`${id}, ${xdoi}, ${typeof xdoi}`);
         }
         // add links based on args.id
         if (args.id) {
@@ -1736,9 +2050,9 @@ module.exports = class Zotero {
             delete xargs.deposit, xargs.record, xargs.doi;
             const data1 = await this.attach_link({
                 key: xargs.key,
-                deposit: "https://zenodo.org/deposit/" + id,
-                record: "https://zenodo.org/record/" + id,
-                doi: "https://doi.org/10.5281/zenodo." + id
+                deposit: 'https://zenodo.org/deposit/' + id,
+                record: 'https://zenodo.org/record/' + id,
+                doi: 'https://doi.org/10.5281/zenodo.' + id,
             });
             dataout.push({ id_out: data1 });
         }
@@ -1750,14 +2064,14 @@ module.exports = class Zotero {
                 console.log(`Link: ${option} => ${args[option]}`);
                 let title = this.as_value(decoration[option].title);
                 let tags = decoration[option].tags;
-                title = args.title ? title + " " + args.title : title;
+                title = args.title ? title + ' ' + args.title : title;
                 tags = args.tags ? tags.push(args.tags) : tags;
-                const addkey = option === "kerko_url_key" ? this.as_value(args.key) : "";
+                const addkey = option === 'kerko_url_key' ? this.as_value(args.key) : '';
                 // ACTION: run code
                 const data = await this.attachLinkToItem(this.as_value(args.key), this.as_value(args[option]) + addkey, { title: title, tags: tags });
                 dataout.push({
                     decoration: option,
-                    data: data
+                    data: data,
                 });
             }
         }
@@ -1770,51 +2084,58 @@ module.exports = class Zotero {
             if (args.url || args.kerko_url_key) {
                 const argx = {
                     key: this.as_value(args.key),
-                    value: this.as_value(args.url) ? this.as_value(args.url) : this.as_value(args.kerko_url_key) ? this.as_value(args.kerko_url_key) + this.as_value(args.key) : ""
+                    value: this.as_value(args.url)
+                        ? this.as_value(args.url)
+                        : this.as_value(args.kerko_url_key)
+                            ? this.as_value(args.kerko_url_key) + this.as_value(args.key)
+                            : '',
                 };
                 const datau = await this.update_url(argx);
-                console.log("TEMPORARY...=" + JSON.stringify(datau, null, 2));
+                console.log('TEMPORARY...=' + JSON.stringify(datau, null, 2));
                 dataout.push({ url_field: datau });
             }
             else {
-                console.log("You have to set url or kerko_url_key for update-url-field to work");
+                console.log('You have to set url or kerko_url_key for update-url-field to work');
             }
         }
         // ACTION: return values
-        return this.message(0, "exist status", dataout);
+        return this.message(0, 'exist status', dataout);
     }
     async field(args, subparsers) {
         this.reconfigure(args);
         // ACTION: define CLI interface
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("field", { "help": "Utility function: Update a field for a specific item." });
-            argparser.set_defaults({ "func": this.field.name });
-            argparser.add_argument("--key", {
-                "nargs": 1,
-                "action": "store",
-                "help": "The Zotero item key for the item to be updated."
+            const argparser = subparsers.add_parser('field', {
+                help: 'Utility function: Update a field for a specific item.',
             });
-            argparser.add_argument("--field", {
-                "nargs": 1,
-                "action": "store",
-                "help": "The field to be updated"
+            argparser.set_defaults({ func: this.field.name });
+            argparser.add_argument('--key', {
+                nargs: 1,
+                action: 'store',
+                help: 'The Zotero item key for the item to be updated.',
             });
-            argparser.add_argument("--value", {
-                "nargs": 1,
-                "action": "store",
-                "help": "The value for the update (if not provided, the value of the field is shown)."
+            argparser.add_argument('--field', {
+                nargs: 1,
+                action: 'store',
+                help: 'The field to be updated',
+            });
+            argparser.add_argument('--value', {
+                nargs: 1,
+                action: 'store',
+                help: 'The value for the update (if not provided, the value of the field is shown).',
             });
             argparser.add_argument('--version', {
-                nargs: 1, help: 'You have to supply the version of the item via the --version argument or else the latest version will be used.'
+                nargs: 1,
+                help: 'You have to supply the version of the item via the --version argument or else the latest version will be used.',
             });
-            return { status: 0, message: "success" };
+            return { status: 0, message: 'success' };
         }
         if (!args.field) {
             console.log(`args.field is required.`);
             process.exit(1);
         }
         args.fullresponse = false;
-        let thisversion = "";
+        let thisversion = '';
         let item;
         if (args.version) {
             thisversion = this.as_value(args.version);
@@ -1832,19 +2153,19 @@ module.exports = class Zotero {
                 version: thisversion,
                 json: myobj,
                 fullresponse: false,
-                show: true
+                show: true,
             };
             const update = await this.update_item(updateargs);
             if (update.statusCode == 204) {
-                console.log("update successfull - getting record");
+                console.log('update successfull - getting record');
                 const zoteroRecord = await this.item({ key: args.key });
                 if (args.verbose)
-                    console.log("Result=" + JSON.stringify(zoteroRecord, null, 2));
+                    console.log('Result=' + JSON.stringify(zoteroRecord, null, 2));
                 return zoteroRecord;
             }
             else {
-                console.log("update failed");
-                return this.message(1, "update failed");
+                console.log('update failed');
+                return this.message(1, 'update failed');
             }
         }
         else {
@@ -1853,25 +2174,27 @@ module.exports = class Zotero {
         }
         // ACTION: return values
         const data = {};
-        return this.message(0, "exist status", data);
+        return this.message(0, 'exist status', data);
     }
     // TODO: Implement
     async extra_append(args, subparsers) {
         this.reconfigure(args);
         // ACTION: define CLI interface
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("extra-append", { "help": "HELPTEXT" });
-            argparser.set_defaults({ "func": this.extra_append.name });
-            argparser.add_argument("--switch", {
-                "action": "store_true",
-                "help": "HELPTEXT"
+            const argparser = subparsers.add_parser('extra-append', {
+                help: 'HELPTEXT',
             });
-            argparser.add_argument("--arguments", {
-                "nargs": "*",
-                "action": "store",
-                "help": "HELPTEXT"
+            argparser.set_defaults({ func: this.extra_append.name });
+            argparser.add_argument('--switch', {
+                action: 'store_true',
+                help: 'HELPTEXT',
             });
-            return { status: 0, message: "success" };
+            argparser.add_argument('--arguments', {
+                nargs: '*',
+                action: 'store',
+                help: 'HELPTEXT',
+            });
+            return { status: 0, message: 'success' };
         }
         // ACTION: check arguments
         if (args.switch) {
@@ -1881,7 +2204,7 @@ module.exports = class Zotero {
         // ACTION: run code
         // ACTION: return values
         const data = {};
-        return this.message(0, "exist status", data);
+        return this.message(0, 'exist status', data);
         /*
       Implement: extra_append
        
@@ -1907,30 +2230,33 @@ module.exports = class Zotero {
     // TODO: Implement
     async update_url(args, subparsers) {
         this.reconfigure(args);
-        // system("./zotUpdateField.pl --update --group $a --item $c --key url --value \"\\\"https://docs.opendeved.net/lib/$c\\\"\"");    
+        // system("./zotUpdateField.pl --update --group $a --item $c --key url --value \"\\\"https://docs.opendeved.net/lib/$c\\\"\"");
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("update-url", { "help": "Utility function: Update a field for a specific item." });
-            argparser.set_defaults({ "func": this.update_url.name });
-            argparser.add_argument("--key", {
-                "nargs": 1,
-                "action": "store",
-                "help": "The Zotero item key for the item to be updated."
+            const argparser = subparsers.add_parser('update-url', {
+                help: 'Utility function: Update a field for a specific item.',
             });
-            argparser.add_argument("--value", {
-                "nargs": 1,
-                "action": "store",
-                "help": "The value for the update (if not provided, the value of the field is shown)."
+            argparser.set_defaults({ func: this.update_url.name });
+            argparser.add_argument('--key', {
+                nargs: 1,
+                action: 'store',
+                help: 'The Zotero item key for the item to be updated.',
+            });
+            argparser.add_argument('--value', {
+                nargs: 1,
+                action: 'store',
+                help: 'The value for the update (if not provided, the value of the field is shown).',
             });
             argparser.add_argument('--version', {
-                nargs: 1, help: 'You have to supply the version of the item via the --version argument or else the latest version will be used.'
+                nargs: 1,
+                help: 'You have to supply the version of the item via the --version argument or else the latest version will be used.',
             });
-            return { status: 0, message: "success" };
+            return { status: 0, message: 'success' };
         }
         // args.field = "url"
         args.json = {
-            url: args.value
+            url: args.value,
         };
-        // console.log("TEMPORARY (update_url)="+JSON.stringify(   args         ,null,2))     
+        // console.log("TEMPORARY (update_url)="+JSON.stringify(   args         ,null,2))
         const update = await this.update_item(args);
         // console.log("TEMPORARY="+JSON.stringify( update           ,null,2))
         return update;
@@ -1942,13 +2268,13 @@ module.exports = class Zotero {
         //return `zotero-cli --group $gp items --collection $collRefs --filter "{\\\"format\\\": \\\"json\\\", \\\"include\\\": \\\"data,bib\\\", \\\"style\\\": \\\"apa\\\"}" `;
         // ACTION: define CLI interface
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("getbib", {
-                "help": "HELPTEXT",
-                "nargs": "*",
-                "action": "store",
+            const argparser = subparsers.add_parser('getbib', {
+                help: 'HELPTEXT',
+                nargs: '*',
+                action: 'store',
             });
-            argparser.set_defaults({ "func": this.getbib.name });
-            return { status: 0, message: "success" };
+            argparser.set_defaults({ func: this.getbib.name });
+            return { status: 0, message: 'success' };
         }
         // ACTION: check arguments
         if (args.switch) {
@@ -1958,41 +2284,43 @@ module.exports = class Zotero {
         // ACTION: run code
         // ACTION: return values
         const data = {};
-        return this.message(0, "exit status", data);
+        return this.message(0, 'exit status', data);
     }
     // TODO: Implement
     async attach_note(args, subparsers) {
         this.reconfigure(args);
         // ACTION: define CLI interface
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("attach-note", { "help": "Utility function: Attach note to item" });
-            argparser.set_defaults({ "func": this.attach_note.name });
-            argparser.add_argument("--key", {
-                "action": "store",
-                "nargs": 1,
-                "help": "The item key to which the note is attached."
+            const argparser = subparsers.add_parser('attach-note', {
+                help: 'Utility function: Attach note to item',
+            });
+            argparser.set_defaults({ func: this.attach_note.name });
+            argparser.add_argument('--key', {
+                action: 'store',
+                nargs: 1,
+                help: 'The item key to which the note is attached.',
             });
             // TODO: Allow file argument (html file)
             /*argparser.add_argument("--file", {
               "action": "store_true",
               "help": "HELPTEXT"
             });*/
-            argparser.add_argument("--notetext", {
-                "action": "store",
-                "nargs": 1,
-                "help": "The text of the note"
+            argparser.add_argument('--notetext', {
+                action: 'store',
+                nargs: 1,
+                help: 'The text of the note',
             });
-            argparser.add_argument("--notefile", {
-                "action": "store",
-                "nargs": 1,
-                "help": "The text of the note"
+            argparser.add_argument('--notefile', {
+                action: 'store',
+                nargs: 1,
+                help: 'The text of the note',
             });
-            argparser.add_argument("--tags", {
-                "nargs": "*",
-                "action": "store",
-                "help": "Tags to be attached to the note"
+            argparser.add_argument('--tags', {
+                nargs: '*',
+                action: 'store',
+                help: 'Tags to be attached to the note',
             });
-            return { status: 0, message: "success" };
+            return { status: 0, message: 'success' };
         }
         // ACTION: check arguments
         if (args.switch) {
@@ -2005,10 +2333,13 @@ module.exports = class Zotero {
         //process.exit(1)
         // TODO: Read from --file
         // ACTION: run code
-        const notefiletext = args.notefile ? fs.readFileSync(args.notefile) : "";
-        const data = await this.attachNoteToItem(args.key, { content: args.notetext + notefiletext, tags: args.tags });
+        const notefiletext = args.notefile ? fs.readFileSync(args.notefile) : '';
+        const data = await this.attachNoteToItem(args.key, {
+            content: args.notetext + notefiletext,
+            tags: args.tags,
+        });
         // ACTION: return values
-        return this.message(0, "exist status", data);
+        return this.message(0, 'exist status', data);
     }
     /*
     // TODO: Implement
@@ -2058,18 +2389,18 @@ module.exports = class Zotero {
         */
         // ACTION: define CLI interface
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("getValue", { "help": "HELPTEXT" });
-            argparser.set_defaults({ "func": this.getValue.name });
-            argparser.add_argument("--switch", {
-                "action": "store_true",
-                "help": "HELPTEXT"
+            const argparser = subparsers.add_parser('getValue', { help: 'HELPTEXT' });
+            argparser.set_defaults({ func: this.getValue.name });
+            argparser.add_argument('--switch', {
+                action: 'store_true',
+                help: 'HELPTEXT',
             });
-            argparser.add_argument("--arguments", {
-                "nargs": "*",
-                "action": "store",
-                "help": "HELPTEXT"
+            argparser.add_argument('--arguments', {
+                nargs: '*',
+                action: 'store',
+                help: 'HELPTEXT',
             });
-            return { status: 0, message: "success" };
+            return { status: 0, message: 'success' };
         }
         // ACTION: check arguments
         if (args.switch) {
@@ -2079,7 +2410,7 @@ module.exports = class Zotero {
         // ACTION: run code
         // ACTION: return values
         const data = {};
-        return this.message(0, "exist status", data);
+        return this.message(0, 'exist status', data);
     }
     // TODO: Implement
     async collectionName(args, subparsers) {
@@ -2096,18 +2427,20 @@ module.exports = class Zotero {
          }; */
         // ACTION: define CLI interface
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("collectionName", { "help": "HELPTEXT" });
-            argparser.set_defaults({ "func": this.collectionName.name });
-            argparser.add_argument("--switch", {
-                "action": "store_true",
-                "help": "HELPTEXT"
+            const argparser = subparsers.add_parser('collectionName', {
+                help: 'HELPTEXT',
             });
-            argparser.add_argument("--arguments", {
-                "nargs": "*",
-                "action": "store",
-                "help": "HELPTEXT"
+            argparser.set_defaults({ func: this.collectionName.name });
+            argparser.add_argument('--switch', {
+                action: 'store_true',
+                help: 'HELPTEXT',
             });
-            return { status: 0, message: "success" };
+            argparser.add_argument('--arguments', {
+                nargs: '*',
+                action: 'store',
+                help: 'HELPTEXT',
+            });
+            return { status: 0, message: 'success' };
         }
         // ACTION: check arguments
         if (args.switch) {
@@ -2117,25 +2450,27 @@ module.exports = class Zotero {
         // ACTION: run code
         // ACTION: return values
         const data = {};
-        return this.message(0, "exist status", data);
+        return this.message(0, 'exist status', data);
     }
     // TODO: Implement
     async amendCollection(args, subparsers) {
         this.reconfigure(args);
         // ACTION: define CLI interface
         if (args.getInterface && subparsers) {
-            const argparser = subparsers.add_parser("amendCollection", { "help": "HELPTEXT" });
-            argparser.set_defaults({ "func": this.amendCollection.name });
-            argparser.add_argument("--switch", {
-                "action": "store_true",
-                "help": "HELPTEXT"
+            const argparser = subparsers.add_parser('amendCollection', {
+                help: 'HELPTEXT',
             });
-            argparser.add_argument("--arguments", {
-                "nargs": "*",
-                "action": "store",
-                "help": "HELPTEXT"
+            argparser.set_defaults({ func: this.amendCollection.name });
+            argparser.add_argument('--switch', {
+                action: 'store_true',
+                help: 'HELPTEXT',
             });
-            return { status: 0, message: "success" };
+            argparser.add_argument('--arguments', {
+                nargs: '*',
+                action: 'store',
+                help: 'HELPTEXT',
+            });
+            return { status: 0, message: 'success' };
         }
         // ACTION: check arguments
         if (args.switch) {
@@ -2145,7 +2480,7 @@ module.exports = class Zotero {
         // ACTION: run code
         // ACTION: return values
         const data = {};
-        return this.message(0, "exist status", data);
+        return this.message(0, 'exist status', data);
         /*
         sub amendCollection() {
           my($gp, $key, $parent, $top, $name, $prefix, $append) = @_;
@@ -2211,7 +2546,7 @@ module.exports = class Zotero {
             process.exit(0);
         }
         if (args.verbose) {
-            console.log("zotero-cli starting...");
+            console.log('zotero-cli starting...');
         }
         if (args.dryrun) {
             console.log(`API command:\n Zotero.${args.func}(${JSON.stringify(args, null, 2)})`);
@@ -2224,28 +2559,29 @@ module.exports = class Zotero {
                process.exit(1)
              });
            } */
-            // using default=2 above prevents the overrides from being picked up                                                                                                     
+            // using default=2 above prevents the overrides from being picked up
             if (args.indent === null)
                 args.indent = 2;
             if (args.verbose)
                 this.showConfig();
-            // call the actual command        
+            // call the actual command
             if (!args.func) {
-                console.log("No arguments provided. Use -h for help.");
+                console.log('No arguments provided. Use -h for help.');
                 process.exit(0);
             }
             try {
                 //await this['$' + args.command.replace(/-/g, '_')]()
                 // await this[args.command.replace(/-/g, '_')]()
                 if (args.verbose)
-                    console.log("ARGS=" + JSON.stringify(args, null, 2));
+                    console.log('ARGS=' + JSON.stringify(args, null, 2));
                 const result = await this[args.func](args);
                 if (args.verbose) {
                     const myout = {
                         result: result,
-                        output: this.output
+                        output: this.output,
                     };
-                    console.log("{Result, output}=" + JSON.stringify(myout, null, this.config.indent));
+                    console.log('{Result, output}=' +
+                        JSON.stringify(myout, null, this.config.indent));
                 }
                 if (args.out)
                     fs.writeFileSync(args.out, JSON.stringify(result, null, this.config.indent));
@@ -2264,48 +2600,59 @@ module.exports = class Zotero {
         return pjson.version;
     }
     getArguments() {
-        const parser = new ArgumentParser({ "description": "Zotero command line utility" });
+        const parser = new ArgumentParser({
+            description: 'Zotero command line utility',
+        });
         parser.add_argument('--api-key', {
-            help: 'The API key to access the Zotero API.'
+            help: 'The API key to access the Zotero API.',
         });
         parser.add_argument('--config', {
             type: parser.file,
-            help: 'Configuration file (toml format). Note that ./zotero-cli.toml and ~/.config/zotero-cli/zotero-cli.toml is picked up automatically.'
+            help: 'Configuration file (toml format). Note that ./zotero-cli.toml and ~/.config/zotero-cli/zotero-cli.toml is picked up automatically.',
         });
         parser.add_argument('--config-json', {
             type: parser.string,
-            help: 'Configuration string in json format.'
+            help: 'Configuration string in json format.',
         });
         parser.add_argument('--user-id', {
-            type: parser.integer, help: 'The id of the user library.'
+            type: parser.integer,
+            help: 'The id of the user library.',
         });
         parser.add_argument('--group-id', {
             action: 'store',
             type: parser.integer,
-            help: 'The id of the group library.'
+            help: 'The id of the group library.',
         });
         // See below. If changed, add: You can provide the group-id as zotero-select link (zotero://...). Only the group-id is used, the item/collection id is discarded.
-        parser.add_argument('--indent', { type: parser.integer, help: 'Identation for json output.' });
-        parser.add_argument('--verbose', { action: 'store_true', help: 'Log requests.' });
-        parser.add_argument("--dryrun", {
-            "action": "store_true",
-            "help": "Show the API request and exit.",
-            "default": false
+        parser.add_argument('--indent', {
+            type: parser.integer,
+            help: 'Identation for json output.',
+        });
+        parser.add_argument('--verbose', {
+            action: 'store_true',
+            help: 'Log requests.',
+        });
+        parser.add_argument('--dryrun', {
+            action: 'store_true',
+            help: 'Show the API request and exit.',
+            default: false,
         });
         parser.add_argument('--out', { help: 'Output to file' });
-        parser.add_argument("--show", {
-            "action": "store_true",
-            "help": "Print the result to the commandline.",
-            "default": false
+        parser.add_argument('--show', {
+            action: 'store_true',
+            help: 'Print the result to the commandline.',
+            default: false,
         });
-        parser.add_argument("--version", {
-            "action": "store_true",
-            "help": "Show version",
+        parser.add_argument('--version', {
+            action: 'store_true',
+            help: 'Show version',
         });
         /*
         The following code adds subparsers.
         */
-        const subparsers = parser.add_subparsers({ "help": "Help for these commands is available via 'command --help'." });
+        const subparsers = parser.add_subparsers({
+            help: "Help for these commands is available via 'command --help'.",
+        });
         this.item({ getInterface: true }, subparsers);
         this.items({ getInterface: true }, subparsers);
         this.create_item({ getInterface: true }, subparsers);
@@ -2320,7 +2667,7 @@ module.exports = class Zotero {
         this.fields({ getInterface: true }, subparsers);
         this.searches({ getInterface: true }, subparsers);
         this.key({ getInterface: true }, subparsers);
-        // Utility functions    
+        // Utility functions
         this.field({ getInterface: true }, subparsers);
         this.update_url({ getInterface: true }, subparsers);
         this.get_doi({ getInterface: true }, subparsers);
@@ -2336,8 +2683,8 @@ module.exports = class Zotero {
         this.__delete({ getInterface: true }, subparsers);
         // Other URLs
         // https://www.zotero.org/support/dev/web_api/v3/basics
-        // /keys/<key>	
-        // /users/<userID>/groups	
+        // /keys/<key>
+        // /users/<userID>/groups
         //parser.set_defaults({ "func": new Zotero().run() });
         //this.parser.parse_args();
         return parser.parse_args();
