@@ -5,6 +5,7 @@
 require('dotenv').config();
 require('docstring');
 const os = require('os');
+const _ = require('lodash');
 
 import logger = require('./logger');
 
@@ -91,8 +92,8 @@ module.exports = class Zotero {
     // Read config (which also sets the Zotero-API-Key value in the header)
     // TODO: readConfig may need to perform an async operation...
     const message = this.configure(args, true);
-    // if (message['status'] === 0) {
-    // }
+    if (message['status'] === 0) {
+    }
   }
 
   // zotero: any
@@ -274,9 +275,8 @@ module.exports = class Zotero {
               return m;
 
             if (m instanceof Error)
-              return `<Error: ${m.message || m.name}${
-                m.stack ? `\n${m.stack}` : ''
-              }>`;
+              return `<Error: ${m.message || m.name}${m.stack ? `\n${m.stack}` : ''
+                }>`;
 
             if (m && type === 'object' && m.message)
               return `<Error: ${m.message}#\n${m.stack}>`;
@@ -1362,8 +1362,7 @@ module.exports = class Zotero {
             await this.post(
               `/items/${uploadItem.successful[0].key}/file?md5=${md5.sync(
                 filename
-              )}&filename=${attach.filename}&filesize=${
-                fs.statSync(filename)['size']
+              )}&filename=${attach.filename}&filesize=${fs.statSync(filename)['size']
               }&mtime=${stat.mtimeMs}`,
               '{}',
               { 'If-None-Match': '*' }
@@ -1504,12 +1503,12 @@ module.exports = class Zotero {
     const finalactions = await this.finalActions(result);
     const return_value = args.fullresponse
       ? {
-          status: 0,
-          message: 'success',
-          output: output,
-          result: result,
-          final: finalactions,
-        }
+        status: 0,
+        message: 'success',
+        output: output,
+        result: result,
+        final: finalactions,
+      }
       : result;
     return return_value;
     // TODO: What if this fails? Zotero will return, e.g.   "message": "404 - {\"type\":\"Buffer\",\"data\":[78,111,116,32,102,111,117,110,100]}",
@@ -1990,7 +1989,7 @@ module.exports = class Zotero {
     const child_name = args.title
       ? args.title
       : (response.reportNumber ? response.reportNumber + '. ' : '') +
-        response.title;
+      response.title;
     //const new_coll = zotero.create_collection(group, base_collection, $name)
     // console.log("ch="+child_name)
     output.push({ child_name: child_name });
@@ -2098,10 +2097,10 @@ module.exports = class Zotero {
       args.group_id
         ? args.group_id
         : args.key && this.extractGroupAndSetGroup(args.key)
-        ? this.extractGroupAndSetGroup(args.key)
-        : args.collection && this.extractGroupAndSetGroup(args.collection)
-        ? this.extractGroupAndSetGroup(args.collection)
-        : this.config.group_id
+          ? this.extractGroupAndSetGroup(args.key)
+          : args.collection && this.extractGroupAndSetGroup(args.collection)
+            ? this.extractGroupAndSetGroup(args.collection)
+            : this.config.group_id
     );
     const key = this.as_value(this.extractKeyAndSetGroup(args.key));
     //console.log(`getGroupAndKey ${args.key} -> ${group_id} / ${key}`)
@@ -2189,9 +2188,8 @@ module.exports = class Zotero {
         // const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         var today = new Date();
         // const message = `Attached new DOI ${args.doi} on ${today.toLocaleDateString("en-US", options)}`
-        const message = `Attached new DOI ${
-          args.doi
-        } on ${today.toLocaleDateString()}`;
+        const message = `Attached new DOI ${args.doi
+          } on ${today.toLocaleDateString()}`;
         await this.attachNoteToItem(args.key, {
           content: message,
           tags: ['_r:message'],
@@ -2321,11 +2319,10 @@ module.exports = class Zotero {
         argparser.add_argument(`--${option}`, {
           nargs: 1,
           action: 'store',
-          help: `Provide a specific URL for '${option}'.${extra_text} The prefix '${
-            decoration[option].title
-          }' will be added to a title (if provided) and the following tags are added: ${JSON.stringify(
-            decoration[option].tags
-          )}`,
+          help: `Provide a specific URL for '${option}'.${extra_text} The prefix '${decoration[option].title
+            }' will be added to a title (if provided) and the following tags are added: ${JSON.stringify(
+              decoration[option].tags
+            )}`,
         });
       });
       // ... otherwise --id adds the three zenodo options, which otherwise are specified ...
@@ -2429,8 +2426,8 @@ module.exports = class Zotero {
           value: this.as_value(args.url)
             ? this.as_value(args.url)
             : this.as_value(args.kerko_url_key)
-            ? this.as_value(args.kerko_url_key) + this.as_value(args.key)
-            : '',
+              ? this.as_value(args.kerko_url_key) + this.as_value(args.key)
+              : '',
         };
         const datau = await this.update_url(argx);
         console.log('TEMPORARY...=' + JSON.stringify(datau, null, 2));
@@ -2550,7 +2547,7 @@ module.exports = class Zotero {
 
     // ACTION: return values
     const data = {};
-    return this.message(0, 'exist status', data);
+    return this.message(0, 'exit status', data);
     /*
   Implement: extra_append
    
@@ -2574,13 +2571,12 @@ module.exports = class Zotero {
     */
   }
 
-  // TODO: Implement
   public async update_url(args, subparsers?) {
     this.reconfigure(args);
     // system("./zotUpdateField.pl --update --group $a --item $c --key url --value \"\\\"https://docs.opendeved.net/lib/$c\\\"\"");
     if (args.getInterface && subparsers) {
       const argparser = subparsers.add_parser('update-url', {
-        help: 'Utility function: Update a field for a specific item.',
+        help: 'Utility function: Update the url for a specific item.',
       });
       argparser.set_defaults({ func: this.update_url.name });
       argparser.add_argument('--key', {
@@ -2611,6 +2607,101 @@ module.exports = class Zotero {
 
     return update;
   }
+
+
+  public async KerkoCiteItemAlsoKnownAs(args, subparsers?) {
+    this.reconfigure(args);
+    // system("./zotUpdateField.pl --update --group $a --item $c --key url --value \"\\\"https://docs.opendeved.net/lib/$c\\\"\"");
+    if (args.getInterface && subparsers) {
+      const argparser = subparsers.add_parser('kciaka', {
+        help: 'Utility function: View/merge - extra>Kerko.CiteItemAlsoKnownAs.',
+      });
+      argparser.set_defaults({ func: this.KerkoCiteItemAlsoKnownAs.name });
+      argparser.add_argument('--key', {
+        nargs: 1,
+        action: 'store',
+        help: 'The Zotero item key for the item to be updated.',
+      });
+      argparser.add_argument('--add', {
+        nargs: '*',
+        action: 'store',
+        help:
+          'The value for the update (if not provided, the value of the field is shown).',
+      });
+      return { status: 0, message: 'success' };
+    }
+    args.fullresponse = false;
+    let thisversion = '';
+    let item;
+    item = await this.item(args);
+    thisversion = item.version;
+    //const item = this.pruneData(response)
+    //  console.log("TEMPORARY="+JSON.stringify(     item       ,null,2))
+
+    var extra = item.extra
+    var extraarr = extra.split("\n")
+
+    // console.log("TEMPORARY=" + JSON.stringify(thisversion, null, 2))
+    // console.log("TEMPORARY=" + JSON.stringify(extraarr, null, 2))
+
+    let kciaka = -1
+    let i = -1
+    for (const value of extraarr) {
+      i++
+      console.log(value)
+      if (value.match(/^KerkoCite\.ItemAlsoKnownAs\: /)) {
+        // console.log(i)
+        kciaka = i
+      }
+    }
+    if (kciaka == -1) {
+      return this.message(0, 'item has no ItemAlsoKnownAs', { item: item });
+    }
+
+    console.log(extraarr[kciaka])
+    let do_update = false
+    if (args.add) {
+      var kcarr = extraarr[kciaka].split(/\s+/).slice(1)
+      args.add = this.as_array(args.add)
+      let knew = "KerkoCite.ItemAlsoKnownAs: " + _.union(kcarr, args.add).join(" ")
+      //console.log(knew)
+      //console.log(extraarr[kciaka])
+      if (knew != extraarr[kciaka]) {
+        do_update = true
+        console.log("Update")
+        extraarr[kciaka] = knew
+        extra = extraarr.sort().join("\n")
+      }
+    }
+    if (do_update) {
+      console.log("\n----\n" + extra + "\n----\n")
+      let myobj = {};
+      myobj["extra"] = extra
+      const updateargs = {
+        key: args.key,
+        version: thisversion,
+        json: myobj,
+        fullresponse: false,
+        show: true,
+      };
+      const update = await this.update_item(updateargs);
+      let zoteroRecord;
+      if (update.statusCode == 204) {
+        console.log('update successfull - getting record');
+        zoteroRecord = await this.item({ key: args.key });
+        if (args.verbose)
+          console.log('Result=' + JSON.stringify(zoteroRecord, null, 2));
+      } else {
+        console.log('update failed');
+        return this.message(1, 'update failed', { update: update });
+      }
+      return this.message(0, 'exit status', { update: update, item: zoteroRecord });
+    } else {
+      return this.message(0, 'exit status', { item: item });
+    }
+  }
+
+
 
   // TODO: Implement
   public async getbib(args, subparsers?) {
@@ -2692,7 +2783,7 @@ module.exports = class Zotero {
       tags: args.tags,
     });
     // ACTION: return values
-    return this.message(0, 'exist status', data);
+    return this.message(0, 'exit status', data);
   }
 
   /*
@@ -2943,7 +3034,7 @@ module.exports = class Zotero {
           };
           console.log(
             '{Result, output}=' +
-              JSON.stringify(myout, null, this.config.indent)
+            JSON.stringify(myout, null, this.config.indent)
           );
         }
         if (args.out)
@@ -3047,6 +3138,7 @@ module.exports = class Zotero {
     this.enclose_item_in_collection({ getInterface: true }, subparsers);
     this.attach_link({ getInterface: true }, subparsers);
     this.attach_note({ getInterface: true }, subparsers);
+    this.KerkoCiteItemAlsoKnownAs({ getInterface: true }, subparsers);
 
     // Functions for get, post, put, patch, delete. (Delete query to API with uri.)
     this.__get({ getInterface: true }, subparsers);
