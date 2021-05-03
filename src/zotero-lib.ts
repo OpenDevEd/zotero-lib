@@ -59,7 +59,7 @@ function sleep(msecs) {
 //   }
 // })();
 
-module.exports = class Zotero {
+export = class Zotero {
   // The following config keys are expected/allowed, with both "-" and "_". The corresponding variables have _
   config_keys = [
     'user-id',
@@ -83,14 +83,12 @@ module.exports = class Zotero {
     'Zotero-API-Key': '',
   };
 
-  constructor(args) {
-    if (!args) {
-      args = {};
-    }
+  constructor(args = {}) {
     //args = args
     // Read config (which also sets the Zotero-API-Key value in the header)
     // TODO: readConfig may need to perform an async operation...
     const message = this.configure(args, true);
+    logger.info('configure response: %O', message);
     // if (message['status'] === 0) {
     // }
   }
@@ -372,10 +370,11 @@ module.exports = class Zotero {
             `Error in zotero.get = ${JSON.stringify(error, null, 2)}`
           );
         }
+        logger.error('error in zotero get %O', error);
         // console.log(`Error in zotero.get = ${JSON.stringify(error.error.data, null, 2)}`)
         let message =
           error.error && error.error.data && Array.isArray(error.error.data)
-            ? Buffer.from(error.error).toString()
+            ? Buffer.from(error.error.data).toString()
             : 'N/A';
         message = Buffer.from(error.error).toString();
         const shortError = {
