@@ -5,6 +5,16 @@
 require('dotenv').config();
 require('docstring');
 const os = require('os');
+const _ = require('lodash');
+const he = require('he');
+var convert = require('xml-js');
+
+// @ts-ignore
+import { url } from 'inspector';
+// @ts-ignore
+import { walkUpBindingElementsAndPatterns } from 'typescript';
+// @ts-ignore
+import arg = require('arg');
 
 import logger = require('./logger');
 
@@ -2072,7 +2082,7 @@ export = class Zotero {
     // say "Creating note for item key. Note key: "
     // ERROR HERE: key is still an array.
     const key2 = this.extractKeyAndSetGroup(key);
-    const note = await zotero.attach_note({
+    const note = await this.attachNoteToItem({
       group_id: group_id,
       key: key2,
       description: `<h1>Bibliography</h1><p>Updated: date</p><p>Do not edit this note manually.</p><p><b>bibliography://select/groups/${group_id}/collections/${refcol}</b></p>`,
@@ -2549,7 +2559,7 @@ export = class Zotero {
 
     // ACTION: return values
     const data = {};
-    return this.message(0, 'exist status', data);
+    return this.message(0, 'exit status', data);
     /*
   Implement: extra_append
    
@@ -2573,13 +2583,12 @@ export = class Zotero {
     */
   }
 
-  // TODO: Implement
   public async update_url(args, subparsers?) {
     this.reconfigure(args);
     // system("./zotUpdateField.pl --update --group $a --item $c --key url --value \"\\\"https://docs.opendeved.net/lib/$c\\\"\"");
     if (args.getInterface && subparsers) {
       const argparser = subparsers.add_parser('update-url', {
-        help: 'Utility function: Update a field for a specific item.',
+        help: 'Utility function: Update the url for a specific item.',
       });
       argparser.set_defaults({ func: this.update_url.name });
       argparser.add_argument('--key', {
@@ -2611,6 +2620,102 @@ export = class Zotero {
     return update;
   }
 
+  public async KerkoCiteItemAlsoKnownAs(args, subparsers?) {
+    this.reconfigure(args);
+    // system("./zotUpdateField.pl --update --group $a --item $c --key url --value \"\\\"https://docs.opendeved.net/lib/$c\\\"\"");
+    if (args.getInterface && subparsers) {
+      const argparser = subparsers.add_parser('kciaka', {
+        help: 'Utility function: View/merge - extra>Kerko.CiteItemAlsoKnownAs.',
+      });
+      argparser.set_defaults({ func: this.KerkoCiteItemAlsoKnownAs.name });
+      argparser.add_argument('--key', {
+        nargs: 1,
+        action: 'store',
+        help: 'The Zotero item key for the item to be updated.',
+      });
+      argparser.add_argument('--add', {
+        nargs: '*',
+        action: 'store',
+        help:
+          'The value for the update (if not provided, the value of the field is shown).',
+      });
+      return { status: 0, message: 'success' };
+    }
+    args.fullresponse = false;
+    let thisversion = '';
+    let item;
+    item = await this.item(args);
+    thisversion = item.version;
+    //const item = this.pruneData(response)
+    //  console.log("TEMPORARY="+JSON.stringify(     item       ,null,2))
+
+    var extra = item.extra;
+    var extraarr = extra.split('\n');
+
+    // console.log("TEMPORARY=" + JSON.stringify(thisversion, null, 2))
+    // console.log("TEMPORARY=" + JSON.stringify(extraarr, null, 2))
+
+    let kciaka = -1;
+    let i = -1;
+    for (const value of extraarr) {
+      i++;
+      console.log(value);
+      if (value.match(/^KerkoCite\.ItemAlsoKnownAs\: /)) {
+        // console.log(i)
+        kciaka = i;
+      }
+    }
+    if (kciaka == -1) {
+      return this.message(0, 'item has no ItemAlsoKnownAs', { item: item });
+    }
+
+    console.log(extraarr[kciaka]);
+    let do_update = false;
+    if (args.add) {
+      var kcarr = extraarr[kciaka].split(/\s+/).slice(1);
+      args.add = this.as_array(args.add);
+      let knew =
+        'KerkoCite.ItemAlsoKnownAs: ' + _.union(kcarr, args.add).join(' ');
+      //console.log(knew)
+      //console.log(extraarr[kciaka])
+      if (knew != extraarr[kciaka]) {
+        do_update = true;
+        console.log('Update');
+        extraarr[kciaka] = knew;
+        extra = extraarr.sort().join('\n');
+      }
+    }
+    if (do_update) {
+      console.log('\n----\n' + extra + '\n----\n');
+      let myobj = {};
+      myobj['extra'] = extra;
+      const updateargs = {
+        key: args.key,
+        version: thisversion,
+        json: myobj,
+        fullresponse: false,
+        show: true,
+      };
+      const update = await this.update_item(updateargs);
+      let zoteroRecord;
+      if (update.statusCode == 204) {
+        console.log('update successfull - getting record');
+        zoteroRecord = await this.item({ key: args.key });
+        if (args.verbose)
+          console.log('Result=' + JSON.stringify(zoteroRecord, null, 2));
+      } else {
+        console.log('update failed');
+        return this.message(1, 'update failed', { update: update });
+      }
+      return this.message(0, 'exit status', {
+        update: update,
+        item: zoteroRecord,
+      });
+    } else {
+      return this.message(0, 'exit status', { item: item });
+    }
+  }
+
   // TODO: Implement
   public async getbib(args, subparsers?) {
     this.reconfigure(args);
@@ -2618,10 +2723,33 @@ export = class Zotero {
     //return `zotero-cli --group $gp items --collection $collRefs --filter "{\\\"format\\\": \\\"json\\\", \\\"include\\\": \\\"data,bib\\\", \\\"style\\\": \\\"apa\\\"}" `;
     // ACTION: define CLI interface
     if (args.getInterface && subparsers) {
-      const argparser = subparsers.add_parser('getbib', {
-        help: 'HELPTEXT',
-        nargs: '*',
+      const argparser = subparsers.add_parser('bibliography', {
+        help: 'Get bibliography',
+      });
+      argparser.add_argument('--groupkeys', {
+        nargs: 1,
         action: 'store',
+        help:
+          'The Zotero item key for the item for which the bib is obtained. Unlike other functions, this is a string of the format 1234567:ABCDEFGH,1234567:ABCDEFGH,...',
+      });
+      argparser.add_argument('--json', {
+        action: 'store_true',
+        help:
+          'The default is for this function to return xml/html. Use this switch to convert the xml to json.',
+      });
+      argparser.add_argument('--zgroup', {
+        nargs: 1,
+        action: 'store',
+        help: '',
+      });
+      argparser.add_argument('--zkey', {
+        nargs: 1,
+        action: 'store',
+        help: '',
+      });
+      argparser.add_argument('--openinzotero', {
+        action: 'store_true',
+        help: '',
       });
       argparser.set_defaults({ func: this.getbib.name });
       return { status: 0, message: 'success' };
@@ -2632,11 +2760,273 @@ export = class Zotero {
     if (args.arguments) {
     }
     // ACTION: run code
-
+    let output;
+    try {
+      output = await this.getZoteroDataX(args);
+    } catch (e) {
+      return this.catchme(2, 'caught error in getZoteroDataX', e, null);
+    }
     // ACTION: return values
-    const data = {};
-    return this.message(0, 'exit status', data);
+    console.log(output);
+
+    return { status: 0, message: 'success', data: output };
   }
+
+  /* START FUcntionS FOR GETBIB */
+  async getZoteroDataX(args) {
+    var d = new Date();
+    var n = d.getTime();
+    // TODO: We need to check the groups of requested data against the groups the API key has access to.
+    var fullresponse = { data: [], message: '' };
+    // We could allow responses that have arg.keys/group as well as groupkeys.
+    if (args.keys && args.group) {
+      console.log('Response based on group and key');
+      fullresponse = await this.makeZoteroQuery(args);
+    } else if (args.groupkeys) {
+      console.log('Response based on groupkeys');
+      fullresponse = await this.makeMultiQuery(args);
+      // console.log("Done.");
+    } else {
+      fullresponse = { data: [], message: 'not implemented' };
+    }
+    /*
+    const evlib = {
+  2129771: "https://docs.opendeved.net/lib/",
+  2405685: "https://docs.edtechhub.org/lib/" 	
+  }*/
+    // console.log("TEMPORARY=" + JSON.stringify(fullresponse, null, 2))
+
+    const response = fullresponse.data;
+    if (response) {
+      var resp = [];
+      try {
+        resp = response.map(
+          (element) =>
+            element.bib
+              .replace(
+                /(\d\d\d\d)/,
+                '$1' +
+                  element.data.tags
+                    .filter((element) => element.tag.match(/_yl:/))
+                    .map((element) => element.tag)
+                    .join(',')
+                    .replace(/_yl\:/, '')
+              )
+              .replace('</div>\n</div>', '')
+              .replace(/\.\s*$/, '')
+              .replace(
+                '<div class="csl-bib-body" style="line-height: 1.35; padding-left: 1em; text-indent:-1em;">',
+                '<div class="csl-bib-body">'
+              ) +
+            '.' +
+            this.getCanonicalURL(args, element) +
+            (element.data.rights &&
+            element.data.rights.match(/Creative Commons/)
+              ? ' Available under ' + he.encode(element.data.rights) + '.'
+              : '') +
+            ' (' +
+            this.urlify(
+              'details',
+              element.library.id,
+              element.key,
+              args.zgroup,
+              args.zkey,
+              args.openinzotero
+            ) +
+            ')' +
+            '</div>\n</div>'
+        );
+      } catch (e) {
+        output = this.catchme(2, 'caught error in response', e, response);
+        return output;
+      }
+      var xml = '<div>\n' + resp.sort().join('\n') + '\n</div>';
+      var d = new Date();
+      var n = (d.getTime() - n) / 1000;
+      var output = '{}';
+      if (args.json) {
+        try {
+          const payload = convert.xml2json(xml, { compact: false, spaces: 4 });
+          output =
+            `{\n"status": 0,\n"count": ${response.length},\n"duration": ${n},\n"data": ` +
+            payload +
+            '\n}';
+        } catch (e) {
+          output = this.catchme(2, 'caught error in convert.xml2json', e, xml);
+        }
+        return output;
+      } else {
+        return { status: 0, data: xml };
+      }
+    } else {
+      var d = new Date();
+      var n = (d.getTime() - n) / 1000;
+      return JSON.stringify(
+        {
+          status: 1,
+          message: this.isomessage('error: no response'),
+          duration: n,
+          data: fullresponse,
+        },
+        null,
+        2
+      );
+    }
+    //return xml
+  }
+
+  private urlify(
+    details,
+    elementlibraryid,
+    elementkey,
+    argszgroup,
+    argszkey,
+    argsopeninzotero
+  ) {
+    return `<a href="https://ref.opendeved.net/zo/zg/${elementlibraryid}/7/${elementkey}/NA?${
+      argszgroup || argszkey ? `src=${argszgroup}:${argszkey}&` : ''
+    }${argsopeninzotero ? 'openin=zotero' : ''}">${details}</a>)`;
+  }
+
+  private getCanonicalURL(args, element) {
+    let url = '';
+    url =
+      element.data.url != '' && !element.bib.match(element.data.url)
+        ? ` Available from <a href="${he.encode(element.data.url)}">${he.encode(
+            element.data.url
+          )}</a>.`
+        : '';
+    url = element.data.url.match(/docs.edtechhub.org|docs.opendeved.net/)
+      ? ' (' +
+        this.urlify(
+          element.data.url,
+          element.library.id,
+          element.key,
+          args.zgroup,
+          args.zkey,
+          args.openinzotero
+        ) +
+        ')'
+      : url;
+    return url;
+  }
+
+  async makeZoteroQuery(arg) {
+    var response = [];
+    // The limit is 25 results at a time - so need to check that arg.keys is not too long.
+    const allkeys = arg.keys.split(',');
+    const keyarray = [];
+    var temp = [];
+    for (const index in allkeys) {
+      temp.push(allkeys[index]);
+      if (temp.length >= 25) {
+        keyarray.push(temp);
+        temp = [];
+      }
+    }
+    if (temp.length > 0) {
+      keyarray.push(temp);
+    }
+    for (const index in keyarray) {
+      //console.log("keyarray=" + JSON.stringify(keyarray[index], null, 2))
+      const resp = await this.item({
+        group_id: arg.group,
+        key: '',
+        filter: {
+          format: 'json',
+          include: 'data,bib',
+          style: 'apa-single-spaced',
+          linkwrap: 1,
+          itemKey: keyarray[index].join(','),
+        },
+      });
+      //console.log("resp=" + JSON.stringify(resp, null, 2))
+
+      if (Array.isArray(resp)) {
+        response.push(...resp);
+      } else {
+        response.push(resp);
+      }
+    }
+    if (!response || response.length == 0) {
+      return { status: 1, message: 'error', data: [] };
+    }
+    return { status: 0, message: 'Success', data: response };
+  }
+
+  async makeMultiQuery(args) {
+    // console.log("Multi query 1")
+    let mykeys;
+    try {
+      args.groupkeys = this.as_value(args.groupkeys);
+      mykeys = args.groupkeys.split(',');
+    } catch (e) {
+      console.log(e);
+      process.exit(1);
+    }
+    var a = {};
+    try {
+      mykeys.forEach((x) => {
+        const gk = x.split(':');
+        if (a[gk[0]]) {
+          a[gk[0]].push(gk[1]);
+        } else {
+          a[gk[0]] = [gk[1]];
+        }
+      });
+    } catch (e) {
+      console.log(e);
+    }
+    // console.log("Multi query 2")
+    var b = [];
+    var errors = [];
+    var zotgroup;
+    var zotkeys;
+    for ([zotgroup, zotkeys] of Object.entries(a)) {
+      // console.log("TEMPORARY="+JSON.stringify(   [zotgroup, zotkeys]         ,null,2))
+      const zargs = {
+        group: zotgroup,
+        keys: zotkeys.join(','),
+      };
+      const response = await this.makeZoteroQuery(zargs);
+      if (response.status == 0) {
+        if (Array.isArray(response.data)) {
+          b.push(...response.data);
+        } else {
+          b.push(response.data);
+        }
+      } else {
+        console.log('ERROR');
+        errors.push({ error: 'Failure to retrieve data', ...zargs });
+      }
+    }
+    //console.log("Multi query 3")
+
+    const output = { status: 0, message: 'Success', data: b, errors: errors };
+    //console.log("TEMPORARY=" + JSON.stringify(output, null, 2))
+    return output;
+  }
+
+  private catchme(number, text, error, data) {
+    return JSON.stringify(
+      {
+        status: number,
+        message: this.isomessage(text),
+        error: error.toString(),
+        data: data,
+      },
+      null,
+      2
+    );
+  }
+
+  private isomessage(text) {
+    var d = new Date();
+    var n = d.toISOString();
+    return text + '; on ' + n;
+  }
+
+  /* END FUcntionS FOR GETBIB */
 
   // TODO: Implement
   public async attach_note(args, subparsers?) {
@@ -2691,7 +3081,7 @@ export = class Zotero {
       tags: args.tags,
     });
     // ACTION: return values
-    return this.message(0, 'exist status', data);
+    return this.message(0, 'exit status', data);
   }
 
   /*
@@ -2839,7 +3229,7 @@ export = class Zotero {
 
     // ACTION: return values
     const data = {};
-    return this.message(0, 'exist status', data);
+    return this.message(0, 'exit status', data);
     /*
     sub amendCollection() {
       my($gp, $key, $parent, $top, $name, $prefix, $append) = @_;
@@ -3046,6 +3436,8 @@ export = class Zotero {
     this.enclose_item_in_collection({ getInterface: true }, subparsers);
     this.attach_link({ getInterface: true }, subparsers);
     this.attach_note({ getInterface: true }, subparsers);
+    this.KerkoCiteItemAlsoKnownAs({ getInterface: true }, subparsers);
+    this.getbib({ getInterface: true }, subparsers);
 
     // Functions for get, post, put, patch, delete. (Delete query to API with uri.)
     this.__get({ getInterface: true }, subparsers);
