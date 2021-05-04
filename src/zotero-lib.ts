@@ -2734,16 +2734,20 @@ module.exports = class Zotero {
       argparser.add_argument('--zgroup', {
         nargs: 1,
         action: 'store',
-        help: '',
+        help: 'Source group (added to links)',
       });
       argparser.add_argument('--zkey', {
         nargs: 1,
         action: 'store',
-        help: '',
+        help: 'Source key (added to links)',
       });
       argparser.add_argument('--openinzotero', {
         action: 'store_true',
-        help: '',
+        help: 'Target zotero app (added to links)',
+      });
+      argparser.add_argument('--test', {
+        action: 'store_true',
+        help: 'Text xml to json conversion ref-by-ref. Helpful for debugging the xml to json conversion.',
       });
       argparser.set_defaults({ func: this.getbib.name });
       return { status: 0, message: 'success' };
@@ -2800,8 +2804,8 @@ module.exports = class Zotero {
         resp = response.map(
           element =>
             element.bib
-              .replace(/(\d\d\d\d)/,
-                "$1" + element.data.tags.filter(element => element.tag.match(/_yl:/)).map(element => element.tag).join(",").replace(/_yl\:/, "")
+              .replace(/\((\d\d\d\d)\)/,
+                "($1" + element.data.tags.filter(element => element.tag.match(/_yl:/)).map(element => element.tag).join(",").replace(/_yl\:/, "") + ")"
               )
               .replace("</div>\n</div>", "")
               .replace(/\.\s*$/, "")
@@ -2819,24 +2823,44 @@ module.exports = class Zotero {
             "</div>\n</div>"
         );
 
-      } catch (e) {
-        output = this.catchme(2, "caught error in response", e, response);
-        return output;
+      } catch (e) {      
+        return this.catchme(2, "caught error in response", e, response)
       };
-      var xml = "<div>\n" + resp.sort().join("\n") + "\n</div>";
-      var d = new Date();
-      var n = (d.getTime() - n) / 1000;
-      var output = '{}';
-      if (args.json) {
-        try {
-          const payload = convert.xml2json(xml, { compact: false, spaces: 4 });
-          output = `{\n"status": 0,\n"count": ${response.length},\n"duration": ${n},\n"data": ` + payload + "\n}";
-        } catch (e) {
-          output = this.catchme(2, "caught error in convert.xml2json", e, xml)
+      if (args.test) {
+        var d = new Date();
+        var n = (d.getTime() - n) / 1000;
+        var output = [];
+        const sortresp = resp.sort()
+        for (const i in sortresp) {
+          let lineresult = null
+          const xml = sortresp[i]
+          try {
+            const payload = convert.xml2json(xml, { compact: false, spaces: 4 });
+            lineresult = { in: xml, error: {}, out: payload };
+          } catch (e) {
+            lineresult = {
+              in: xml, error: e, out: {}
+            }
+          }
+          output.push(lineresult)
         }
-        return output;
+        return { status: 0, data: output }
       } else {
-        return { status: 0, data: xml }
+        var xml = "<div>\n" + resp.sort().join("\n") + "\n</div>";
+        var d = new Date();
+        var n = (d.getTime() - n) / 1000;
+        var outputstr = '{}';
+        if (args.json) {
+          try {
+            const payload = convert.xml2json(xml, { compact: false, spaces: 4 });
+            outputstr = `{\n"status": 0,\n"count": ${response.length},\n"duration": ${n},\n"data": ` + payload + "\n}";
+          } catch (e) {
+            outputstr = this.catchme(2, "caught error in convert.xml2json", e, xml)
+          }
+          return outputstr;
+        } else {
+          return { status: 0, data: xml }
+        }
       }
     } else {
       var d = new Date();
@@ -2848,7 +2872,7 @@ module.exports = class Zotero {
   }
 
   private urlify(details, elementlibraryid, elementkey, argszgroup, argszkey, argsopeninzotero) {
-    return `<a href="https://ref.opendeved.net/zo/zg/${elementlibraryid}/7/${elementkey}/NA?${ argszgroup || argszkey ? `src=${argszgroup}:${argszkey}&` : ""}${argsopeninzotero ? "openin=zotero" : ""}">${details}</a>)`
+    return `<a href="https://ref.opendeved.net/zo/zg/${elementlibraryid}/7/${elementkey}/NA?${argszgroup || argszkey ? `src=${argszgroup}:${argszkey}&` : ""}${argsopeninzotero ? "openin=zotero" : ""}">${details}</a>)`
   }
 
   private getCanonicalURL(args, element) {
