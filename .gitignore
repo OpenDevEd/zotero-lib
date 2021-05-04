@@ -4,6 +4,7 @@
 node_modules
 node_modules/*
 .env
+temp/*
 build/*
 BaCkUp
 BaCkUp/*
