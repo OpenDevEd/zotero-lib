@@ -6,11 +6,6 @@
 //var Zotero = require('zotero-lib');
 import Zotero = require('./zotero-lib');
 
-//TODO: discuss What is this?
-module.exports = {
-  node: 'current',
-};
-
 async function main() {
   //console.log("Command-line: config")
   const zotero = await new Zotero({});
