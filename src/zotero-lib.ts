@@ -2,19 +2,13 @@
 
 //import { stringify } from "@iarna/toml";
 //import * as argparse from 'argparse';
+
 require('dotenv').config();
 require('docstring');
 const os = require('os');
 const _ = require('lodash');
 const he = require('he');
 var convert = require('xml-js');
-
-// @ts-ignore
-import { url } from 'inspector';
-// @ts-ignore
-import { walkUpBindingElementsAndPatterns } from 'typescript';
-// @ts-ignore
-import arg = require('arg');
 
 import logger = require('./logger');
 
@@ -2753,7 +2747,8 @@ export = class Zotero {
       });
       argparser.add_argument('--test', {
         action: 'store_true',
-        help: 'Text xml to json conversion ref-by-ref. Helpful for debugging the xml to json conversion.',
+        help:
+          'Text xml to json conversion ref-by-ref. Helpful for debugging the xml to json conversion.',
       });
       argparser.set_defaults({ func: this.getbib.name });
       return { status: 0, message: 'success' };
@@ -2807,8 +2802,15 @@ export = class Zotero {
         resp = response.map(
           (element) =>
             element.bib
-              .replace(/\((\d\d\d\d)\)/,
-                "($1" + element.data.tags.filter(element => element.tag.match(/_yl:/)).map(element => element.tag).join(",").replace(/_yl\:/, "") + ")"
+              .replace(
+                /\((\d\d\d\d)\)/,
+                '($1' +
+                  element.data.tags
+                    .filter((element) => element.tag.match(/_yl:/))
+                    .map((element) => element.tag)
+                    .join(',')
+                    .replace(/_yl\:/, '') +
+                  ')'
               )
               .replace('</div>\n</div>', '')
               .replace(/\.\s*$/, '')
@@ -2834,44 +2836,59 @@ export = class Zotero {
             ')' +
             '</div>\n</div>'
         );
-
-      } catch (e) {      
-        return this.catchme(2, "caught error in response", e, response)
-      };
+      } catch (e) {
+        return this.catchme(2, 'caught error in response', e, response);
+      }
       if (args.test) {
         var d = new Date();
         var n = (d.getTime() - n) / 1000;
         var output = [];
-        const sortresp = resp.sort()
+        const sortresp = resp.sort();
         for (const i in sortresp) {
-          let lineresult = null
-          const xml = sortresp[i]
+          let lineresult = null;
+          const xml = sortresp[i];
           try {
-            const payload = convert.xml2json(xml, { compact: false, spaces: 4 });
+            const payload = convert.xml2json(xml, {
+              compact: false,
+              spaces: 4,
+            });
             lineresult = { in: xml, error: {}, out: payload };
           } catch (e) {
             lineresult = {
-              in: xml, error: e, out: {}
-            }
+              in: xml,
+              error: e,
+              out: {},
+            };
           }
-          output.push(lineresult)
+          output.push(lineresult);
         }
-        return { status: 0, data: output }
+        return { status: 0, data: output };
       } else {
-        var xml = "<div>\n" + resp.sort().join("\n") + "\n</div>";
+        var xml = '<div>\n' + resp.sort().join('\n') + '\n</div>';
         var d = new Date();
         var n = (d.getTime() - n) / 1000;
         var outputstr = '{}';
         if (args.json) {
           try {
-            const payload = convert.xml2json(xml, { compact: false, spaces: 4 });
-            outputstr = `{\n"status": 0,\n"count": ${response.length},\n"duration": ${n},\n"data": ` + payload + "\n}";
+            const payload = convert.xml2json(xml, {
+              compact: false,
+              spaces: 4,
+            });
+            outputstr =
+              `{\n"status": 0,\n"count": ${response.length},\n"duration": ${n},\n"data": ` +
+              payload +
+              '\n}';
           } catch (e) {
-            outputstr = this.catchme(2, "caught error in convert.xml2json", e, xml)
+            outputstr = this.catchme(
+              2,
+              'caught error in convert.xml2json',
+              e,
+              xml
+            );
           }
           return outputstr;
         } else {
-          return { status: 0, data: xml }
+          return { status: 0, data: xml };
         }
       }
     } else {
@@ -2891,8 +2908,17 @@ export = class Zotero {
     //return xml
   }
 
-  private urlify(details, elementlibraryid, elementkey, argszgroup, argszkey, argsopeninzotero) {
-    return `<a href="https://ref.opendeved.net/zo/zg/${elementlibraryid}/7/${elementkey}/NA?${argszgroup || argszkey ? `src=${argszgroup}:${argszkey}&` : ""}${argsopeninzotero ? "openin=zotero" : ""}">${details}</a>)`
+  private urlify(
+    details,
+    elementlibraryid,
+    elementkey,
+    argszgroup,
+    argszkey,
+    argsopeninzotero
+  ) {
+    return `<a href="https://ref.opendeved.net/zo/zg/${elementlibraryid}/7/${elementkey}/NA?${
+      argszgroup || argszkey ? `src=${argszgroup}:${argszkey}&` : ''
+    }${argsopeninzotero ? 'openin=zotero' : ''}">${details}</a>)`;
   }
 
   private getCanonicalURL(args, element) {
