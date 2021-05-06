@@ -11,6 +11,7 @@ const he = require('he');
 var convert = require('xml-js');
 
 import logger = require('./logger');
+import sleep = require('./utils/sleep');
 
 // import { ArgumentParser } from 'argparse'
 const { ArgumentParser } = require('argparse');
@@ -34,10 +35,6 @@ const Ajv = require('ajv');
 // import Ajv = require('ajv')
 const ajv = new Ajv();
 const md5 = require('md5-file');
-
-function sleep(msecs) {
-  return new Promise((resolve) => setTimeout(resolve, msecs));
-}
 
 // const arg = new (class {
 //   integer(v) {
