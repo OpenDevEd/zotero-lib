@@ -63,7 +63,7 @@ function sleep(msecs) {
 //   }
 // })();
 
-export = class Zotero {
+class Zotero {
   // The following config keys are expected/allowed, with both "-" and "_". The corresponding variables have _
   config_keys = [
     'user-id',
@@ -428,7 +428,7 @@ export = class Zotero {
     return out;
   }
 
-  // TODO: Add       resolveWithFullResponse: options.resolveWithFullResponse,
+  // TODO: Add resolveWithFullResponse: options.resolveWithFullResponse,
   async post(uri, data, headers = {}) {
     const prefix = this.config.user_id
       ? `/users/${this.config.user_id}`
@@ -3489,4 +3489,6 @@ export = class Zotero {
 
     return parser.parse_args();
   }
-};
+}
+
+export = Zotero;
