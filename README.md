@@ -1,7 +1,9 @@
 # zotero-lib
+
 ## Introduction: Tools for working with the APIs of Zotero and Zenodo (zotzen)
 
 This repository is part of a set of repositories, see here: https://github.com/orgs/OpenDevEd/teams/zotzen-team/repositories. Currently, this set contains a number of libraries
+
 - zenodo-lib https://github.com/opendeved/zenodo-lib, https://www.npmjs.com/package/zenodo-lib
 - zotero-lib https://github.com/opendeved/zotero-lib, https://www.npmjs.com/package/zotero-lib
 - zotzen-lib https://github.com/opendeved/zotzen-lib, https://www.npmjs.com/package/zotzen-lib
@@ -9,22 +11,29 @@ This repository is part of a set of repositories, see here: https://github.com/o
 (The above tools can also be installed as command-line tools (CLI) with `npm -g`.)
 
 And a web application
+
 - zotzen-web https://github.com/opendeved/zotzen-web
 
 # zotero-lib
 
 Install this library with
+
 ```
 npm install zotero-lib
 ```
+
 or as CLI
+
 ```
 sudo npm install -g zotero-lib
 ```
+
 View entry on https://www.npmjs.com/package/zotero-lib
 
 # Used by
-This library is currently used by 
+
+This library is currently used by
+
 - https://github.com/OpenDevEd/zotero-lib
 - https://github.com/OpenDevEd/zotzen-lib
 - https://github.com/OpenDevEd/zotzen-web
@@ -40,3 +49,87 @@ use of the library from the command line.
 # Also see:
 
 https://github.com/tnajdek/zotero-api-client (With hindsight we might have built on zotero-api-client - we might still rebuild our code to use zotero-api-client.)
+
+# CLI Documentation:
+
+The zotero-cli allows you to access zoter from cmd line, it allows you to automate redundant taskse easily
+
+## Installation
+
+`npm install -g zotero-lib`
+
+OR
+
+`yarn global add zotero-lib`
+
+## Basic usage
+
+### Help
+
+```
+zotero-lib -h
+
+OR
+
+zotero-lib --help
+```
+
+This will print help for all commands and options accepted by zotero-lib
+
+### Version
+
+```
+zotero-lib -v
+
+OR
+
+zotero-lib --version
+```
+
+This will print the version of cli you have installed
+
+### Item
+
+### Items
+
+### Create
+
+### Update
+
+### Collection
+
+### Collections
+
+### Publications
+
+### Tags
+
+### Attachment
+
+### Types
+
+### Groups
+
+### Fields
+
+### Searches
+
+### Key
+
+### Field
+
+### Update-url
+
+### Get-doi
+
+### Update-doi
+
+### Enclose-item
+
+### Attach-link
+
+### Attach-note
+
+### Kciaka
+
+### Bibliography
