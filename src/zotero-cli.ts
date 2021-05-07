@@ -8,7 +8,9 @@ import Zotero = require('./zotero-lib');
 
 async function main() {
   //console.log("Command-line: config")
-  const zotero = await new Zotero({});
+  // TODO: discuss no async with constructor
+  // const zotero = await new Zotero({});
+  const zotero = new Zotero({});
   //console.log("Command-line: start")
   await zotero
     .commandlineinterface()
