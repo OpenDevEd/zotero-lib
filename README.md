@@ -94,6 +94,18 @@ This will print the version of cli you have installed
 
 ### Create
 
+This allows you to create item(s). You can create items in two different ways by providing following arguments
+
+- `--files` - this accepts text files containing json
+- `--items` - this accepts items as json string
+
+for example
+
+```
+zotero-lib create items --files filepath.txt
+zotero-lib create items --items '{"title": "zotero item"}'
+```
+
 ### Update
 
 ### Collection
