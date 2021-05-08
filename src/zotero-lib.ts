@@ -10,6 +10,7 @@ const _ = require('lodash');
 const he = require('he');
 var convert = require('xml-js');
 
+import argsAny from 'args-any';
 import logger = require('./logger');
 
 // import { ArgumentParser } from 'argparse'
@@ -276,9 +277,8 @@ export = class Zotero {
               return m;
 
             if (m instanceof Error)
-              return `<Error: ${m.message || m.name}${
-                m.stack ? `\n${m.stack}` : ''
-              }>`;
+              return `<Error: ${m.message || m.name}${m.stack ? `\n${m.stack}` : ''
+                }>`;
 
             if (m && type === 'object' && m.message)
               return `<Error: ${m.message}#\n${m.stack}>`;
@@ -1365,8 +1365,7 @@ export = class Zotero {
             await this.post(
               `/items/${uploadItem.successful[0].key}/file?md5=${md5.sync(
                 filename
-              )}&filename=${attach.filename}&filesize=${
-                fs.statSync(filename)['size']
+              )}&filename=${attach.filename}&filesize=${fs.statSync(filename)['size']
               }&mtime=${stat.mtimeMs}`,
               '{}',
               { 'If-None-Match': '*' }
@@ -1507,12 +1506,12 @@ export = class Zotero {
     const finalactions = await this.finalActions(result);
     const return_value = args.fullresponse
       ? {
-          status: 0,
-          message: 'success',
-          output: output,
-          result: result,
-          final: finalactions,
-        }
+        status: 0,
+        message: 'success',
+        output: output,
+        result: result,
+        final: finalactions,
+      }
       : result;
     return return_value;
     // TODO: What if this fails? Zotero will return, e.g.   "message": "404 - {\"type\":\"Buffer\",\"data\":[78,111,116,32,102,111,117,110,100]}",
@@ -1993,7 +1992,7 @@ export = class Zotero {
     const child_name = args.title
       ? args.title
       : (response.reportNumber ? response.reportNumber + '. ' : '') +
-        response.title;
+      response.title;
     //const new_coll = zotero.create_collection(group, base_collection, $name)
     // console.log("ch="+child_name)
     output.push({ child_name: child_name });
@@ -2101,10 +2100,10 @@ export = class Zotero {
       args.group_id
         ? args.group_id
         : args.key && this.extractGroupAndSetGroup(args.key)
-        ? this.extractGroupAndSetGroup(args.key)
-        : args.collection && this.extractGroupAndSetGroup(args.collection)
-        ? this.extractGroupAndSetGroup(args.collection)
-        : this.config.group_id
+          ? this.extractGroupAndSetGroup(args.key)
+          : args.collection && this.extractGroupAndSetGroup(args.collection)
+            ? this.extractGroupAndSetGroup(args.collection)
+            : this.config.group_id
     );
     const key = this.as_value(this.extractKeyAndSetGroup(args.key));
     //console.log(`getGroupAndKey ${args.key} -> ${group_id} / ${key}`)
@@ -2192,9 +2191,8 @@ export = class Zotero {
         // const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         var today = new Date();
         // const message = `Attached new DOI ${args.doi} on ${today.toLocaleDateString("en-US", options)}`
-        const message = `Attached new DOI ${
-          args.doi
-        } on ${today.toLocaleDateString()}`;
+        const message = `Attached new DOI ${args.doi
+          } on ${today.toLocaleDateString()}`;
         await this.attachNoteToItem(args.key, {
           content: message,
           tags: ['_r:message'],
@@ -2324,11 +2322,10 @@ export = class Zotero {
         argparser.add_argument(`--${option}`, {
           nargs: 1,
           action: 'store',
-          help: `Provide a specific URL for '${option}'.${extra_text} The prefix '${
-            decoration[option].title
-          }' will be added to a title (if provided) and the following tags are added: ${JSON.stringify(
-            decoration[option].tags
-          )}`,
+          help: `Provide a specific URL for '${option}'.${extra_text} The prefix '${decoration[option].title
+            }' will be added to a title (if provided) and the following tags are added: ${JSON.stringify(
+              decoration[option].tags
+            )}`,
         });
       });
       // ... otherwise --id adds the three zenodo options, which otherwise are specified ...
@@ -2432,8 +2429,8 @@ export = class Zotero {
           value: this.as_value(args.url)
             ? this.as_value(args.url)
             : this.as_value(args.kerko_url_key)
-            ? this.as_value(args.kerko_url_key) + this.as_value(args.key)
-            : '',
+              ? this.as_value(args.kerko_url_key) + this.as_value(args.key)
+              : '',
         };
         const datau = await this.update_url(argx);
         console.log('TEMPORARY...=' + JSON.stringify(datau, null, 2));
@@ -2720,16 +2717,39 @@ export = class Zotero {
       const argparser = subparsers.add_parser('bibliography', {
         help: 'Get bibliography',
       });
+      argparser.add_argument('--key', {
+        nargs: 1,
+        action: 'store',
+        help:
+          'A Zotero item key for the item for which the bib is obtained. Can be provided in zotero://select format.',
+      });
+      argparser.add_argument('--keys', {
+        nargs: 1,
+        action: 'store',
+        help:
+          'A Zotero item key for the item for which the bib is obtained. Can be provided as list ABC,DEF,...',
+      });
+      argparser.add_argument('--group', {
+        nargs: 1,
+        action: 'store',
+        help:
+          'If you use --keys, use --group to specify the group.',
+      });
       argparser.add_argument('--groupkeys', {
         nargs: 1,
         action: 'store',
         help:
           'The Zotero item key for the item for which the bib is obtained. Unlike other functions, this is a string of the format 1234567:ABCDEFGH,1234567:ABCDEFGH,...',
       });
+      argparser.add_argument('--xml', {
+        action: 'store_true',
+        help:
+          'The default is for this function to return xml/html (wrapped in json). Use this switch to only return the xml.',
+      });
       argparser.add_argument('--json', {
         action: 'store_true',
         help:
-          'The default is for this function to return xml/html. Use this switch to convert the xml to json.',
+          'The default is for this function to return xml/html (wrapped in json). Use this switch to convert the xml to json.',
       });
       argparser.add_argument('--zgroup', {
         nargs: 1,
@@ -2758,6 +2778,23 @@ export = class Zotero {
     }
     if (args.arguments) {
     }
+    if (args.key) {
+      const [group, key] = this.getGroupAndKey(args)
+      if (key) {
+        args.key = key
+      }
+      if (group) {
+        args.group_id = group
+      }
+      // console.log(`Via --key ${key}, ${group}`)
+    }    
+    if (args.group) {
+      args.group_id = args.group
+    }
+    if (args.keys && !args.group) {
+      console.log("Please specify --group.")
+      process.exit(1)
+    }
     // ACTION: run code
     let output;
     try {
@@ -2766,20 +2803,25 @@ export = class Zotero {
       return this.catchme(2, 'caught error in getZoteroDataX', e, null);
     }
     // ACTION: return values
-    console.log(output);
 
-    return { status: 0, message: 'success', data: output };
+    if (args.xml) {
+      console.log(output.data);
+      return output
+    } else {
+      return { status: 0, message: 'success', data: output };
+    }
   }
 
   /* START FUcntionS FOR GETBIB */
   async getZoteroDataX(args) {
+    //console.log("Hello")
     var d = new Date();
     var n = d.getTime();
     // TODO: We need to check the groups of requested data against the groups the API key has access to.
     var fullresponse = { data: [], message: '' };
     // We could allow responses that have arg.keys/group as well as groupkeys.
-    if (args.keys && args.group) {
-      console.log('Response based on group and key');
+    if (args.keys || args.key) {
+      console.log('Response based on group and key(s)');
       fullresponse = await this.makeZoteroQuery(args);
     } else if (args.groupkeys) {
       console.log('Response based on groupkeys');
@@ -2805,12 +2847,12 @@ export = class Zotero {
               .replace(
                 /\((\d\d\d\d)\)/,
                 '($1' +
-                  element.data.tags
-                    .filter((element) => element.tag.match(/_yl:/))
-                    .map((element) => element.tag)
-                    .join(',')
-                    .replace(/_yl\:/, '') +
-                  ')'
+                element.data.tags
+                  .filter((element) => element.tag.match(/_yl:/))
+                  .map((element) => element.tag)
+                  .join(',')
+                  .replace(/_yl\:/, '') +
+                ')'
               )
               .replace('</div>\n</div>', '')
               .replace(/\.\s*$/, '')
@@ -2821,9 +2863,11 @@ export = class Zotero {
             '.' +
             this.getCanonicalURL(args, element) +
             (element.data.rights &&
-            element.data.rights.match(/Creative Commons/)
+              element.data.rights.match(/Creative Commons/)
               ? ' Available under ' + he.encode(element.data.rights) + '.'
               : '') +
+            this.colophon(element.data.extra)
+            +
             ' (' +
             this.urlify(
               'details',
@@ -2908,6 +2952,15 @@ export = class Zotero {
     //return xml
   }
 
+  private colophon(string) {
+    let colophon = ""
+    const match = string.match(/Colophon: (.*?)\n/)
+    if (match) {
+      colophon = " " + match[1]
+    }
+    return colophon
+  }
+
   private urlify(
     details,
     elementlibraryid,
@@ -2916,9 +2969,8 @@ export = class Zotero {
     argszkey,
     argsopeninzotero
   ) {
-    return `<a href="https://ref.opendeved.net/zo/zg/${elementlibraryid}/7/${elementkey}/NA?${
-      argszgroup || argszkey ? `src=${argszgroup}:${argszkey}&` : ''
-    }${argsopeninzotero ? 'openin=zotero' : ''}">${details}</a>)`;
+    return `<a href="https://ref.opendeved.net/zo/zg/${elementlibraryid}/7/${elementkey}/NA?${argszgroup || argszkey ? `src=${argszgroup}:${argszkey}&` : ''
+      }${argsopeninzotero ? 'openin=zotero' : ''}">${details}</a>`;
   }
 
   private getCanonicalURL(args, element) {
@@ -2926,28 +2978,38 @@ export = class Zotero {
     url =
       element.data.url != '' && !element.bib.match(element.data.url)
         ? ` Available from <a href="${he.encode(element.data.url)}">${he.encode(
-            element.data.url
-          )}</a>.`
+          element.data.url
+        )}</a>.`
         : '';
     url = element.data.url.match(/docs.edtechhub.org|docs.opendeved.net/)
       ? ' (' +
-        this.urlify(
-          element.data.url,
-          element.library.id,
-          element.key,
-          args.zgroup,
-          args.zkey,
-          args.openinzotero
-        ) +
-        ')'
+      this.urlify(
+        element.data.url,
+        element.library.id,
+        element.key,
+        args.zgroup,
+        args.zkey,
+        args.openinzotero
+      ) +
+      ')'
       : url;
     return url;
   }
 
   async makeZoteroQuery(arg) {
     var response = [];
+    console.log("hello")
     // The limit is 25 results at a time - so need to check that arg.keys is not too long.
-    const allkeys = arg.keys.split(',');
+    let allkeys = []
+    if (arg.key) {
+      allkeys.push(arg.key)
+    }
+    console.log("hello")
+    if (arg.keys) {
+      const arr = this.as_value(arg.keys).split(',')
+      allkeys.push(arr)
+    }
+    console.log(`allkeys ${allkeys}`)
     const keyarray = [];
     var temp = [];
     for (const index in allkeys) {
@@ -2973,7 +3035,7 @@ export = class Zotero {
           itemKey: keyarray[index].join(','),
         },
       });
-      //console.log("resp=" + JSON.stringify(resp, null, 2))
+      console.log("resp=" + JSON.stringify(resp, null, 2))
 
       if (Array.isArray(resp)) {
         response.push(...resp);
@@ -3365,7 +3427,7 @@ export = class Zotero {
           };
           console.log(
             '{Result, output}=' +
-              JSON.stringify(myout, null, this.config.indent)
+            JSON.stringify(myout, null, this.config.indent)
           );
         }
         if (args.out)
