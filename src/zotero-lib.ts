@@ -2251,7 +2251,7 @@ export = class Zotero {
         title: '👀View item in Evidence Library',
         tags: ['_r:kerko', '_r:zotzen'],
       },
-      kerko_url_key: {
+      kerko_site_url: {
         title: '👀View item in Evidence Library',
         tags: ['_r:kerko', '_r:zotzen'],
       },
@@ -2316,13 +2316,17 @@ export = class Zotero {
       // This should probably just be the title used if there is no title, or --decorate is given.
       Object.keys(decoration).forEach((option) => {
         const extra_text =
-          option === 'kerko_url_key'
+          option === 'kerko_site_url'
             ? ' The item key will be added automatically.'
-            : '';
+            : (
+              option === 'kerko_url'
+                ? ' You need to provide the full URL with the item key.'
+                : ''
+            );
         argparser.add_argument(`--${option}`, {
           nargs: 1,
           action: 'store',
-          help: `Provide a specific URL for '${option}'.${extra_text} The prefix '${decoration[option].title
+          help: `Provide a specific (complete) URL for '${option}'.${extra_text} The prefix '${decoration[option].title
             }' will be added to a title (if provided) and the following tags are added: ${JSON.stringify(
               decoration[option].tags
             )}`,
@@ -2357,6 +2361,14 @@ export = class Zotero {
     }
     if (args.arguments) {
     }
+    if (args.kerko_url) {
+      if (this.as_value(args.kerko_url) == 'eth') {
+        args.kerko_url = "https://docs.edtechhub.org/lib/"
+      }
+      if (this.as_value(args.kerko_url) == 'ode') {
+        args.kerko_url = "https://docs.opendeved.net/lib/"
+      }
+    }    
     // TODO: Make this consistent
     args.key = this.as_value(args.key);
     args.key = this.extractKeyAndSetGroup(args.key);
@@ -2400,7 +2412,7 @@ export = class Zotero {
         title = args.title ? title + ' ' + args.title : title;
         tags = args.tags ? tags.push(args.tags) : tags;
         const addkey =
-          option === 'kerko_url_key' ? this.as_value(args.key) : '';
+          option === 'kerko_site_url' ? this.as_value(args.key) : '';
         // ACTION: run code
         const data = await this.attachLinkToItem(
           this.as_value(args.key),
@@ -2423,13 +2435,13 @@ export = class Zotero {
       dataout.push({ url_based: datau });
     }
     if (args.update_url_field) {
-      if (args.url || args.kerko_url_key) {
+      if (args.url || args.kerko_site_url) {
         const argx = {
           key: this.as_value(args.key),
           value: this.as_value(args.url)
             ? this.as_value(args.url)
-            : this.as_value(args.kerko_url_key)
-              ? this.as_value(args.kerko_url_key) + this.as_value(args.key)
+            : this.as_value(args.kerko_site_url)
+              ? this.as_value(args.kerko_site_url) + this.as_value(args.key)
               : '',
         };
         const datau = await this.update_url(argx);
@@ -2438,7 +2450,7 @@ export = class Zotero {
         dataout.push({ url_field: datau });
       } else {
         console.log(
-          'You have to set url or kerko_url_key for update-url-field to work'
+          'You have to set url or kerko_site_url for update-url-field to work'
         );
       }
     }
@@ -2787,7 +2799,7 @@ export = class Zotero {
         args.group_id = group
       }
       // console.log(`Via --key ${key}, ${group}`)
-    }    
+    }
     if (args.group) {
       args.group_id = args.group
     }
