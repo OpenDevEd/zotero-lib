@@ -2982,7 +2982,7 @@ export = class Zotero {
         )}</a>.`
         : '';
     url = element.data.url.match(/docs.edtechhub.org|docs.opendeved.net/)
-      ? ' (' +
+      ? ' Available from ' +
       this.urlify(
         element.data.url,
         element.library.id,
@@ -2991,7 +2991,7 @@ export = class Zotero {
         args.zkey,
         args.openinzotero
       ) +
-      ')'
+      '.'
       : url;
     return url;
   }
