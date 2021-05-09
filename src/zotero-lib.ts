@@ -122,7 +122,7 @@ class Zotero {
     if (this.config.user_id === null && this.config.group_id === null)
       return this.message(
         0,
-        'Both user/group are null. You must provide exactly one of --user-id or --group-id'
+        'Both user/group are null. You must provide exactly one of --user-id or --group-id',
       );
 
     // TODO:
@@ -222,7 +222,7 @@ class Zotero {
     if (this.config.out)
       fs.writeFileSync(
         this.config.out,
-        JSON.stringify(output, null, this.config.indent)
+        JSON.stringify(output, null, this.config.indent),
       );
     if (this.config.show || this.config.verbose) this.show(output);
   }
@@ -307,7 +307,7 @@ class Zotero {
       params?: any;
       resolveWithFullResponse?: boolean;
       json?: boolean;
-    } = {}
+    } = {},
   ) {
     if (typeof options.userOrGroupPrefix === 'undefined')
       options.userOrGroupPrefix = true;
@@ -343,7 +343,7 @@ class Zotero {
       .catch((error) => {
         if (this.config.verbose) {
           console.log(
-            `Error in zotero.get = ${JSON.stringify(error, null, 2)}`
+            `Error in zotero.get = ${JSON.stringify(error, null, 2)}`,
           );
         }
         logger.error('error in zotero get %O', error);
@@ -363,7 +363,7 @@ class Zotero {
         // console.log("DEBUG", (new Error().stack));
         // console.log(shortError)
         console.log(
-          'Error in zotero.get = ' + JSON.stringify(shortError, null, 2)
+          'Error in zotero.get = ' + JSON.stringify(shortError, null, 2),
         );
         return error;
       });
@@ -622,7 +622,7 @@ class Zotero {
       if (args.terse) {
         console.log(`Number of groups: ${res2.length}`);
         const res3 = res2.sort((a, b) =>
-          a.data.name > b.data.name ? 1 : b.data.name > a.data.name ? -1 : 0
+          a.data.name > b.data.name ? 1 : b.data.name > a.data.name ? -1 : 0,
         );
         res3.forEach((element) => {
           const data = element.data;
@@ -690,13 +690,13 @@ class Zotero {
       let out = '';
       key = key.toString();
       const res = key.match(
-        /^zotero\:\/\/select\/groups\/(library|\d+)\/(items|collections)\/([A-Z01-9]+)/
+        /^zotero\:\/\/select\/groups\/(library|\d+)\/(items|collections)\/([A-Z01-9]+)/,
       );
       if (res) {
         // console.log("extractKeyGroupVariable -> res=" + JSON.stringify(res, null, 2))
         if (res[2] == 'library') {
           console.log(
-            'You cannot specify zotero-select links (zotero://...) to select user libraries.'
+            'You cannot specify zotero-select links (zotero://...) to select user libraries.',
           );
           return null;
         } else {
@@ -741,7 +741,7 @@ class Zotero {
     options: { content?: string; tags?: any } = {
       content: 'Note note.',
       tags: [],
-    }
+    },
   ) {
     const tags = this.objectifyTags(options.tags);
     // const noteText = options.content.replace(/\n/g, "\\n").replace(/\"/g, '\\\"')
@@ -765,7 +765,7 @@ class Zotero {
     options: { title?: string; tags?: any } = {
       title: 'Click to open',
       tags: [],
-    }
+    },
   ) {
     const tags = this.objectifyTags(options.tags);
     console.log('Linktitle=' + options.title);
@@ -844,7 +844,7 @@ class Zotero {
     } else {
       return this.message(
         0,
-        'Unable to extract group/key from the string provided.'
+        'Unable to extract group/key from the string provided.',
       );
     }
 
@@ -864,8 +864,8 @@ class Zotero {
         JSON.stringify(
           args.create_child.map((c) => {
             return { name: c, parentCollection: args.key };
-          })
-        )
+          }),
+        ),
       );
       const resp = JSON.parse(response);
       console.log('response=' + JSON.stringify(resp, null, 2));
@@ -895,7 +895,7 @@ class Zotero {
       if (args.terse) {
         console.log('test');
         collections = collections.map((element) =>
-          Object({ key: element.data.key, name: element.data.name })
+          Object({ key: element.data.key, name: element.data.name }),
         );
       }
       return collections;
@@ -955,7 +955,7 @@ class Zotero {
     } else {
       const msg = this.message(
         0,
-        'Unable to extract group/key from the string provided.'
+        'Unable to extract group/key from the string provided.',
       );
       return msg;
     }
@@ -987,7 +987,7 @@ class Zotero {
           JSON.stringify({
             collections: item.data.collections.concat(args.key),
           }),
-          item.version
+          item.version,
         );
       }
     }
@@ -1002,13 +1002,13 @@ class Zotero {
         await this.patch(
           `/items/${itemKey}`,
           JSON.stringify({ collections: item.data.collections }),
-          item.version
+          item.version,
         );
       }
     }
 
     const res = await this.get(
-      `/collections/${args.key}${args.tags ? '/tags' : ''}`
+      `/collections/${args.key}${args.tags ? '/tags' : ''}`,
     );
     this.show(res);
     return res;
@@ -1086,7 +1086,7 @@ class Zotero {
       if (!args.collection) {
         const msg = this.message(
           0,
-          'Unable to extract group/key from the string provided.'
+          'Unable to extract group/key from the string provided.',
         );
         return msg;
       }
@@ -1098,8 +1098,8 @@ class Zotero {
       this.print(
         await this.count(
           `${collection}/items${args.top ? '/top' : ''}`,
-          args.filter || {}
-        )
+          args.filter || {},
+        ),
       );
       return;
     }
@@ -1114,7 +1114,7 @@ class Zotero {
       if (params.limit > 100) {
         const msg = this.message(
           0,
-          'You can only retrieve up to 100 items with with params.limit.'
+          'You can only retrieve up to 100 items with with params.limit.',
         );
         return msg;
       }
@@ -1141,14 +1141,14 @@ class Zotero {
     if (args.validate_with) {
       if (!fs.existsSync(args.validate_with))
         throw new Error(
-          `You have provided a schema with --validate-with that does not exist: ${args.validate_with} does not exist`
+          `You have provided a schema with --validate-with that does not exist: ${args.validate_with} does not exist`,
         );
       else schema_path = args.validate_with;
     } else {
       console.log('TEMPORARY=' + JSON.stringify(this.config, null, 2));
       if (!fs.existsSync(this.config.zotero_schema))
         throw new Error(
-          `You have asked for validation, but '${this.config.zotero_schema}' does not exist`
+          `You have asked for validation, but '${this.config.zotero_schema}' does not exist`,
         );
       else schema_path = this.config.zotero_schema;
     }
@@ -1168,9 +1168,9 @@ class Zotero {
             JSON.parse(
               fs.readFileSync(
                 path.join(schema_path, `${item.itemType}.json`),
-                'utf-8'
-              )
-            )
+                'utf-8',
+              ),
+            ),
           );
       }
 
@@ -1272,7 +1272,7 @@ class Zotero {
     if (!args.key && !(args.filter && args.filter.itemKey)) {
       const msg = this.message(
         0,
-        'Unable to extract group/key from the string provided.'
+        'Unable to extract group/key from the string provided.',
       );
       return msg;
     }
@@ -1297,14 +1297,14 @@ class Zotero {
                 fs.writeFileSync(
                   item.data.filename,
                   await this.get(`/items/${item.key}/file`),
-                  'binary'
+                  'binary',
                 );
               } else {
                 console.log(
-                  `Not downloading file ${item.key}/${item.data.itemType}/${item.data.linkMode}/${item.data.title}`
+                  `Not downloading file ${item.key}/${item.data.itemType}/${item.data.linkMode}/${item.data.title}`,
                 );
               }
-            })
+            }),
         );
       }
 
@@ -1312,14 +1312,14 @@ class Zotero {
         console.log('Adding files...');
         const attachmentTemplate = await this.get(
           '/items/new?itemType=attachment&linkMode=imported_file',
-          { userOrGroupPrefix: false }
+          { userOrGroupPrefix: false },
         );
         for (const filename of args.addfiles) {
           if (args.debug) console.log('Adding file: ' + filename);
           if (!fs.existsSync(filename)) {
             const msg = this.message(
               0,
-              `Ignoring non-existing file: ${filename}.`
+              `Ignoring non-existing file: ${filename}.`,
             );
             return msg;
           }
@@ -1331,18 +1331,18 @@ class Zotero {
           attach.parentItem = args.key;
           const stat = fs.statSync(filename);
           const uploadItem = JSON.parse(
-            await this.post('/items', JSON.stringify([attach]))
+            await this.post('/items', JSON.stringify([attach])),
           );
           const uploadAuth = JSON.parse(
             await this.post(
               `/items/${uploadItem.successful[0].key}/file?md5=${md5.sync(
-                filename
+                filename,
               )}&filename=${attach.filename}&filesize=${
                 fs.statSync(filename)['size']
               }&mtime=${stat.mtimeMs}`,
               '{}',
-              { 'If-None-Match': '*' }
-            )
+              { 'If-None-Match': '*' },
+            ),
           );
           let request_post = null;
           if (uploadAuth.exists !== 1) {
@@ -1366,7 +1366,7 @@ class Zotero {
               {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'If-None-Match': '*',
-              }
+              },
             );
           }
           output.push({ file: request_post });
@@ -1386,14 +1386,14 @@ class Zotero {
         const addto = await this.patch(
           `/items/${args.key}`,
           JSON.stringify({ collections: newCollections }),
-          item.version
+          item.version,
         );
         output.push({ addtocollection: addto });
       }
 
       if (args.removefromcollection) {
         args.removefromcollection = this.extractKeyAndSetGroup(
-          args.removefromcollection
+          args.removefromcollection,
         );
         const newCollections = item.data.collections;
         args.removefromcollection.forEach((itemKey) => {
@@ -1405,7 +1405,7 @@ class Zotero {
         const removefrom = await this.patch(
           `/items/${args.key}`,
           JSON.stringify({ collections: newCollections }),
-          item.version
+          item.version,
         );
         output.push({ removefromcollection: removefrom });
       }
@@ -1420,19 +1420,19 @@ class Zotero {
         const res = await this.patch(
           `/items/${args.key}`,
           JSON.stringify({ tags: newTags }),
-          item.version
+          item.version,
         );
         output.push({ addtags: res });
       }
 
       if (args.removetags) {
         const newTags = item.data.tags.filter(
-          (tag) => !args.removetags.includes(tag.tag)
+          (tag) => !args.removetags.includes(tag.tag),
         );
         const res = await this.patch(
           `/items/${args.key}`,
           JSON.stringify({ tags: newTags }),
-          item.version
+          item.version,
         );
         output.push({ removetags: res });
       }
@@ -1524,7 +1524,7 @@ class Zotero {
       if (!args.key) {
         const msg = this.message(
           0,
-          'Unable to extract group/key from the string provided.'
+          'Unable to extract group/key from the string provided.',
         );
         return msg;
       }
@@ -1533,7 +1533,7 @@ class Zotero {
     fs.writeFileSync(
       args.save,
       await this.get(`/items/${args.key}/file`),
-      'binary'
+      'binary',
     );
     // TODO return better value.
     return this.message(0, 'File saved', args.save);
@@ -1580,10 +1580,10 @@ class Zotero {
       if (!args.files.length)
         return this.message(
           0,
-          'Need at least one item (args.items) to create or use args.template'
+          'Need at least one item (args.items) to create or use args.template',
         );
       const items = args.files.map((item) =>
-        JSON.parse(fs.readFileSync(item, 'utf-8'))
+        JSON.parse(fs.readFileSync(item, 'utf-8')),
       );
       // console.log("input")
       // this.show(items)
@@ -1601,7 +1601,7 @@ class Zotero {
     } else if (args.item) {
       const result = await this.post(
         '/items',
-        '[' + JSON.stringify(args.item) + ']'
+        '[' + JSON.stringify(args.item) + ']',
       );
       // console.log(result)
       const res = JSON.parse(result);
@@ -1671,7 +1671,7 @@ class Zotero {
       const msg = this.message(
         0,
         'Unable to extract group/key from the string provided. Arguments attached.',
-        args
+        args,
       );
       console.log(msg);
       // return msg
@@ -1699,7 +1699,7 @@ class Zotero {
     const result = await this[args.replace ? 'put' : 'patch'](
       `/items/${args.key}`,
       jsonstr,
-      originalItemVersion
+      originalItemVersion,
     );
     // console.log("X=" + JSON.stringify(result, null, 2))
     return result;
@@ -1946,12 +1946,12 @@ class Zotero {
     }
     const [group_id, key] = this.getGroupAndKey(args);
     const base_collection = this.as_value(
-      this.extractKeyAndSetGroup(args.collection)
+      this.extractKeyAndSetGroup(args.collection),
     );
     console.log(
       `Key = ${key}; group_id = ${group_id}; ${this.extractGroupAndSetGroup(
-        args.key
-      )}; ${this.extractGroupAndSetGroup(args.collection)}`
+        args.key,
+      )}; ${this.extractGroupAndSetGroup(args.collection)}`,
     );
     const zotero = new Zotero({ group_id });
     const response = await zotero.item({ key });
@@ -2077,7 +2077,7 @@ class Zotero {
         ? this.extractGroupAndSetGroup(args.key)
         : args.collection && this.extractGroupAndSetGroup(args.collection)
         ? this.extractGroupAndSetGroup(args.collection)
-        : this.config.group_id
+        : this.config.group_id,
     );
     const key = this.as_value(this.extractKeyAndSetGroup(args.key));
     // console.log(`getGroupAndKey ${args.key} -> ${group_id} / ${key}`)
@@ -2147,7 +2147,7 @@ class Zotero {
       // TODO: should scan item.extra and check for existing DOI
       if (!item.doi)
         console.log(
-          'TODO: zotero-lib - should scan item.extra and check for existing DOI'
+          'TODO: zotero-lib - should scan item.extra and check for existing DOI',
         );
       const extra = item.extra + `\nDOI: ${args.doi}`;
       const updateargs = {
@@ -2300,7 +2300,7 @@ class Zotero {
           help: `Provide a specific URL for '${option}'.${extra_text} The prefix '${
             decoration[option].title
           }' will be added to a title (if provided) and the following tags are added: ${JSON.stringify(
-            decoration[option].tags
+            decoration[option].tags,
           )}`,
         });
       });
@@ -2384,7 +2384,7 @@ class Zotero {
         const data = await this.attachLinkToItem(
           this.as_value(args.key),
           this.as_value(args[option]) + addkey,
-          { title, tags }
+          { title, tags },
         );
         dataout.push({
           decoration: option,
@@ -2397,7 +2397,7 @@ class Zotero {
       const datau = await this.attachLinkToItem(
         this.as_value(args.key),
         this.as_value(args.url),
-        { title: this.as_value(args.title), tags: args.tags }
+        { title: this.as_value(args.title), tags: args.tags },
       );
       dataout.push({ url_based: datau });
     }
@@ -2417,7 +2417,7 @@ class Zotero {
         dataout.push({ url_field: datau });
       } else {
         console.log(
-          'You have to set url or kerko_url_key for update-url-field to work'
+          'You have to set url or kerko_url_key for update-url-field to work',
         );
       }
     }
@@ -2786,13 +2786,13 @@ class Zotero {
                     .map((element) => element.tag)
                     .join(',')
                     .replace(/_yl\:/, '') +
-                  ')'
+                  ')',
               )
               .replace('</div>\n</div>', '')
               .replace(/\.\s*$/, '')
               .replace(
                 '<div class="csl-bib-body" style="line-height: 1.35; padding-left: 1em; text-indent:-1em;">',
-                '<div class="csl-bib-body">'
+                '<div class="csl-bib-body">',
               ) +
             '.' +
             this.getCanonicalURL(args, element) +
@@ -2807,10 +2807,10 @@ class Zotero {
               element.key,
               args.zgroup,
               args.zkey,
-              args.openinzotero
+              args.openinzotero,
             ) +
             ')' +
-            '</div>\n</div>'
+            '</div>\n</div>',
         );
       } catch (e) {
         return this.catchme(2, 'caught error in response', e, response);
@@ -2859,7 +2859,7 @@ class Zotero {
               2,
               'caught error in convert.xml2json',
               e,
-              xml
+              xml,
             );
           }
           return outputstr;
@@ -2878,7 +2878,7 @@ class Zotero {
           data: fullresponse,
         },
         null,
-        2
+        2,
       );
     }
     // return xml
@@ -2890,7 +2890,7 @@ class Zotero {
     elementkey,
     argszgroup,
     argszkey,
-    argsopeninzotero
+    argsopeninzotero,
   ) {
     return `<a href="https://ref.opendeved.net/zo/zg/${elementlibraryid}/7/${elementkey}/NA?${
       argszgroup || argszkey ? `src=${argszgroup}:${argszkey}&` : ''
@@ -2902,7 +2902,7 @@ class Zotero {
     url =
       element.data.url != '' && !element.bib.match(element.data.url)
         ? ` Available from <a href="${he.encode(element.data.url)}">${he.encode(
-            element.data.url
+            element.data.url,
           )}</a>.`
         : '';
     url = element.data.url.match(/docs.edtechhub.org|docs.opendeved.net/)
@@ -2913,7 +2913,7 @@ class Zotero {
           element.key,
           args.zgroup,
           args.zkey,
-          args.openinzotero
+          args.openinzotero,
         ) +
         ')'
       : url;
@@ -3025,7 +3025,7 @@ class Zotero {
         data,
       },
       null,
-      2
+      2,
     );
   }
 
@@ -3309,7 +3309,7 @@ class Zotero {
     }
     if (args.dryrun) {
       console.log(
-        `API command:\n Zotero.${args.func}(${JSON.stringify(args, null, 2)})`
+        `API command:\n Zotero.${args.func}(${JSON.stringify(args, null, 2)})`,
       );
     } else {
       /* // ZenodoAPI.${args.func.name}(args)
@@ -3341,13 +3341,13 @@ class Zotero {
           };
           console.log(
             '{Result, output}=' +
-              JSON.stringify(myout, null, this.config.indent)
+              JSON.stringify(myout, null, this.config.indent),
           );
         }
         if (args.out)
           fs.writeFileSync(
             args.out,
-            JSON.stringify(result, null, this.config.indent)
+            JSON.stringify(result, null, this.config.indent),
           );
       } catch (ex) {
         this.print('Command execution failed: ', ex);
