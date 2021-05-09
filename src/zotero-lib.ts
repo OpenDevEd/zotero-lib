@@ -212,7 +212,7 @@ class Zotero {
     return {
       status: stat,
       message: msg,
-      data: data,
+      data,
     };
   }
 
@@ -356,8 +356,8 @@ class Zotero {
         const shortError = {
           name: error.name,
           statusCode: error.statusCode,
-          message: message,
-          uri: uri,
+          message,
+          uri,
           json: options.json,
         };
         // console.log("DEBUG", (new Error().stack));
@@ -750,7 +750,7 @@ class Zotero {
       parentItem: PARENT,
       itemType: 'note',
       note: noteText,
-      tags: tags,
+      tags,
       collections: [],
       relations: {},
     };
@@ -778,7 +778,7 @@ class Zotero {
       note: '',
       contentType: '',
       charset: '',
-      tags: tags,
+      tags,
       relations: {},
     };
     return await this.create_item({ item: json });
@@ -1284,7 +1284,7 @@ class Zotero {
 
       if (args.savefiles) {
         const children = await this.get(`/items/${args.key}/children`);
-        output.push({ children: children });
+        output.push({ children });
         await Promise.all(
           children
             .filter((item) => item.data.itemType === 'attachment')
@@ -1481,8 +1481,8 @@ class Zotero {
       ? {
           status: 0,
           message: 'success',
-          output: output,
-          result: result,
+          output,
+          result,
           final: finalactions,
         }
       : result;
@@ -1953,8 +1953,8 @@ class Zotero {
         args.key
       )}; ${this.extractGroupAndSetGroup(args.collection)}`
     );
-    const zotero = new Zotero({ group_id: group_id });
-    const response = await zotero.item({ key: key });
+    const zotero = new Zotero({ group_id });
+    const response = await zotero.item({ key });
     // console.log("response = " + JSON.stringify(response, null, 2))
     // TODO: Have automated test to see whether successful.
     output.push({ response1: response });
@@ -1969,12 +1969,12 @@ class Zotero {
         response.title;
     // const new_coll = zotero.create_collection(group, base_collection, $name)
     // console.log("ch="+child_name)
-    output.push({ child_name: child_name });
+    output.push({ child_name });
 
     // Everything below here should be done as Promise.all
     console.log('collections -base');
     const new_coll = await zotero.collections({
-      group_id: group_id,
+      group_id,
       key: this.as_value(base_collection),
       create_child: this.as_array(child_name),
     });
@@ -1984,14 +1984,14 @@ class Zotero {
     console.log('Move item to collection');
     const ecoll = this.as_array(new_coll[0].key);
     const res = await zotero.item({
-      key: key,
+      key,
       addtocollection: ecoll,
     });
     output.push({ response2: res });
 
     console.log('1-collections');
     const refcol_res = await zotero.collections({
-      group_id: group_id,
+      group_id,
       key: ecoll,
       create_child: ['✅_References'],
     });
@@ -2001,8 +2001,8 @@ class Zotero {
     console.log('TEMPORARY=' + JSON.stringify(refcol_res, null, 2));
     const refcol = refcol_res[0].key;
     const link1 = await zotero.attach_link({
-      group_id: group_id,
-      key: key,
+      group_id,
+      key,
       url: `zotero://select/groups/${group_id}/collections/${refcol}`,
       title: '✅View collection with references.',
       tags: ['_r:viewRefs'],
@@ -2011,7 +2011,7 @@ class Zotero {
 
     console.log('2-collection');
     const refcol_citing = await zotero.collections({
-      group_id: group_id,
+      group_id,
       key: ecoll,
       create_child: ['✅Citing articles'],
     });
@@ -2019,8 +2019,8 @@ class Zotero {
     const citingcol = refcol_citing[0].key;
     console.log('2-link');
     const link2 = await zotero.attach_link({
-      group_id: group_id,
-      key: key,
+      group_id,
+      key,
       url: `zotero://select/groups/${group_id}/collections/${citingcol}`,
       title: '✅View collection with citing articles (cited by).',
       tags: ['_r:viewCitedBy'],
@@ -2029,7 +2029,7 @@ class Zotero {
 
     console.log('3-collection');
     const refcol_rem = await zotero.collections({
-      group_id: group_id,
+      group_id,
       key: ecoll,
       create_child: ['✅Removed references'],
     });
@@ -2037,8 +2037,8 @@ class Zotero {
     const refremcol = refcol_rem[0].key;
     console.log('3-link');
     const link3 = await zotero.attach_link({
-      group_id: group_id,
-      key: key,
+      group_id,
+      key,
       url: `zotero://select/groups/${group_id}/collections/${refremcol}`,
       title: '✅View collection with removed references.',
       tags: ['_r:viewRRemoved'],
@@ -2050,15 +2050,15 @@ class Zotero {
     // ERROR HERE: key is still an array.
     const key2 = this.extractKeyAndSetGroup(key);
     const note = await this.attachNoteToItem({
-      group_id: group_id,
+      group_id,
       key: key2,
       description: `<h1>Bibliography</h1><p>Updated: date</p><p>Do not edit this note manually.</p><p><b>bibliography://select/groups/${group_id}/collections/${refcol}</b></p>`,
       tags: ['_cites'],
     });
-    output.push({ note: note });
+    output.push({ note });
 
-    const response3 = await zotero.item({ key: key });
-    output.push({ response3: response3 });
+    const response3 = await zotero.item({ key });
+    output.push({ response3 });
     // console.log("-->" + response2.collections)
     console.log('TEMPORARY=' + JSON.stringify(output, null, 2));
 
@@ -2153,7 +2153,7 @@ class Zotero {
       const updateargs = {
         key: args.key,
         version: item.version,
-        json: item.doi ? { doi: args.doi } : { extra: extra },
+        json: item.doi ? { doi: args.doi } : { extra },
         fullresponse: false,
         show: true,
       };
@@ -2384,11 +2384,11 @@ class Zotero {
         const data = await this.attachLinkToItem(
           this.as_value(args.key),
           this.as_value(args[option]) + addkey,
-          { title: title, tags: tags }
+          { title, tags }
         );
         dataout.push({
           decoration: option,
-          data: data,
+          data,
         });
       }
     }
@@ -2636,7 +2636,7 @@ class Zotero {
       }
     }
     if (kciaka == -1) {
-      return this.message(0, 'item has no ItemAlsoKnownAs', { item: item });
+      return this.message(0, 'item has no ItemAlsoKnownAs', { item });
     }
 
     console.log(extraarr[kciaka]);
@@ -2675,14 +2675,14 @@ class Zotero {
           console.log('Result=' + JSON.stringify(zoteroRecord, null, 2));
       } else {
         console.log('update failed');
-        return this.message(1, 'update failed', { update: update });
+        return this.message(1, 'update failed', { update });
       }
       return this.message(0, 'exit status', {
-        update: update,
+        update,
         item: zoteroRecord,
       });
     } else {
-      return this.message(0, 'exit status', { item: item });
+      return this.message(0, 'exit status', { item });
     }
   }
 
@@ -3011,7 +3011,7 @@ class Zotero {
     }
     // console.log("Multi query 3")
 
-    const output = { status: 0, message: 'Success', data: b, errors: errors };
+    const output = { status: 0, message: 'Success', data: b, errors };
     // console.log("TEMPORARY=" + JSON.stringify(output, null, 2))
     return output;
   }
@@ -3022,7 +3022,7 @@ class Zotero {
         status: number,
         message: this.isomessage(text),
         error: error.toString(),
-        data: data,
+        data,
       },
       null,
       2
@@ -3336,7 +3336,7 @@ class Zotero {
         const result = await this[args.func](args);
         if (args.verbose) {
           const myout = {
-            result: result,
+            result,
             output: this.output,
           };
           console.log(
