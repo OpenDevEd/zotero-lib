@@ -3,7 +3,13 @@
     "es2021": true,
     "node": true
   },
-  "extends": ["prettier", "airbnb-base"],
+  "extends": [
+    "prettier",
+    "airbnb-base",
+    "plugin:import/errors",
+    "plugin:import/warnings",
+    "plugin:import/typescript"
+  ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaVersion": 12,
@@ -11,6 +17,8 @@
   },
   "plugins": ["prettier", "@typescript-eslint"],
   "rules": {
-    "prettier/prettier": ["error", { "singleQuote": true }]
+    "prettier/prettier": ["error", { "singleQuote": true }],
+    "import/extensions": "off",
+    "import/no-unresolved": [2, { "commonjs": true }]
   }
 }
