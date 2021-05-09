@@ -33,7 +33,6 @@
     "@iarna/toml": "^2.2.5",
     "@types/node": "^14.14.14",
     "argparse": "^2.0.1",
-    "args-any": "^1.2.1",
     "docstring": "^1.1.0",
     "dotenv": "^8.2.0",
     "file-system": "^2.2.2",
