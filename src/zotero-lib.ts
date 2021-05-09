@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
 import { ArgumentParser } from 'argparse';
+import logger from './logger';
 
 require('dotenv').config();
 require('docstring');
 
-import logger = require('./logger');
 import sleep = require('./utils/sleep');
 
 const os = require('os');
