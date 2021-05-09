@@ -3,6 +3,7 @@
 import { ArgumentParser } from 'argparse';
 import logger from './logger';
 import sleep from './utils/sleep';
+import Ajv from 'ajv';
 
 require('dotenv').config();
 require('docstring');
@@ -17,8 +18,6 @@ const fs = require('fs');
 const path = require('path');
 const request = require('request-promise');
 const LinkHeader = require('http-link-header');
-
-const Ajv = require('ajv');
 
 // import { parse as TOML } from '@iarna/toml'
 // import fs = require('fs')
