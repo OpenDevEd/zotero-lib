@@ -1,20 +1,18 @@
 #!/usr/bin/env node
 
-//import { stringify } from "@iarna/toml";
-//import * as argparse from 'argparse';
+import { ArgumentParser } from 'argparse';
 
 require('dotenv').config();
 require('docstring');
-const os = require('os');
-const _ = require('lodash');
-const he = require('he');
-var convert = require('xml-js');
 
 import logger = require('./logger');
 import sleep = require('./utils/sleep');
 
-// import { ArgumentParser } from 'argparse'
-const { ArgumentParser } = require('argparse');
+const os = require('os');
+const _ = require('lodash');
+const he = require('he');
+const convert = require('xml-js');
+
 const toml = require('@iarna/toml');
 const fs = require('fs');
 const path = require('path');
