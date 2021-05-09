@@ -906,8 +906,8 @@ class Zotero {
   // TODO: Add option "--output file.json" to pipe output to file.
 
   async collection(args, subparsers?) {
-    /** 
-  Retrieve information about a specific collection --key KEY (API: /collections/KEY or /collections/KEY/tags). Use 'collection --help' for details.   
+    /**
+  Retrieve information about a specific collection --key KEY (API: /collections/KEY or /collections/KEY/tags). Use 'collection --help' for details.
   (Note: Retrieve items is a collection via 'items --collection KEY'.)
      */
     this.reconfigure(args);
@@ -1017,10 +1017,10 @@ class Zotero {
   async items(args, subparsers?) {
     // console.log("items-----")
     this.reconfigure(args);
-    /** 
-  Retrieve list of items from API. (API: /items, /items/top, /collections/COLLECTION/items/top). 
-  Use 'items --help' for details. 
-  By default, all items are retrieved. With --top or limit (via --filter) the default number of items are retrieved. 
+    /**
+  Retrieve list of items from API. (API: /items, /items/top, /collections/COLLECTION/items/top).
+  Use 'items --help' for details.
+  By default, all items are retrieved. With --top or limit (via --filter) the default number of items are retrieved.
     */
     let items;
     if (args.getInterface && subparsers) {
@@ -1186,9 +1186,9 @@ class Zotero {
     }
   */
   public async item(args, subparsers?) {
-    /** 
-  Retrieve an item (item --key KEY), save/add file attachments, retrieve children. Manage collections and tags. (API: /items/KEY/ or /items/KEY/children). 
-   
+    /**
+  Retrieve an item (item --key KEY), save/add file attachments, retrieve children. Manage collections and tags. (API: /items/KEY/ or /items/KEY/children).
+
   Also see 'attachment', 'create' and 'update'.
     */
     // console.log("HERE="+this.getFuncName())
@@ -1488,9 +1488,9 @@ class Zotero {
   }
 
   async attachment(args, subparsers?) {
-    /** 
-  Retrieve/save file attachments for the item specified with --key KEY (API: /items/KEY/file). 
-  Also see 'item', which has options for adding/saving file attachments. 
+    /**
+  Retrieve/save file attachments for the item specified with --key KEY (API: /items/KEY/file).
+  Also see 'item', which has options for adding/saving file attachments.
     */
     this.reconfigure(args);
     if (args.getInterface && subparsers) {
@@ -1535,8 +1535,8 @@ class Zotero {
   }
 
   public async create_item(args, subparsers?) {
-    /** 
-  Create a new item or items. (API: /items/new) You can retrieve a template with the --template option.  
+    /**
+  Create a new item or items. (API: /items/new) You can retrieve a template with the --template option.
   Use this option to create both top-level items, as well as child items (including notes and links).
     */
     this.reconfigure(args);
@@ -2523,9 +2523,9 @@ class Zotero {
     return this.message(0, 'exit status', data);
     /*
   Implement: extra_append
-   
+
     my $str = `./zotUpdateField.pl $thegroup --item $key --key extra | jq " .extra "`;
-   
+
   my @extra ;
   if ($str =~ m/\S/s) {
       $str =~ s/\n$//s;
@@ -2533,14 +2533,14 @@ class Zotero {
       $str =~ s/^\"//s;
       @extra = split(/\\n/,$str);
   };
-   
+
   push @extra, @t;
-   
+
   my $string = shell_quote("\"" . join("\\n", @extra) . "\"");
   #print $string;
-   
+
   say `./zotUpdateField.pl $thegroup  --item $key --key extra --value $string --update`;
-   
+
     */
   }
 
@@ -2758,7 +2758,7 @@ class Zotero {
     /*
     const evlib = {
   2129771: "https://docs.opendeved.net/lib/",
-  2405685: "https://docs.edtechhub.org/lib/" 	
+  2405685: "https://docs.edtechhub.org/lib/"
   } */
     // console.log("TEMPORARY=" + JSON.stringify(fullresponse, null, 2))
 
@@ -3165,7 +3165,7 @@ class Zotero {
        my($gp, $key) = @_;
        my $coll = `zotero-cli --group $gp collection --key $key`;
        $coll =  & jq(".data", $coll);
-  #    say "collectionName";                                                                                                                                                   
+  #    say "collectionName";
   #    say $coll;
        my $oname = & jqx(".name", $coll);
      #my $oparent = & jqx(".parentCollection", $coll);
@@ -3236,45 +3236,45 @@ class Zotero {
       my $coll = `zotero-cli --group $gp collection --key $key`;
       $coll =  & jq(".data", $coll);
   #    say $coll;
-   
+
       my $oname = & jqx(".name", $coll);
       my $oparent = & jqx(".parentCollection", $coll);
-   
+
     # A name must always be provided.
         if($name) {
   #    $name = qq{, "name": "$name" };
       } else {
         $name = $oname;
       };
-   
+
       if ($prefix) {
         $name = $prefix.$name;
       }
-   
+
       if ($append) {
         $name = $name.$append;
       }
-   
+
       $name = qq{, "name": "$name" };
-   
+
       if ($parent) {
         $parent = qq{, "parentCollection": "$parent" };
       } else {
         $parent = qq{, "parentCollection": "$oparent" };
       };
-   
+
     # If no parent is provided, the collection is moved to the top level:
       if ($top) {
         $parent = "";
       }
-   
+
       my $command = qq < zotero - cli--group $gp put / collections / $key--data '{"version": >
         .& jqx(".version", $coll)
           .qq < $name $parent
     } '>;
     say $command;
     say`$command`;
-   
+
     my $coll2 = `zotero-cli --group $gp collection --key $key`;
     $coll2 =  & jq(".data", $coll);
     say "Result:";
@@ -3404,7 +3404,7 @@ class Zotero {
       help: 'Show version',
     });
     /*
-    The following code adds subparsers. 
+    The following code adds subparsers.
     */
 
     const subparsers = parser.add_subparsers({
