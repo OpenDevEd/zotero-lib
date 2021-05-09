@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 import { ArgumentParser } from 'argparse';
+import Ajv from 'ajv';
 import logger from './logger';
 import sleep from './utils/sleep';
-import Ajv from 'ajv';
 
 require('dotenv').config();
 require('docstring');
