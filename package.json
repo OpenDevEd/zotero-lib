@@ -39,7 +39,6 @@
     "http-link-header": "^1.0.3",
     "lodash": "^4.17.21",
     "md5-file": "^5.0.0",
-    "path": "^0.12.7",
     "request": "^2.88.2",
     "request-promise": "^4.2.6",
     "request-promise-native": "^1.0.9",
