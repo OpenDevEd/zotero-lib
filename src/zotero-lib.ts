@@ -58,11 +58,10 @@ class Zotero {
   };
 
   constructor(args = {}) {
-    // args = args
     // Read config (which also sets the Zotero-API-Key value in the header)
     // TODO: readConfig may need to perform an async operation...
     const message = this.configure(args, true);
-    logger.info('configure response: %O', message);
+    logger.debug('configure response: %O', message);
     // if (message['status'] === 0) {
     // }
   }
