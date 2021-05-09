@@ -18,9 +18,14 @@
   "plugins": ["prettier", "@typescript-eslint"],
   "rules": {
     "no-console": "off",
-    "prettier/prettier": ["error", { "singleQuote": true }],
+    "prettier/prettier": [
+      "error",
+      { "singleQuote": true, "trailingComma": "all" }
+    ],
     "import/extensions": "off",
     "import/no-unresolved": [2, { "commonjs": true }],
-    "camelcase": "warn"
+    "camelcase": "warn",
+    "operator-linebreak": "off",
+    "no-underscore-dangle": "off"
   }
 }
