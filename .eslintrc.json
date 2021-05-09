@@ -17,8 +17,10 @@
   },
   "plugins": ["prettier", "@typescript-eslint"],
   "rules": {
+    "no-console": "off",
     "prettier/prettier": ["error", { "singleQuote": true }],
     "import/extensions": "off",
-    "import/no-unresolved": [2, { "commonjs": true }]
+    "import/no-unresolved": [2, { "commonjs": true }],
+    "camelcase": "warn"
   }
 }
