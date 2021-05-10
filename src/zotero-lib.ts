@@ -4,6 +4,7 @@ import { ArgumentParser } from 'argparse';
 import Ajv from 'ajv';
 import logger from './logger';
 import sleep from './utils/sleep';
+import formatAsXMP from './utils/formatAsXMP';
 
 require('dotenv').config();
 require('docstring');
@@ -1210,6 +1211,10 @@ class Zotero {
         required: true,
         help:
           'The key of the item. You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
+      });
+      parser_item.add_argument('--xmp', {
+        action: 'store_true',
+        help: 'Provide output in xmp format',
       });
       parser_item.add_argument('--children', {
         action: 'store_true',
@@ -3332,7 +3337,10 @@ class Zotero {
         // await this['$' + args.command.replace(/-/g, '_')]()
         // await this[args.command.replace(/-/g, '_')]()
         if (args.verbose) console.log('ARGS=' + JSON.stringify(args, null, 2));
-        const result = await this[args.func](args);
+        let result = await this[args.func](args);
+        if (args.xmp) {
+          result = formatAsXMP(result);
+        }
         if (args.verbose) {
           const myout = {
             result,
@@ -3343,11 +3351,15 @@ class Zotero {
               JSON.stringify(myout, null, this.config.indent),
           );
         }
-        if (args.out)
+
+        if (args.out) {
           fs.writeFileSync(
             args.out,
             JSON.stringify(result, null, this.config.indent),
           );
+        } else {
+          console.log(result);
+        }
       } catch (ex) {
         this.print('Command execution failed: ', ex);
         process.exit(1);
