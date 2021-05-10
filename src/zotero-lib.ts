@@ -1216,6 +1216,14 @@ class Zotero {
         action: 'store_true',
         help: 'Provide output in xmp format',
       });
+
+      parser_item.add_argument('--switch-names', {
+        action: 'store_true',
+        help:
+          'Switch firstName with lastName and vice versa in creators, ignoring name only creators',
+        dest: 'switchNames',
+      });
+
       parser_item.add_argument('--children', {
         action: 'store_true',
         help: 'Retrieve list of children for the item.',
@@ -1393,6 +1401,31 @@ class Zotero {
           item.version,
         );
         output.push({ addtocollection: addto });
+      }
+
+      console.log('args = ', { ...args });
+      if (args.switchNames) {
+        const { creators = [] } = item.data;
+
+        logger.info('switching creators, old = %O', creators);
+
+        let updatedCreators = creators.map((creator) => {
+          if ('name' in creator) {
+            return creator;
+          }
+
+          const { firstName, lastName, creatorType } = creator;
+
+          return { lastName: firstName, firstName: lastName, creatorType };
+        });
+
+        logger.info('switched creators, new = %O', updatedCreators);
+        const res = await this.patch(
+          `/items/${args.key}`,
+          JSON.stringify({ creators: updatedCreators }),
+          item.version,
+        );
+        output.push({ switchNames: res });
       }
 
       if (args.removefromcollection) {
