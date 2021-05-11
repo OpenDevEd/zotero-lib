@@ -1,20 +1,22 @@
 type Creator =
   | { name: string; creatorType: string }
-  | { firstname: string; lastname: string; creatorType: string };
+  | { firstName: string; lastName: string; creatorType: string };
 interface ZoteroItem {
-  creators: [Creator];
+  creators?: [];
   rights: any;
   title: string;
   abstractNote: string;
 }
-export default function formatAsXMP(item: ZoteroItem) {
-  const creatorsList = item.creators
-    .map((c) => {
+export default function formatAsXMP(item: ZoteroItem = {} as ZoteroItem) {
+  const { creators = [] } = item;
+  console.log('before formatting', creators);
+  const creatorsList = creators
+    .map((c: Creator) => {
       if ('name' in c) {
         return `<rdf:li>${c.name} ${c.creatorType}</rdf:li>`;
       }
 
-      return `<rdf:li>${c.firstname} ${c.lastname} ${c.creatorType}</rdf:li>`;
+      return `<rdf:li>${c.firstName} ${c.lastName} ${c.creatorType}</rdf:li>`;
     })
     .join('\n');
 
