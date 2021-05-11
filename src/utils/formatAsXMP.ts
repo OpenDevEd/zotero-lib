@@ -9,7 +9,6 @@ interface ZoteroItem {
 }
 export default function formatAsXMP(item: ZoteroItem = {} as ZoteroItem) {
   const { creators = [] } = item;
-  console.log('before formatting', creators);
   const creatorsList = creators
     .map((c: Creator) => {
       if ('name' in c) {
