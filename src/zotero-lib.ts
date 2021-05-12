@@ -5,6 +5,7 @@ import Ajv from 'ajv';
 import logger from './logger';
 import sleep from './utils/sleep';
 import formatAsXMP from './utils/formatAsXMP';
+import printJSON from './utils/printJSON';
 
 require('dotenv').config();
 require('docstring');
@@ -3393,7 +3394,7 @@ class Zotero {
           );
         } else {
           logger.info(`writing output to console`);
-          console.log(result);
+          console.log(printJSON(result));
         }
       } catch (ex) {
         this.print('Command execution failed: ', ex);
