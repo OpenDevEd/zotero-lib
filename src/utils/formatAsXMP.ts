@@ -12,10 +12,10 @@ export default function formatAsXMP(item: ZoteroItem = {} as ZoteroItem) {
   const creatorsList = creators
     .map((c: Creator) => {
       if ('name' in c) {
-        return `<rdf:li>${c.name} ${c.creatorType}</rdf:li>`;
+        return `<rdf:li>${c.name} (${c.creatorType})</rdf:li>`;
       }
 
-      return `<rdf:li>${c.firstName} ${c.lastName} ${c.creatorType}</rdf:li>`;
+      return `<rdf:li>${c.firstName} ${c.lastName} (${c.creatorType})</rdf:li>`;
     })
     .join('\n');
 
