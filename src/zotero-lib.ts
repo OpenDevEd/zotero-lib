@@ -3386,11 +3386,13 @@ class Zotero {
         }
 
         if (args.out) {
+          logger.info(`writing output to file ${args.out}`);
           fs.writeFileSync(
             args.out,
             JSON.stringify(result, null, this.config.indent),
           );
         } else {
+          logger.info(`writing output to console`);
           console.log(result);
         }
       } catch (ex) {
