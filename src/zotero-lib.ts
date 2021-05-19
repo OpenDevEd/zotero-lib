@@ -349,11 +349,7 @@ class Zotero {
         }
         logger.error('error in zotero get %O', error);
         // console.log(`Error in zotero.get = ${JSON.stringify(error.error.data, null, 2)}`)
-        let message =
-          error.error && error.error.data && Array.isArray(error.error.data)
-            ? Buffer.from(error.error.data).toString()
-            : 'N/A';
-        message = Buffer.from(error.error).toString();
+        const message = error.error && error.error.data;
         const shortError = {
           name: error.name,
           statusCode: error.statusCode,
@@ -410,7 +406,7 @@ class Zotero {
     uri = `${this.base}${prefix}${uri}`;
     if (this.config.verbose) console.error('POST', uri);
 
-    return await request({
+    return request({
       method: 'POST',
       uri,
       headers: {
@@ -1654,6 +1650,7 @@ class Zotero {
     }
   */
   public pruneData(res, fullresponse = false) {
+    logger.info('pruneData res = %O', res);
     if (fullresponse) return res;
     return res.successful['0'].data;
   }
@@ -2083,14 +2080,14 @@ class Zotero {
     });
     output.push({ link: link3 });
 
-    console.log('Note');
+    logger.info('Creating notes');
     // say "Creating note for item key. Note key: "
     // ERROR HERE: key is still an array.
     const key2 = this.extractKeyAndSetGroup(key);
-    const note = await this.attachNoteToItem({
-      group_id,
-      key: key2,
-      description: `<h1>Bibliography</h1><p>Updated: date</p><p>Do not edit this note manually.</p><p><b>bibliography://select/groups/${group_id}/collections/${refcol}</b></p>`,
+    const note = await this.attachNoteToItem(key2, {
+      // group_id,
+      // key: key2,
+      content: `<h1>Bibliography</h1><p>Updated: date</p><p>Do not edit this note manually.</p><p><b>bibliography://select/groups/${group_id}/collections/${refcol}</b></p>`,
       tags: ['_cites'],
     });
     output.push({ note });
