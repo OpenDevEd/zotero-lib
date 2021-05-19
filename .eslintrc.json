@@ -24,7 +24,7 @@
     ],
     "import/extensions": "off",
     "import/no-unresolved": [2, { "commonjs": true }],
-    "camelcase": "warn",
+    "camelcase": "off",
     "operator-linebreak": "off",
     "no-underscore-dangle": "off"
   }
