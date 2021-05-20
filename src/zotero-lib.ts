@@ -448,7 +448,7 @@ class Zotero {
     uri = `${this.base}${prefix}${uri}`;
     if (this.config.verbose) console.error('PUT', uri);
 
-    return await request({
+    return request({
       method: 'PUT',
       uri,
       headers: { ...this.headers, 'Content-Type': 'application/json' },
@@ -547,7 +547,7 @@ class Zotero {
 
     //      console.log("TEMPORARY="+JSON.stringify(      uri      ,null,2))
 
-    return await request({
+    return request({
       method: 'DELETE',
       uri,
       headers,
@@ -751,7 +751,7 @@ class Zotero {
       collections: [],
       relations: {},
     };
-    return await this.create_item({ item: json });
+    return this.create_item({ item: json });
   }
 
   // TODO: Rewrite other function args like this.
@@ -778,7 +778,7 @@ class Zotero {
       tags,
       relations: {},
     };
-    return await this.create_item({ item: json });
+    return this.create_item({ item: json });
   }
 
   /// THE COMMANDS --> public
@@ -1650,7 +1650,7 @@ class Zotero {
     }
   */
   public pruneData(res, fullresponse = false) {
-    logger.info('pruneData res = %O', res);
+    // logger.info('pruneData res = %O', res);
     if (fullresponse) return res;
     return res.successful['0'].data;
   }
@@ -2007,13 +2007,15 @@ class Zotero {
     output.push({ child_name });
 
     // Everything below here should be done as Promise.all
-    console.log('collections -base');
+    console.log('collections -base', base_collection);
     const new_coll = await zotero.collections({
       group_id,
       key: this.as_value(base_collection),
       create_child: this.as_array(child_name),
     });
-    // console.log("TEMPORARY=" + JSON.stringify(new_coll, null, 2))
+    console.log(
+      'TEMPORARY res collections=' + JSON.stringify(new_coll, null, 2),
+    );
     output.push({ collection: new_coll });
 
     console.log('Move item to collection');
