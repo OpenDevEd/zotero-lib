@@ -26,6 +26,8 @@
     "import/no-unresolved": [2, { "commonjs": true }],
     "camelcase": "off",
     "operator-linebreak": "off",
-    "no-underscore-dangle": "off"
+    "no-underscore-dangle": "off",
+    "prefer-template": "off",
+    "no-param-reassign": "off"
   }
 }
