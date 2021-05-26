@@ -249,9 +249,8 @@ class Zotero {
               return m;
 
             if (m instanceof Error)
-              return `<Error: ${m.message || m.name}${
-                m.stack ? `\n${m.stack}` : ''
-              }>`;
+              return `<Error: ${m.message || m.name}${m.stack ? `\n${m.stack}` : ''
+                }>`;
 
             if (m && type === 'object' && m.message)
               return `<Error: ${m.message}#\n${m.stack}>`;
@@ -703,8 +702,29 @@ class Zotero {
           // console.log(`--> ${n}/${out}`)
         }
       } else {
+        // There wasn't a match. We might have a group, or a key.
         // console.log("extractKeyGroupVariable: direct return")
-        out = key;
+        if (key.match(/^([A-Z01-9]+)/)) {
+          if (n == 1) {
+            // Group requested
+            if (key.match(/^([01-9]+)/)) {
+              // This is slightly ropy - presumably a zotero item key could just be numbers?
+              out = key
+            } else {
+              out = undefined
+            }
+          } else if (n == 2) {
+            // items|collections requested - but we cannot tell
+            out = undefined
+          } else if (n == 3) {
+            // item requested - this is ok, because we wouldn't expect a group to go in as sole argument
+            out = key;
+          } else {
+            out = undefined
+          }
+        } else {
+          out = undefined;
+        }
       }
       // console.log("extractKeyGroupVariable:result=" + out)
       return out;
@@ -716,10 +736,12 @@ class Zotero {
     return this.extractKeyGroupVariable(key, 3);
   }
 
+  /*
   private extractGroupAndSetGroup(key) {
     // console.log("extractGroupAndSetGroup")
     return this.extractKeyGroupVariable(key, 1);
   }
+  */
 
   public objectifyTags(tags) {
     const tagsarr = [];
@@ -838,7 +860,8 @@ class Zotero {
     // console.log("console args =" + JSON.stringify(args, null, 2))
     if (args.key) {
       args.key = this.extractKeyAndSetGroup(this.as_value(args.key));
-    } else {
+    }
+    if (!args.create_child && !args.top) {
       return this.message(
         0,
         'Unable to extract group/key from the string provided.',
@@ -855,15 +878,28 @@ class Zotero {
     // If create_child=true, then create the child and exit.
     // console.log("collection...." + args.key)
     if (args.create_child) {
-      console.log('args.create_child');
-      const response = await this.post(
-        '/collections',
-        JSON.stringify(
-          args.create_child.map((c) => {
-            return { name: c, parentCollection: args.key };
-          }),
-        ),
-      );
+      let response
+      if (args.key) {
+        console.log('args.key=>args.create_child');
+        response = await this.post(
+          '/collections',
+          JSON.stringify(
+            args.create_child.map((c) => {
+              return { name: c, parentCollection: args.key };
+            }),
+          ),
+        );
+      } else {
+        console.log('(top)=>args.create_child');
+        response = await this.post(
+          '/collections',
+          JSON.stringify(
+            args.create_child.map((c) => {
+              return { name: c };
+            }),
+          ),
+        );
+      }
       const resp = JSON.parse(response);
       console.log('response=' + JSON.stringify(resp, null, 2));
       if (resp.successful) {
@@ -1273,8 +1309,9 @@ class Zotero {
     const output = [];
 
     // console.log("args in ... TEMPORARY=" + JSON.stringify(args.key, null, 2))
-    const [my_group_id, my_key] = this.getGroupAndKey(args);
-    args.group_id = my_group_id;
+    // const [my_group_id, my_key] = this.getGroupAndKey(args);
+    const my_key = this.extractKeyAndSetGroup(args.key)
+    //args.group_id = my_group_id;
     args.key = my_key;
     // console.log("args out ... TEMPORARY=" + JSON.stringify(args.key, null, 2))
     // TODO: Need to implement filter as a command line option --filter="{...}"
@@ -1346,8 +1383,7 @@ class Zotero {
             await this.post(
               `/items/${uploadItem.successful[0].key}/file?md5=${md5.sync(
                 filename,
-              )}&filename=${attach.filename}&filesize=${
-                fs.statSync(filename)['size']
+              )}&filename=${attach.filename}&filesize=${fs.statSync(filename)['size']
               }&mtime=${stat.mtimeMs}`,
               '{}',
               { 'If-None-Match': '*' },
@@ -1513,12 +1549,12 @@ class Zotero {
     const finalactions = await this.finalActions(result);
     const return_value = args.fullresponse
       ? {
-          status: 0,
-          message: 'success',
-          output,
-          result,
-          final: finalactions,
-        }
+        status: 0,
+        message: 'success',
+        output,
+        result,
+        final: finalactions,
+      }
       : result;
     return return_value;
     // TODO: What if this fails? Zotero will return, e.g.   "message": "404 - {\"type\":\"Buffer\",\"data\":[78,111,116,32,102,111,117,110,100]}",
@@ -1979,17 +2015,21 @@ class Zotero {
     if (!args.collection) {
       args.collection = '';
     }
-    const [group_id, key] = this.getGroupAndKey(args);
-    const base_collection = this.as_value(
-      this.extractKeyAndSetGroup(args.collection),
-    );
-    console.log(
-      `Key = ${key}; group_id = ${group_id}; ${this.extractGroupAndSetGroup(
-        args.key,
-      )}; ${this.extractGroupAndSetGroup(args.collection)}`,
-    );
-    const zotero = new Zotero({ group_id });
-    const response = await zotero.item({ key });
+    // This line produces the issue. XXX
+    // const [group_id, key] = this.getGroupAndKey(args);
+    const key = this.as_value(this.extractKeyAndSetGroup(args.key));
+    const base_collection = this.as_value(this.extractKeyAndSetGroup(args.collection));
+    const group_id = this.config.group_id
+    /* console.log(
+      `CHECKING
+      Key = ${key}; 
+      group_id = ${group_id}; 
+      ${this.extractGroupAndSetGroup(args.key)},
+      ${this.extractGroupAndSetGroup(args.collection)}`,
+    ); */
+
+    const zotero = new Zotero();
+    const response = await zotero.item({ key: key });
     // console.log("response = " + JSON.stringify(response, null, 2))
     // TODO: Have automated test to see whether successful.
     output.push({ response1: response });
@@ -2001,21 +2041,22 @@ class Zotero {
     const child_name = args.title
       ? args.title
       : (response.reportNumber ? response.reportNumber + '. ' : '') +
-        response.title;
+      response.title;
     // const new_coll = zotero.create_collection(group, base_collection, $name)
     // console.log("ch="+child_name)
     output.push({ child_name });
 
     // Everything below here should be done as Promise.all
-    console.log('collections -base', base_collection);
+    // This causes the problem.
+    console.log('collections -- base', base_collection);
     const new_coll = await zotero.collections({
       group_id,
       key: this.as_value(base_collection),
       create_child: this.as_array(child_name),
     });
-    console.log(
-      'TEMPORARY res collections=' + JSON.stringify(new_coll, null, 2),
-    );
+    //console.log(
+    //  'TEMPORARY res collections=' + JSON.stringify(new_coll, null, 2),
+    //);
     output.push({ collection: new_coll });
 
     console.log('Move item to collection');
@@ -2025,6 +2066,16 @@ class Zotero {
       addtocollection: ecoll,
     });
     output.push({ response2: res });
+
+    console.log('0-link');
+    const link0 = await zotero.attach_link({
+      group_id,
+      key,
+      url: `zotero://select/groups/${group_id}/collections/${new_coll[0].key}`,
+      title: '🆉View enclosing collection',
+      tags: ['_r:enclosing_collection'],
+    });
+    output.push({ link: link0 });
 
     console.log('1-collections');
     const refcol_res = await zotero.collections({
@@ -2101,25 +2152,40 @@ class Zotero {
 
     return this.message(0, 'Succes', output);
   }
-
-  private getGroupAndKey(args: any) {
-    // console.log("getGroupAndKey TEMPORARY=" + JSON.stringify(args, null, 2))
-    this.reconfigure(args);
-    // Precendence: explicit argument - otherwise from args.key, otherwise from args.collection
-    // TODO: Check this with "  private extractKeyGroupVariable " - because that sets this.config.group_id - does that matter?
-    const group_id = this.as_value(
-      args.group_id
-        ? args.group_id
-        : args.key && this.extractGroupAndSetGroup(args.key)
-        ? this.extractGroupAndSetGroup(args.key)
-        : args.collection && this.extractGroupAndSetGroup(args.collection)
-        ? this.extractGroupAndSetGroup(args.collection)
-        : this.config.group_id,
-    );
-    const key = this.as_value(this.extractKeyAndSetGroup(args.key));
-    // console.log(`getGroupAndKey ${args.key} -> ${group_id} / ${key}`)
-    return [group_id, key];
-  }
+  /*
+    private getGroupAndKey(args: any) {
+      // console.log("getGroupAndKey TEMPORARY=" + JSON.stringify(args, null, 2))
+      this.reconfigure(args);
+      // Precendence: explicit argument - otherwise from args.key, otherwise from args.collection
+      // TODO: Check this with "  private extractKeyGroupVariable " - because that sets this.config.group_id - does that matter?
+      const group_id = this.as_value(
+        args.group_id
+          ? args.group_id
+          : (
+            args.key && this.extractGroupAndSetGroup(args.key)
+              ? this.extractGroupAndSetGroup(args.key)
+              : (
+                args.collection && this.extractGroupAndSetGroup(args.collection)
+                  ? this.extractGroupAndSetGroup(args.collection)
+                  : this.config.group_id
+              )
+          )
+      );
+      console.log(`
+  getGroupAndKey
+  args.key = ${args.key}
+  args.group_id = ${args.group_id}
+  args.collection = ${args.collection}
+  this.extractGroupAndSetGroup(args.key) = ${this.extractGroupAndSetGroup(args.key)}
+  this.extractGroupAndSetGroup(args.collection) = ${this.extractGroupAndSetGroup(args.collection)}
+  this.config.group_id = ${this.config.group_id}
+  -> args.group_id = ${args.group_id}
+      `)
+      const key = this.as_value(this.extractKeyAndSetGroup(args.key));
+      // console.log(`getGroupAndKey ${args.key} -> ${group_id} / ${key}`)
+      return [group_id, key];
+    }
+  */
 
   // Update the DOI of the item provided.
   public async get_doi(args, subparsers?) {
@@ -2202,9 +2268,8 @@ class Zotero {
         // const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         var today = new Date();
         // const message = `Attached new DOI ${args.doi} on ${today.toLocaleDateString("en-US", options)}`
-        const message = `Attached new DOI ${
-          args.doi
-        } on ${today.toLocaleDateString()}`;
+        const message = `Attached new DOI ${args.doi
+          } on ${today.toLocaleDateString()}`;
         await this.attachNoteToItem(args.key, {
           content: message,
           tags: ['_r:message'],
@@ -2334,11 +2399,10 @@ class Zotero {
         argparser.add_argument(`--${option}`, {
           nargs: 1,
           action: 'store',
-          help: `Provide a specific URL for '${option}'.${extra_text} The prefix '${
-            decoration[option].title
-          }' will be added to a title (if provided) and the following tags are added: ${JSON.stringify(
-            decoration[option].tags,
-          )}`,
+          help: `Provide a specific URL for '${option}'.${extra_text} The prefix '${decoration[option].title
+            }' will be added to a title (if provided) and the following tags are added: ${JSON.stringify(
+              decoration[option].tags,
+            )}`,
         });
       });
       // ... otherwise --id adds the three zenodo options, which otherwise are specified ...
@@ -2445,8 +2509,8 @@ class Zotero {
           value: this.as_value(args.url)
             ? this.as_value(args.url)
             : this.as_value(args.kerko_url_key)
-            ? this.as_value(args.kerko_url_key) + this.as_value(args.key)
-            : '',
+              ? this.as_value(args.kerko_url_key) + this.as_value(args.key)
+              : '',
         };
         const datau = await this.update_url(argx);
         console.log('TEMPORARY...=' + JSON.stringify(datau, null, 2));
@@ -2818,12 +2882,12 @@ class Zotero {
               .replace(
                 /\((\d\d\d\d)\)/,
                 '($1' +
-                  element.data.tags
-                    .filter((element) => element.tag.match(/_yl:/))
-                    .map((element) => element.tag)
-                    .join(',')
-                    .replace(/_yl\:/, '') +
-                  ')',
+                element.data.tags
+                  .filter((element) => element.tag.match(/_yl:/))
+                  .map((element) => element.tag)
+                  .join(',')
+                  .replace(/_yl\:/, '') +
+                ')',
               )
               .replace('</div>\n</div>', '')
               .replace(/\.\s*$/, '')
@@ -2834,7 +2898,7 @@ class Zotero {
             '.' +
             this.getCanonicalURL(args, element) +
             (element.data.rights &&
-            element.data.rights.match(/Creative Commons/)
+              element.data.rights.match(/Creative Commons/)
               ? ' Available under ' + he.encode(element.data.rights) + '.'
               : '') +
             ' (' +
@@ -2929,9 +2993,8 @@ class Zotero {
     argszkey,
     argsopeninzotero,
   ) {
-    return `<a href="https://ref.opendeved.net/zo/zg/${elementlibraryid}/7/${elementkey}/NA?${
-      argszgroup || argszkey ? `src=${argszgroup}:${argszkey}&` : ''
-    }${argsopeninzotero ? 'openin=zotero' : ''}">${details}</a>)`;
+    return `<a href="https://ref.opendeved.net/zo/zg/${elementlibraryid}/7/${elementkey}/NA?${argszgroup || argszkey ? `src=${argszgroup}:${argszkey}&` : ''
+      }${argsopeninzotero ? 'openin=zotero' : ''}">${details}</a>)`;
   }
 
   private getCanonicalURL(args, element) {
@@ -2939,20 +3002,20 @@ class Zotero {
     url =
       element.data.url != '' && !element.bib.match(element.data.url)
         ? ` Available from <a href="${he.encode(element.data.url)}">${he.encode(
-            element.data.url,
-          )}</a>.`
+          element.data.url,
+        )}</a>.`
         : '';
     url = element.data.url.match(/docs.edtechhub.org|docs.opendeved.net/)
       ? ' (' +
-        this.urlify(
-          element.data.url,
-          element.library.id,
-          element.key,
-          args.zgroup,
-          args.zkey,
-          args.openinzotero,
-        ) +
-        ')'
+      this.urlify(
+        element.data.url,
+        element.library.id,
+        element.key,
+        args.zgroup,
+        args.zkey,
+        args.openinzotero,
+      ) +
+      ')'
       : url;
     return url;
   }
@@ -3381,7 +3444,7 @@ class Zotero {
           };
           console.log(
             '{Result, output}=' +
-              JSON.stringify(myout, null, this.config.indent),
+            JSON.stringify(myout, null, this.config.indent),
           );
         }
 
