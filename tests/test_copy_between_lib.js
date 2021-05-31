@@ -12,13 +12,53 @@ const { mainModule } = require('process')
 main()
 
 async function main() {
-  console.log(process.argv[2])
-  const targetgroup = "2405685" 
-  // const targetcollections = ["C5U3ZBQP"]
-  const targetcollections = ["8NAIANHI"]
-  const [sourcegroup, sourcekey] = ["2339240", process.argv[2]]
-  //check_existence(sourcegroup, sourcekey, targetgroup)
-  copy_item(sourcegroup, sourcekey, targetgroup, targetcollections)
+  let targetgroup, targetcollections, sourcegroup, sourcekey
+  if (process.argv[2].match(/^zotero/)) {
+    //  const src = process.argv[2].split("/")[4]
+    targetgroup = process.argv[2].split("/")[4]
+    targetcollections = [process.argv[2].split("/")[6]]
+    console.log(`
+    targetgroup = ${targetgroup}
+    targetcollections = ${targetcollections}
+    `)
+    const arg = process.argv.slice(3)
+    arg.forEach(x => {
+      console.log(`
+      sourcegroup = ${sourcegroup}
+      sourcekey = ${sourcekey}
+      `)
+      if (x.match(/ref\.opendeved\.net/)) {
+        sourcegroup = x.split("/")[5]
+        sourcekey = x.split("/")[7]
+      } else {
+        sourcegroup = x.split("/")[4]
+        sourcekey = x.split("/")[6]
+      }
+      copy_item(sourcegroup, sourcekey, targetgroup, targetcollections)
+    })
+  } else {
+    targetgroup = process.argv[2]
+    targetcollections = [process.argv[3]]
+    sourcegroup = process.argv[4]
+    sourcekey = process.argv[5]
+    console.log(`
+  targetgroup = ${targetgroup}
+  targetcollections = ${targetcollections}
+  sourcegroup = ${sourcegroup}
+  sourcekey = ${sourcekey}
+  `)
+    // process.exit(1)
+    // process.exit(1)
+    /*
+      console.log(process.argv[2])
+      const targetgroup = "2405685" 
+      // const targetcollections = ["C5U3ZBQP"]
+      const targetcollections = ["8NAIANHI"]
+      const [sourcegroup, sourcekey] = ["2339240", process.argv[2]]
+      */
+    //check_existence(sourcegroup, sourcekey, targetgroup)
+    copy_item(sourcegroup, sourcekey, targetgroup, targetcollections)
+  }
 }
 
 async function check_existence(sourcegroup, sourcekey, targetgroup) {
@@ -36,9 +76,9 @@ async function check_existence(sourcegroup, sourcekey, targetgroup) {
     }
   })
   //items = items.map(e => { return e.data })
-  console.log("TEMPORARY="+JSON.stringify(  items          ,null,2))
+  console.log("TEMPORARY=" + JSON.stringify(items, null, 2))
   console.log("results=" + items.length)
-   
+
 }
 
 async function copy_item(sourcegroup, sourcekey, targetgroup, targetcollections) {
@@ -62,6 +102,9 @@ async function copy_item(sourcegroup, sourcekey, targetgroup, targetcollections)
   delete item.dateModified
   delete item.dateModified
   delete item.collections
+  item.extra = item.extra
+    + "\n" + `KerkoCite.ItemAlsoKnownAs: ${sourcegroup}:${sourcekey}`
+    + "\n" + `zotzenLib.CopiedFrom: ${sourcegroup}:${sourcekey}`
   item.collections = targetcollections
   /*
   if (item.relations) {
@@ -84,7 +127,7 @@ async function copy_item(sourcegroup, sourcekey, targetgroup, targetcollections)
   */
   const newitem = await zotero.create_item({ group_id: targetgroup, item: item })
   console.log("TEMPORARY=" + JSON.stringify(newitem, null, 2))
-  const itemnote = zotero.attach_note({ group_id: targetgroup, key: newitem.key, description: note, tags: ["_r:copiedNote"] });
+  const itemnote = zotero.attach_note({ group_id: targetgroup, key: newitem.key, notetext: note, tags: ["_r:copiedNote"] });
   return 0
 }
 
