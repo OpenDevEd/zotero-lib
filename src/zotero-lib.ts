@@ -18,22 +18,17 @@ const convert = require('xml-js');
 const toml = require('@iarna/toml');
 const fs = require('fs');
 const path = require('path');
-const request = require('request-promise');
 const LinkHeader = require('http-link-header');
-
-// import { parse as TOML } from '@iarna/toml'
-// import fs = require('fs')
-// import path = require('path')
-// import request = require('request-promise')
-// import * as LinkHeader from 'http-link-header'
-
-// TODO: Review issues here https://github.com/edtechhub/zotero-cli/issues and where this relevant, implement below.
 
 const ajv = new Ajv();
 const md5 = require('md5-file');
 
+const axios = require('axios')
+
 class Zotero {
-  // The following config keys are expected/allowed, with both "-" and "_". The corresponding variables have _
+  // The following config keys are expected/allowed,
+  // with both "-" and "_". The corresponding variables have _
+
   config_keys = [
     'user-id',
     'group-id',
@@ -284,8 +279,8 @@ class Zotero {
       if (chunk.headers.backoff)
         await sleep(parseInt(chunk.headers.backoff) * 1000);
 
-      chunk = await request({
-        uri: link[0].uri,
+      chunk = await axios({
+        url: link[0].uri,
         headers: this.headers,
         json: true,
         resolveWithFullResponse: true,
@@ -333,37 +328,33 @@ class Zotero {
     if (this.config.verbose) console.error('GET', uri);
     logger.info('get uri: %s', uri);
 
-    const res = await request({
-      uri,
+    const res = await axios({
+      url: uri,
       headers: this.headers,
       encoding: null,
       json: options.json,
       resolveWithFullResponse: options.resolveWithFullResponse,
-    })
-      .then()
-      .catch((error) => {
-        if (this.config.verbose) {
-          console.log(
-            `Error in zotero.get = ${JSON.stringify(error, null, 2)}`,
-          );
-        }
-        logger.error('error in zotero get %O', error);
-        // console.log(`Error in zotero.get = ${JSON.stringify(error.error.data, null, 2)}`)
-        const message = error.error && error.error.data;
-        const shortError = {
-          name: error.name,
-          statusCode: error.statusCode,
-          message,
-          uri,
-          json: options.json,
-        };
-        // console.log("DEBUG", (new Error().stack));
-        // console.log(shortError)
-        console.log(
-          'Error in zotero.get = ' + JSON.stringify(shortError, null, 2),
-        );
-        return error;
-      });
+    }).catch((error) => {
+      if (this.config.verbose) {
+        console.log(`Error in zotero.get = ${JSON.stringify(error, null, 2)}`);
+      }
+      logger.error('error in zotero get %O', error);
+      // console.log(`Error in zotero.get = ${JSON.stringify(error.error.data, null, 2)}`)
+      const message = error.error && error.error.data;
+      const shortError = {
+        name: error.name,
+        statusCode: error.statusCode,
+        message,
+        url: uri,
+        json: options.json,
+      };
+      // console.log("DEBUG", (new Error().stack));
+      // console.log(shortError)
+      console.log(
+        'Error in zotero.get = ' + JSON.stringify(shortError, null, 2),
+      );
+      return error;
+    });
     // console.log("all=" + JSON.stringify(res, null, 2))
     return res;
   }
@@ -406,9 +397,9 @@ class Zotero {
     uri = `${this.base}${prefix}${uri}`;
     if (this.config.verbose) console.error('POST', uri);
 
-    return request({
+    return axios({
       method: 'POST',
-      uri,
+      url: uri,
       headers: {
         ...this.headers,
         'Content-Type': 'application/json',
@@ -448,9 +439,9 @@ class Zotero {
     uri = `${this.base}${prefix}${uri}`;
     if (this.config.verbose) console.error('PUT', uri);
 
-    return request({
+    return axios({
       method: 'PUT',
-      uri,
+      url: uri,
       headers: { ...this.headers, 'Content-Type': 'application/json' },
       body: data,
     });
@@ -479,7 +470,6 @@ class Zotero {
   }
 
   // patch does not return any data.
-  // TODO: 'request-response' is deprecated - replace by something else? (axios?)
   // TODO: Errors are not handled - add this to patch (below) but needs adding to others.
   async patch(uri, data, version?: number) {
     const prefix = this.config.user_id
@@ -492,18 +482,16 @@ class Zotero {
 
     uri = `${this.base}${prefix}${uri}`;
     if (this.config.verbose) console.error('PATCH', uri);
-    const res = await request({
+    const res = await axios({
       method: 'PATCH',
-      uri,
+      url: uri,
       headers,
       body: data,
       resolveWithFullResponse: true,
-    })
-      .then()
-      .catch((error) => {
-        console.log('TEMPORARY=' + JSON.stringify(error, null, 2));
-        return error;
-      });
+    }).catch((error) => {
+      console.log('TEMPORARY=' + JSON.stringify(error, null, 2));
+      return error;
+    });
     return res;
   }
 
@@ -547,9 +535,9 @@ class Zotero {
 
     //      console.log("TEMPORARY="+JSON.stringify(      uri      ,null,2))
 
-    return request({
+    return axios({
       method: 'DELETE',
-      uri,
+      url: uri,
       headers,
     });
   }
@@ -1393,9 +1381,9 @@ class Zotero {
           );
           let request_post = null;
           if (uploadAuth.exists !== 1) {
-            const uploadResponse = await request({
+            const uploadResponse = await axios({
               method: 'POST',
-              uri: uploadAuth.url,
+              url: uploadAuth.url,
               body: Buffer.concat([
                 Buffer.from(uploadAuth.prefix),
                 fs.readFileSync(filename),
