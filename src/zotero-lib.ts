@@ -23,7 +23,7 @@ const LinkHeader = require('http-link-header');
 const ajv = new Ajv();
 const md5 = require('md5-file');
 
-const axios = require('axios')
+const axios = require('axios');
 
 class Zotero {
   // The following config keys are expected/allowed,
@@ -82,7 +82,7 @@ class Zotero {
     if (args.config_json) {
       console.log('Setting from config_json');
       const confobj =
-        typeof args.config_json == 'string'
+        typeof args.config_json === 'string'
           ? JSON.parse(args.config_json)
           : args.config_json;
       Object.keys(confobj).forEach((x) => {
@@ -112,17 +112,20 @@ class Zotero {
       return this.message(1, 'No API key provided in args or config');
     }
 
-    if (args.verbose)
+    if (args.verbose) {
       console.log('config=' + JSON.stringify(this.config, null, 2));
+    }
     // Check that one and only one is defined:
-    if (this.config.user_id === null && this.config.group_id === null)
+    if (this.config.user_id === null && this.config.group_id === null) {
       return this.message(
         0,
         'Both user/group are null. You must provide exactly one of --user-id or --group-id',
       );
+    }
 
     // TODO:
-    // if (this.config.user_id !== null && this.config.group_id !== null) return this.message(0,'Both user/group are specified. You must provide exactly one of --user-id or --group-id')
+    // if (this.config.user_id !== null && this.config.group_id !== null) return this.message(0,
+    // 'Both user/group are specified. You must provide exactly one of --user-id or --group-id')
 
     // TODO: discuss - we'd not be doing this, constructor should not do async ops
     // user_id==0 is generic; retrieve the real user id via the api_key
@@ -152,7 +155,7 @@ class Zotero {
       zotero_api_key
       --> api_key
       */
-      if (key != key_underscore) {
+      if (key !== key_underscore) {
         // Fix existing config
         if (config[key]) {
           config[key_underscore] = config[key];
@@ -215,11 +218,12 @@ class Zotero {
   private finalActions(output) {
     // console.log("args="+JSON.stringify(args))
     // TODO: Look at the type of output: if string, then print, if object, then stringify
-    if (this.config.out)
+    if (this.config.out) {
       fs.writeFileSync(
         this.config.out,
         JSON.stringify(output, null, this.config.indent),
       );
+    }
     if (this.config.show || this.config.verbose) this.show(output);
   }
 
@@ -240,16 +244,19 @@ class Zotero {
               type === 'undefined' ||
               type === 'boolean' ||
               m === null
-            )
+            ) {
               return m;
+            }
 
-            if (m instanceof Error)
+            if (m instanceof Error) {
               return `<Error: ${m.message || m.name}${
                 m.stack ? `\n${m.stack}` : ''
               }>`;
+            }
 
-            if (m && type === 'object' && m.message)
+            if (m && type === 'object' && m.message) {
               return `<Error: ${m.message}#\n${m.stack}>`;
+            }
 
             return JSON.stringify(m, null, this.config.indent);
           })
