@@ -408,6 +408,7 @@ class Zotero {
     uri = `${this.base}${prefix}${uri}`;
     if (this.config.verbose) console.error('POST', uri);
 
+    console.log('POST data: ', data);
     return axios({
       method: 'POST',
       url: uri,
@@ -416,7 +417,7 @@ class Zotero {
         'Content-Type': 'application/json',
         ...headers,
       },
-      body: data,
+      data,
     }).then((res) => res.data);
   }
 
@@ -1676,10 +1677,8 @@ class Zotero {
         '/items',
         '[' + JSON.stringify(args.item) + ']',
       );
-      // console.log(result)
-      const res = JSON.parse(result);
-      this.show(res);
-      return this.pruneData(res, args.fullresponse);
+      this.show(result);
+      return this.pruneData(result, args.fullresponse);
     }
   }
 
