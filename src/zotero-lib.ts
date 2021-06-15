@@ -903,7 +903,7 @@ class Zotero {
           ),
         );
       }
-      const resp = JSON.parse(response);
+      const resp = response;
       console.log('response=' + JSON.stringify(resp, null, 2));
       if (resp.successful) {
         this.print('Collections created: ', resp.successful);
@@ -1662,13 +1662,13 @@ class Zotero {
       // console.log("input")
       // this.show(items)
       const result = await this.post('/items', JSON.stringify(items));
-      const res = JSON.parse(result);
+      const res = result;
       this.show(res);
       // TODO: see how to use pruneData
       return res;
     } else if ('items' in args && args.items.length > 0) {
       const result = await this.post('/items', JSON.stringify(args.items));
-      const res = JSON.parse(result);
+      const res = result;
       this.show(res);
       // TODO: see how to use pruneData
       return res;
