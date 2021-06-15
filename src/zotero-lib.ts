@@ -291,7 +291,7 @@ class Zotero {
         headers: this.headers,
         json: true,
         resolveWithFullResponse: true,
-      });
+      }).then((res) => res.data);
       data = data.concat(chunk.body);
       link =
         chunk.headers.link && LinkHeader.parse(chunk.headers.link).rel('next');
@@ -341,27 +341,31 @@ class Zotero {
       encoding: null,
       json: options.json,
       resolveWithFullResponse: options.resolveWithFullResponse,
-    }).catch((error) => {
-      if (this.config.verbose) {
-        console.log(`Error in zotero.get = ${JSON.stringify(error, null, 2)}`);
-      }
-      logger.error('error in zotero get %O', error);
-      // console.log(`Error in zotero.get = ${JSON.stringify(error.error.data, null, 2)}`)
-      const message = error.error && error.error.data;
-      const shortError = {
-        name: error.name,
-        statusCode: error.statusCode,
-        message,
-        url: uri,
-        json: options.json,
-      };
-      // console.log("DEBUG", (new Error().stack));
-      // console.log(shortError)
-      console.log(
-        'Error in zotero.get = ' + JSON.stringify(shortError, null, 2),
-      );
-      return error;
-    });
+    })
+      .then((res) => res.data)
+      .catch((error) => {
+        if (this.config.verbose) {
+          console.log(
+            `Error in zotero.get = ${JSON.stringify(error, null, 2)}`,
+          );
+        }
+        logger.error('error in zotero get %O', error);
+        // console.log(`Error in zotero.get = ${JSON.stringify(error.error.data, null, 2)}`)
+        const message = error.error && error.error.data;
+        const shortError = {
+          name: error.name,
+          statusCode: error.statusCode,
+          message,
+          url: uri,
+          json: options.json,
+        };
+        // console.log("DEBUG", (new Error().stack));
+        // console.log(shortError)
+        console.log(
+          'Error in zotero.get = ' + JSON.stringify(shortError, null, 2),
+        );
+        return error;
+      });
     // console.log("all=" + JSON.stringify(res, null, 2))
     return res;
   }
@@ -413,7 +417,7 @@ class Zotero {
         ...headers,
       },
       body: data,
-    });
+    }).then((res) => res.data);
   }
 
   public async __post(args, subparsers?) {
@@ -451,7 +455,7 @@ class Zotero {
       url: uri,
       headers: { ...this.headers, 'Content-Type': 'application/json' },
       body: data,
-    });
+    }).then((res) => res.data);
   }
 
   public async __put(args, subparsers?) {
@@ -495,10 +499,12 @@ class Zotero {
       headers,
       body: data,
       resolveWithFullResponse: true,
-    }).catch((error) => {
-      console.log('TEMPORARY=' + JSON.stringify(error, null, 2));
-      return error;
-    });
+    })
+      .then((res) => res.data)
+      .catch((error) => {
+        console.log('TEMPORARY=' + JSON.stringify(error, null, 2));
+        return error;
+      });
     return res;
   }
 
@@ -546,7 +552,7 @@ class Zotero {
       method: 'DELETE',
       url: uri,
       headers,
-    });
+    }).then((res) => res.data);
   }
 
   public async __delete(args, subparsers?) {
@@ -1397,7 +1403,7 @@ class Zotero {
                 Buffer.from(uploadAuth.suffix),
               ]),
               headers: { 'Content-Type': uploadAuth.contentType },
-            });
+            }).then((res) => res.data);
             if (args.verbose) {
               console.log('uploadResponse=');
               this.show(uploadResponse);
