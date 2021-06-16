@@ -457,7 +457,7 @@ class Zotero {
       method: 'PUT',
       url: uri,
       headers: { ...this.headers, 'Content-Type': 'application/json' },
-      body: data,
+      data,
     }).then((res) => res.data);
   }
 
@@ -500,7 +500,7 @@ class Zotero {
       method: 'PATCH',
       url: uri,
       headers,
-      body: data,
+      data,
       resolveWithFullResponse: true,
     })
       .then((resp) => resp.data)
@@ -1400,7 +1400,7 @@ class Zotero {
             const uploadResponse = await axios({
               method: 'POST',
               url: uploadAuth.url,
-              body: Buffer.concat([
+              data: Buffer.concat([
                 Buffer.from(uploadAuth.prefix),
                 fs.readFileSync(filename),
                 Buffer.from(uploadAuth.suffix),
