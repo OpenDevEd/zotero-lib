@@ -28,6 +28,9 @@
     "operator-linebreak": "off",
     "no-underscore-dangle": "off",
     "prefer-template": "off",
-    "no-param-reassign": "off"
+    "no-param-reassign": "off",
+    "no-restricted-syntax": "off",
+    "no-await-in-loop": "off",
+    "function-paren-newline": "off"
   }
 }

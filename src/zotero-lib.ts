@@ -283,8 +283,9 @@ class Zotero {
     let link =
       chunk.headers.link && LinkHeader.parse(chunk.headers.link).rel('next');
     while (link && link.length && link[0].uri) {
-      if (chunk.headers.backoff)
+      if (chunk.headers.backoff) {
         await sleep(parseInt(chunk.headers.backoff) * 1000);
+      }
 
       chunk = await axios({
         url: link[0].uri,
@@ -318,10 +319,11 @@ class Zotero {
     if (typeof options.json === 'undefined') options.json = true;
 
     let prefix = '';
-    if (options.userOrGroupPrefix)
+    if (options.userOrGroupPrefix) {
       prefix = this.config.user_id
         ? `/users/${this.config.user_id}`
         : `/groups/${this.config.group_id}`;
+    }
 
     const params = Object.keys(options.params)
       .map((param) => {
@@ -342,7 +344,7 @@ class Zotero {
       json: options.json,
       resolveWithFullResponse: options.resolveWithFullResponse,
     })
-      .then((res) => res.data)
+      .then((resp) => resp.data)
       .catch((error) => {
         if (this.config.verbose) {
           console.log(
@@ -489,9 +491,9 @@ class Zotero {
       : `/groups/${this.config.group_id}`;
 
     const headers = { ...this.headers, 'Content-Type': 'application/json' };
-    if (typeof version !== 'undefined')
+    if (typeof version !== 'undefined') {
       headers['If-Unmodified-Since-Version'] = version;
-
+    }
     uri = `${this.base}${prefix}${uri}`;
     if (this.config.verbose) console.error('PATCH', uri);
     const res = await axios({
@@ -501,7 +503,7 @@ class Zotero {
       body: data,
       resolveWithFullResponse: true,
     })
-      .then((res) => res.data)
+      .then((resp) => resp.data)
       .catch((error) => {
         console.log('TEMPORARY=' + JSON.stringify(error, null, 2));
         return error;
@@ -541,8 +543,9 @@ class Zotero {
       : `/groups/${this.config.group_id}`;
 
     const headers = { ...this.headers, 'Content-Type': 'application/json' };
-    if (typeof version !== 'undefined')
+    if (typeof version !== 'undefined') {
       headers['If-Unmodified-Since-Version'] = version;
+    }
 
     uri = `${this.base}${prefix}${uri}`;
     if (this.config.verbose) console.error('DELETE', uri);
@@ -654,7 +657,6 @@ class Zotero {
   private as_value(value) {
     if (Array.isArray(value)) {
       value = value[0];
-    } else {
     }
     return value;
   }
@@ -693,7 +695,7 @@ class Zotero {
       );
       if (res) {
         // console.log("extractKeyGroupVariable -> res=" + JSON.stringify(res, null, 2))
-        if (res[2] == 'library') {
+        if (res[2] === 'library') {
           console.log(
             'You cannot specify zotero-select links (zotero://...) to select user libraries.',
           );
@@ -708,7 +710,7 @@ class Zotero {
         // There wasn't a match. We might have a group, or a key.
         // console.log("extractKeyGroupVariable: direct return")
         if (key.match(/^([A-Z01-9]+)/)) {
-          if (n == 1) {
+          if (n === 1) {
             // Group requested
             if (key.match(/^([01-9]+)/)) {
               // This is slightly ropy - presumably a zotero item key could just be numbers?
@@ -716,10 +718,10 @@ class Zotero {
             } else {
               out = undefined;
             }
-          } else if (n == 2) {
+          } else if (n === 2) {
             // items|collections requested - but we cannot tell
             out = undefined;
-          } else if (n == 3) {
+          } else if (n === 3) {
             // item requested - this is ok, because we wouldn't expect a group to go in as sole argument
             out = key;
           } else {
@@ -811,10 +813,10 @@ class Zotero {
 
   // https://www.zotero.org/support/dev/web_api/v3/basics
   // Collections
-  // <userOrGroupPrefix>/collections	Collections in the library
-  // <userOrGroupPrefix>/collections/top	Top-level collections in the library
-  // <userOrGroupPrefix>/collections/<collectionKey>	A specific collection in the library
-  // <userOrGroupPrefix>/collections/<collectionKey>/collections	Subcollections within a specific collection in the library
+  // <userOrGroupPrefix>/collections Collections in the library
+  // <userOrGroupPrefix>/collections/top Top-level collections in the library
+  // <userOrGroupPrefix>/collections/<collectionKey> A specific collection in the library
+  // <userOrGroupPrefix>/collections/<collectionKey>/collections Subcollections within a specific collection in the library
 
   // TODO: --create-child should go into 'collection'.
 
@@ -939,8 +941,8 @@ class Zotero {
   }
 
   // Operate on a specific collection.
-  // <userOrGroupPrefix>/collections/<collectionKey>/items	Items within a specific collection in the library
-  // <userOrGroupPrefix>/collections/<collectionKey>/items/top	Top-level items within a specific collection in the library
+  // <userOrGroupPrefix>/collections/<collectionKey>/items Items within a specific collection in the library
+  // <userOrGroupPrefix>/collections/<collectionKey>/items/top Top-level items within a specific collection in the library
 
   // TODO: --create-child should go into 'collection'.
   // DONE: Why is does the setup for --add and --remove differ? Should 'add' not be "nargs: '*'"? Remove 'itemkeys'?
@@ -1050,10 +1052,10 @@ class Zotero {
     return res;
   }
 
-  // URI	Description
+  // URI Description
   // https://www.zotero.org/support/dev/web_api/v3/basics
-  // <userOrGroupPrefix>/items	All items in the library, excluding trashed items
-  // <userOrGroupPrefix>/items/top	Top-level items in the library, excluding trashed items
+  // <userOrGroupPrefix>/items All items in the library, excluding trashed items
+  // <userOrGroupPrefix>/items/top Top-level items in the library, excluding trashed items
 
   async items(args, subparsers?) {
     // console.log("items-----")
@@ -1219,8 +1221,8 @@ class Zotero {
   }
 
   // https://www.zotero.org/support/dev/web_api/v3/basics
-  // <userOrGroupPrefix>/items/<itemKey>	A specific item in the library
-  // <userOrGroupPrefix>/items/<itemKey>/children	Child items under a specific item
+  // <userOrGroupPrefix>/items/<itemKey> A specific item in the library
+  // <userOrGroupPrefix>/items/<itemKey>/children Child items under a specific item
   /*
     getFuncName() {
       return this.getFuncName.caller.name
@@ -1778,7 +1780,7 @@ class Zotero {
     return result;
   }
 
-  // <userOrGroupPrefix>/items/trash	Items in the trash
+  // <userOrGroupPrefix>/items/trash Items in the trash
   async trash(args, subparsers?) {
     /** Return a list of items in the trash. */
     this.reconfigure(args);
@@ -1792,7 +1794,7 @@ class Zotero {
   }
 
   // https://www.zotero.org/support/dev/web_api/v3/basics
-  // <userOrGroupPrefix>/publications/items	Items in My Publications
+  // <userOrGroupPrefix>/publications/items Items in My Publications
 
   async publications(args, subparsers?) {
     /** Return a list of items in publications (user library only). (API: /publications/items) */
@@ -2026,8 +2028,8 @@ class Zotero {
     const group_id = this.config.group_id;
     /* console.log(
       `CHECKING
-      Key = ${key}; 
-      group_id = ${group_id}; 
+      Key = ${key};
+      group_id = ${group_id};
       ${this.extractGroupAndSetGroup(args.key)},
       ${this.extractGroupAndSetGroup(args.collection)}`,
     ); */
@@ -2311,10 +2313,10 @@ class Zotero {
       });
     }
     // ACTION: check arguments
-    if (args.switch) {
-    }
-    if (args.arguments) {
-    }
+    // if (args.switch) {
+    // }
+    // if (args.arguments) {
+    // }
     // ACTION: run code
 
     // ACTION: return values
@@ -2439,10 +2441,10 @@ class Zotero {
       return { status: 0, message: 'success' };
     }
     // ACTION: check arguments
-    if (args.switch) {
-    }
-    if (args.arguments) {
-    }
+    // if (args.switch) {
+    // }
+    // if (args.arguments) {
+    // }
     // TODO: Make this consistent
     args.key = this.as_value(args.key);
     args.key = this.extractKeyAndSetGroup(args.key);
@@ -2628,10 +2630,10 @@ class Zotero {
       return { status: 0, message: 'success' };
     }
     // ACTION: check arguments
-    if (args.switch) {
-    }
-    if (args.arguments) {
-    }
+    // if (args.switch) {
+    // }
+    // if (args.arguments) {
+    // }
     // ACTION: run code
 
     // ACTION: return values
@@ -2837,10 +2839,10 @@ class Zotero {
       return { status: 0, message: 'success' };
     }
     // ACTION: check arguments
-    if (args.switch) {
-    }
-    if (args.arguments) {
-    }
+    // if (args.switch) {
+    // }
+    // if (args.arguments) {
+    // }
     // ACTION: run code
     let output;
     try {
@@ -3181,10 +3183,10 @@ class Zotero {
       return { status: 0, message: 'success' };
     }
     // ACTION: check arguments
-    if (args.switch) {
-    }
-    if (args.arguments) {
-    }
+    // if (args.switch) {
+    // }
+    // if (args.arguments) {
+    // }
     args.notetext = this.as_value(args.notetext);
     args.key = this.extractKeyAndSetGroup(this.as_value(args.key));
     // console.log(args.key)
@@ -3263,10 +3265,10 @@ class Zotero {
       return { status: 0, message: 'success' };
     }
     // ACTION: check arguments
-    if (args.switch) {
-    }
-    if (args.arguments) {
-    }
+    // if (args.switch) {
+    // }
+    // if (args.arguments) {
+    // }
     // ACTION: run code
 
     // ACTION: return values
@@ -3305,10 +3307,10 @@ class Zotero {
       return { status: 0, message: 'success' };
     }
     // ACTION: check arguments
-    if (args.switch) {
-    }
-    if (args.arguments) {
-    }
+    // if (args.switch) {
+    // }
+    // if (args.arguments) {
+    // }
     // ACTION: run code
 
     // ACTION: return values
@@ -3337,10 +3339,10 @@ class Zotero {
       return { status: 0, message: 'success' };
     }
     // ACTION: check arguments
-    if (args.switch) {
-    }
-    if (args.arguments) {
-    }
+    // if (args.switch) {
+    // }
+    // if (args.arguments) {
+    // }
     // ACTION: run code
 
     // ACTION: return values
