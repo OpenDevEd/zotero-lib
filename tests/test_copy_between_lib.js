@@ -30,6 +30,9 @@ async function main() {
       if (x.match(/ref\.opendeved\.net/)) {
         sourcegroup = x.split("/")[5]
         sourcekey = x.split("/")[7]
+      } else if (x.match(/^\d+\:[\w\d]+$/)) {
+	sourcegroup = x.split(":")[0]
+        sourcekey = x.split(":")[1]
       } else {
         sourcegroup = x.split("/")[4]
         sourcekey = x.split("/")[6]
