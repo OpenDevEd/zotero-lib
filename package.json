@@ -1,6 +1,6 @@
 {
   "name": "zotero-lib",
-  "version": "1.0.58",
+  "version": "1.0.59",
   "description": "",
   "main": "build/zotero-lib.js",
   "bin": {
