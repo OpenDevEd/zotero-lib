@@ -1,4 +1,4 @@
-const { createLogger, format, transports } = require('winston');
+import { createLogger, format, transports } from 'winston';
 
 function getLogingLevel() {
   let level = 'info';
@@ -17,4 +17,5 @@ const logger = createLogger({
   format: format.combine(format.splat(), format.simple()),
   transports: [new transports.Console()],
 });
-export = logger;
+
+export default logger;

@@ -1,35 +1,24 @@
 {
-    "compilerOptions": {
-        "allowUnreachableCode": true,
-        "importHelpers": true,
-        "target": "es2017",
-        "disableSizeLimit": true,
-        "module": "commonjs",
-        "noImplicitAny": false,
-        "removeComments": false,
-        "preserveConstEnums": false,
-        "downlevelIteration": true,
-        "outDir": "./build",
-        "sourceMap": true,
-        "declaration": true,
-        "noUnusedLocals": true,
-        "noImplicitReturns": true,
-        "noFallthroughCasesInSwitch": true,
-        "lib": [
-            "es2017",
-            "dom"
-        ],
-        "typeRoots": [
-            "./typings",
-            "./node_modules/@types"
-        ]
-    },
-    "include": [
-        "src/*.ts",
-    ],
-    "exclude": [
-        "node_modules",
-        "**/*.spec.ts",
-        "typings"
-    ]
+  "compilerOptions": {
+    "allowUnreachableCode": true,
+    "importHelpers": true,
+    "target": "es2018",
+    "disableSizeLimit": true,
+    "module": "commonjs",
+    "noImplicitAny": false,
+    "removeComments": false,
+    "preserveConstEnums": false,
+    "downlevelIteration": true,
+    "outDir": "./build",
+    "sourceMap": true,
+    "declaration": true,
+    "noUnusedLocals": true,
+    "noImplicitReturns": true,
+    "esModuleInterop": true,
+    "noFallthroughCasesInSwitch": true,
+    "lib": ["es2017", "dom"],
+    "typeRoots": ["./typings", "./node_modules/@types"]
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "BaCkUp", "*/BaCkUp"]
 }
