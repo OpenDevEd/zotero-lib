@@ -249,9 +249,8 @@ class Zotero {
             }
 
             if (m instanceof Error) {
-              return `<Error: ${m.message || m.name}${
-                m.stack ? `\n${m.stack}` : ''
-              }>`;
+              return `<Error: ${m.message || m.name}${m.stack ? `\n${m.stack}` : ''
+                }>`;
             }
 
             if (m && type === 'object' && m.message) {
@@ -325,8 +324,8 @@ class Zotero {
     } = {},
   ) {
     if (typeof options.userOrGroupPrefix === 'undefined')
-      options.userOrGroupPrefix =       data = data.concat(chunk.body);
-      true;
+      options.userOrGroupPrefix = true
+    true;
     if (typeof options.params === 'undefined') options.params = {};
     if (typeof options.json === 'undefined') options.json = true;
 
@@ -345,7 +344,7 @@ class Zotero {
       })
       .join('&');
 
-    if (!options.fulluri) {      
+    if (!options.fulluri) {
       uri = `${this.base}${prefix}${uri}${params ? '?' + params : ''}`;
     }
 
@@ -361,27 +360,25 @@ class Zotero {
     })
       .then(
         // (resp) => resp.data
-        (response) => options.resolveWithFullResponse ? {
+        /*
+        (response) => {
           body: response.data,
           status: response.status,
           statusText: response.statusText,
           headers: response.headers,
           config: response.config
-          } 
-          :
-          response.data
-          /*
-        function(response) {
+          }  */
+        function (response) {
           const out = {
             data: response.data,
             status: response.status,
             statusText: response.statusText,
             headers: response.headers,
             config: response.config
-            }            
-          console.log("TEMPORARY="+JSON.stringify(    out        ,null,2))
-         
-        }  */
+          }
+          console.log("TEMPORARY=" + JSON.stringify(out, null, 2))
+          return out
+        }
       )
       .catch((error) => {
         if (this.config.verbose) {
@@ -406,8 +403,12 @@ class Zotero {
         );
         return error;
       });
-    // console.log("all=" + JSON.stringify(res, null, 2))
-    return res;
+    console.log("all=" + JSON.stringify(res, null, 2))
+    if (options.resolveWithFullResponse) {
+      return res;
+    } else {
+      return res.body;
+    }
   }
 
   public async __get(args, subparsers?) {
@@ -1426,8 +1427,7 @@ class Zotero {
             await this.post(
               `/items/${uploadItem.successful[0].key}/file?md5=${md5.sync(
                 filename,
-              )}&filename=${attach.filename}&filesize=${
-                fs.statSync(filename)['size']
+              )}&filename=${attach.filename}&filesize=${fs.statSync(filename)['size']
               }&mtime=${stat.mtimeMs}`,
               '{}',
               { 'If-None-Match': '*' },
@@ -1593,12 +1593,12 @@ class Zotero {
     const finalactions = await this.finalActions(result);
     const return_value = args.fullresponse
       ? {
-          status: 0,
-          message: 'success',
-          output,
-          result,
-          final: finalactions,
-        }
+        status: 0,
+        message: 'success',
+        output,
+        result,
+        final: finalactions,
+      }
       : result;
     return return_value;
     // TODO: What if this fails? Zotero will return, e.g.   "message": "404 - {\"type\":\"Buffer\",\"data\":[78,111,116,32,102,111,117,110,100]}",
@@ -2085,7 +2085,7 @@ class Zotero {
     const child_name = args.title
       ? args.title
       : (response.reportNumber ? response.reportNumber + '. ' : '') +
-        response.title;
+      response.title;
     // const new_coll = zotero.create_collection(group, base_collection, $name)
     // console.log("ch="+child_name)
     output.push({ child_name });
@@ -2447,11 +2447,10 @@ class Zotero {
         argparser.add_argument(`--${option}`, {
           nargs: 1,
           action: 'store',
-          help: `Provide a specific URL for '${option}'.${extra_text} The prefix '${
-            decoration[option].title
-          }' will be added to a title (if provided) and the following tags are added: ${JSON.stringify(
-            decoration[option].tags,
-          )}`,
+          help: `Provide a specific URL for '${option}'.${extra_text} The prefix '${decoration[option].title
+            }' will be added to a title (if provided) and the following tags are added: ${JSON.stringify(
+              decoration[option].tags,
+            )}`,
         });
       });
       // ... otherwise --id adds the three zenodo options, which otherwise are specified ...
@@ -2959,12 +2958,12 @@ class Zotero {
               .replace(
                 /\((\d\d\d\d)\)/,
                 '($1' +
-                  element.data.tags
-                    .filter((element) => element.tag.match(/_yl:/))
-                    .map((element) => element.tag)
-                    .join(',')
-                    .replace(/_yl\:/, '') +
-                  ')',
+                element.data.tags
+                  .filter((element) => element.tag.match(/_yl:/))
+                  .map((element) => element.tag)
+                  .join(',')
+                  .replace(/_yl\:/, '') +
+                ')',
               )
               .replace('</div>\n</div>', '')
               .replace(/\.\s*$/, '')
@@ -3090,20 +3089,20 @@ class Zotero {
     url =
       element.data.url != '' && !element.bib.match(element.data.url)
         ? ` Available from <a href="${he.encode(element.data.url)}">${he.encode(
-            element.data.url,
-          )}</a>.`
+          element.data.url,
+        )}</a>.`
         : '';
     url = element.data.url.match(/docs.edtechhub.org|docs.opendeved.net/)
       ? ' (' +
-        this.urlify(
-          element.data.url,
-          element.library.id,
-          element.key,
-          args.zgroup,
-          args.zkey,
-          args.openinzotero,
-        ) +
-        ')'
+      this.urlify(
+        element.data.url,
+        element.library.id,
+        element.key,
+        args.zgroup,
+        args.zkey,
+        args.openinzotero,
+      ) +
+      ')'
       : url;
     return url;
   }
@@ -3542,7 +3541,7 @@ class Zotero {
           };
           console.log(
             '{Result, output}=' +
-              JSON.stringify(myout, null, this.config.indent),
+            JSON.stringify(myout, null, this.config.indent),
           );
         }
 
