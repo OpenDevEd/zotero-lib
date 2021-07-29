@@ -277,7 +277,8 @@ class Zotero {
     });
 
     let data = chunk.body;
-    console.log('ALL-TEMPORARY=' + JSON.stringify(chunk.headers, null, 2))
+    // console.log(data.length)
+    // console.log('ALL-TEMPORARY=' + JSON.stringify(chunk.headers, null, 2))
     // console.log("ALL-TEMPORARY=" + JSON.stringify(data, null, 2))
     // const lh = LinkHeader.parse(chunk.headers.link)
     // console.log("ALL-TEMPORARY=" + JSON.stringify(lh, null, 2))
@@ -296,6 +297,7 @@ class Zotero {
       }).then((res) => res.data);
       */
       chunk = await this.get(link[0].uri, {
+        fulluri: true,
         resolveWithFullResponse: true,
         params,
       }).catch((error) => {
@@ -315,6 +317,7 @@ class Zotero {
   async get(
     uri,
     options: {
+      fulluri?: boolean;
       userOrGroupPrefix?: boolean;
       params?: any;
       resolveWithFullResponse?: boolean;
@@ -322,7 +325,8 @@ class Zotero {
     } = {},
   ) {
     if (typeof options.userOrGroupPrefix === 'undefined')
-      options.userOrGroupPrefix = true;
+      options.userOrGroupPrefix =       data = data.concat(chunk.body);
+      true;
     if (typeof options.params === 'undefined') options.params = {};
     if (typeof options.json === 'undefined') options.json = true;
 
@@ -341,7 +345,10 @@ class Zotero {
       })
       .join('&');
 
-    uri = `${this.base}${prefix}${uri}${params ? '?' + params : ''}`;
+    if (!options.fulluri) {      
+      uri = `${this.base}${prefix}${uri}${params ? '?' + params : ''}`;
+    }
+
     if (this.config.verbose) console.error('GET', uri);
     logger.info('get uri: %s', uri);
 
@@ -355,7 +362,7 @@ class Zotero {
       .then(
         // (resp) => resp.data
         (response) => options.resolveWithFullResponse ? {
-          data: response.data,
+          body: response.data,
           status: response.status,
           statusText: response.statusText,
           headers: response.headers,
