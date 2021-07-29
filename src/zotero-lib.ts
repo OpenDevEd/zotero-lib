@@ -265,8 +265,8 @@ class Zotero {
 
   // Function to get more than 100 records, i.e. chunked retrieval.
   async all(uri, params = {}) {
-    console.log('all=' + uri);
-    console.log('TEMPORARY=' + JSON.stringify(params, null, 2));
+    //console.log('all=' + uri);
+    //console.log('TEMPORARY=' + JSON.stringify(params, null, 2));
 
     let chunk = await this.get(uri, {
       resolveWithFullResponse: true,
@@ -370,13 +370,13 @@ class Zotero {
           }  */
         function (response) {
           const out = {
-            data: response.data,
+            body: response.data,
             status: response.status,
             statusText: response.statusText,
             headers: response.headers,
             config: response.config
           }
-          console.log("TEMPORARY=" + JSON.stringify(out, null, 2))
+          // console.log("response-TEMPORARY=" + JSON.stringify(out, null, 2))
           return out
         }
       )
@@ -403,7 +403,7 @@ class Zotero {
         );
         return error;
       });
-    console.log("all=" + JSON.stringify(res, null, 2))
+    // console.log("all=" + JSON.stringify(res, null, 2))
     if (options.resolveWithFullResponse) {
       return res;
     } else {
