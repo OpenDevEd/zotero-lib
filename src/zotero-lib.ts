@@ -277,6 +277,7 @@ class Zotero {
     });
 
     let data = chunk.body;
+    console.log('ALL-TEMPORARY=' + JSON.stringify(chunk.headers, null, 2))
     // console.log("ALL-TEMPORARY=" + JSON.stringify(data, null, 2))
     // const lh = LinkHeader.parse(chunk.headers.link)
     // console.log("ALL-TEMPORARY=" + JSON.stringify(lh, null, 2))
@@ -344,7 +345,30 @@ class Zotero {
       json: options.json,
       resolveWithFullResponse: options.resolveWithFullResponse,
     })
-      .then((resp) => resp.data)
+      .then(
+        // (resp) => resp.data
+        (response) => options.resolveWithFullResponse ? {
+          data: response.data,
+          status: response.status,
+          statusText: response.statusText,
+          headers: response.headers,
+          config: response.config
+          } 
+          :
+          response.data
+          /*
+        function(response) {
+          const out = {
+            data: response.data,
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers,
+            config: response.config
+            }            
+          console.log("TEMPORARY="+JSON.stringify(    out        ,null,2))
+         
+        }  */
+      )
       .catch((error) => {
         if (this.config.verbose) {
           console.log(

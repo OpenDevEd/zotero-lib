@@ -26,7 +26,7 @@ async function main() {
         sourcegroup = x.split("/")[5]
         sourcekey = x.split("/")[7]
       } else if (x.match(/^\d+\:[\w\d]+$/)) {
-	sourcegroup = x.split(":")[0]
+        sourcegroup = x.split(":")[0]
         sourcekey = x.split(":")[1]
       } else {
         sourcegroup = x.split('/')[4];
