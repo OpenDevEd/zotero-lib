@@ -288,12 +288,19 @@ class Zotero {
         await sleep(parseInt(chunk.headers.backoff) * 1000);
       }
 
-      chunk = await axios({
+      /* chunk = await axios({
         url: link[0].uri,
         headers: this.headers,
         json: true,
         resolveWithFullResponse: true,
       }).then((res) => res.data);
+      */
+      chunk = await this.get(link[0].uri, {
+        resolveWithFullResponse: true,
+        params,
+      }).catch((error) => {
+        console.log('Error in all: ' + error);
+      });
       data = data.concat(chunk.body);
       link =
         chunk.headers.link && LinkHeader.parse(chunk.headers.link).rel('next');
