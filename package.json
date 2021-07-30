@@ -1,11 +1,18 @@
 {
   "name": "zotero-lib",
+<<<<<<< HEAD
   "version": "1.0.64",
+=======
+  "version": "1.0.65",
+>>>>>>> f2dbbb8569a3abcfb7bc7c5ad85c71586063c68c
   "description": "",
   "main": "build/zotero-lib.js",
   "bin": {
     "zotero-lib": "build/zotero-cli.js"
   },
+  "files": [
+    "build/*"
+  ],
   "scripts": {
     "start": "node ./build/zotero-cli.js",
     "dev": "ts-node ./src/zotero-cli.ts",
@@ -15,9 +22,17 @@
     "test_item": "node ./tests/test_item.js",
     "test_update": "node ./tests/test_update.js",
     "build": "rimraf build/ && tsc",
+    "prepublish": "npm run build",
+    "prepack": "npm run build",
     "publish:patch": "npm version patch; npm publish; git push --tags",
     "publish:minor": "npm version minor; npm publish; git push --tags",
-    "publish:major": "npm version major; npm publish; git push --tags"
+    "publish:major": "npm version major; npm publish; git push --tags",
+    "release": "standard-version"
+  },
+  "standard-version": {
+    "skip": {
+      "tag": true
+    }
   },
   "repository": {
     "type": "git",
@@ -41,6 +56,7 @@
     "http-link-header": "^1.0.3",
     "lodash": "^4.17.21",
     "md5-file": "^5.0.0",
+    "standard-version": "^9.3.1",
     "ts-dotenv": "^0.8.3",
     "tsconfig": "^7.0.0",
     "typescript": "^4.1.3",
