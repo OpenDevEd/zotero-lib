@@ -1,1 +1,142 @@
-{"successful":{"0":{"key":"F6D4BDCE","version":3318,"library":{"type":"group","id":2259720,"name":"2020 API_TEST","links":{"alternate":{"href":"https://www.zotero.org/groups/2259720","type":"text/html"}}},"links":{"self":{"href":"https://api.zotero.org/groups/2259720/items/F6D4BDCE","type":"application/json"},"alternate":{"href":"https://www.zotero.org/groups/2259720/items/F6D4BDCE","type":"text/html"}},"meta":{"createdByUser":{"id":7093358,"username":"jszeina","name":"","links":{"alternate":{"href":"https://www.zotero.org/jszeina","type":"text/html"}}},"numChildren":0},"data":{"key":"F6D4BDCE","version":3318,"itemType":"report","title":"ABC","creators":[],"abstractNote":"","reportNumber":"","reportType":"","seriesTitle":"","place":"","institution":"","date":"","pages":"","language":"","shortTitle":"","url":"","accessDate":"","archive":"","archiveLocation":"","libraryCatalog":"","callNumber":"","rights":"","extra":"","tags":[],"collections":[],"relations":{},"dateAdded":"2021-01-15T22:20:45Z","dateModified":"2021-01-15T22:20:45Z"}}},"success":{"0":"F6D4BDCE"},"unchanged":{},"failed":{}}
+{
+  "Parent task(s) of this task": {
+    "id": "=PuT",
+    "type": "relation",
+    "relation": []
+  },
+  "Team": {
+    "id": "IMjn",
+    "type": "people",
+    "people": []
+  },
+  "Grouping": {
+    "id": "O_bZ",
+    "type": "relation",
+    "relation": []
+  },
+  "Lead": {
+    "id": "PG]e",
+    "type": "relation",
+    "relation": []
+  },
+  "Week": {
+    "id": "Q\\gt",
+    "type": "number",
+    "number": 27
+  },
+  "Due date": {
+    "id": "WhWu",
+    "type": "date",
+    "date": {
+      "start": "2021-07-06",
+      "end": null
+    }
+  },
+  "Programme": {
+    "id": "XoU|",
+    "type": "relation",
+    "relation": []
+  },
+  "Partnership": {
+    "id": "[CPX",
+    "type": "relation",
+    "relation": []
+  },
+  "Child task(s) of this task": {
+    "id": "_un;",
+    "type": "relation",
+    "relation": []
+  },
+  "Contact": {
+    "id": "`xKj",
+    "type": "relation",
+    "relation": []
+  },
+  "Year": {
+    "id": "a?WT",
+    "type": "number",
+    "number": 2021
+  },
+  "Priority": {
+    "id": "fO[x",
+    "type": "select",
+    "select": {
+      "id": "d22f4ba9-84d8-4e04-8d68-eb86de453ea3",
+      "name": "Medium 📣",
+      "color": "yellow"
+    }
+  },
+  "Complete": {
+    "id": "pjiZ",
+    "type": "checkbox",
+    "checkbox": false
+  },
+  "Hours estimated": {
+    "id": "q>|q",
+    "type": "number",
+    "number": 1
+  },
+  "Owner": {
+    "id": "tB=O",
+    "type": "people",
+    "people": [
+      {
+        "object": "user",
+        "id": "5a2be62e-384f-40a6-a72e-3c20c4ec24c8",
+        "name": "Björn Haßler",
+        "avatar_url": "https://s3-us-west-2.amazonaws.com/public.notion-static.com/4b6a9f3a-9db3-4d64-9d98-f1123468716c/unnamed.png",
+        "type": "person",
+        "person": {
+          "email": "bjoern@opendeved.net"
+        }
+      }
+    ]
+  },
+  "Status": {
+    "id": "xbKK",
+    "type": "select",
+    "select": {
+      "id": "2",
+      "name": "In progress 🏃🏾‍♀️",
+      "color": "yellow"
+    }
+  },
+  "Team (not on notion)": {
+    "id": "{rJF",
+    "type": "relation",
+    "relation": []
+  },
+  "Name": {
+    "id": "title",
+    "type": "title",
+    "title": [
+      {
+        "type": "text",
+        "text": {
+          "content": "Close upwork projects for Arfan and Elena",
+          "link": null
+        },
+        "annotations": {
+          "bold": false,
+          "italic": false,
+          "strikethrough": false,
+          "underline": false,
+          "code": false,
+          "color": "default"
+        },
+        "plain_text": "Close upwork projects for Arfan and Elena",
+        "href": null
+      }
+    ]
+  },
+  "Description": {
+    "id": "4aac7a3b-a4c0-43cc-889a-f15711d62a11",
+    "type": "rich_text",
+    "rich_text": []
+  },
+  "Tags": {
+    "id": "7977cd66-8c36-4f77-bf50-e9e442c13412",
+    "type": "multi_select",
+    "multi_select": []
+  }
+}
