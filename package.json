@@ -6,6 +6,9 @@
   "bin": {
     "zotero-lib": "build/zotero-cli.js"
   },
+  "files": [
+    "build/*"
+  ],
   "scripts": {
     "start": "node ./build/zotero-cli.js",
     "dev": "ts-node ./src/zotero-cli.ts",
