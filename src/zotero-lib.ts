@@ -905,10 +905,12 @@ class Zotero {
     if (args.key) {
       args.key = this.extractKeyAndSetGroup(this.as_value(args.key));
     }
-    if (!args.create_child && !args.top) {
+    // if (!args.create_child && !args.top) {
+    // 'Unable to extract group/key from the string provided.',
+    if (!args.key && !args.top) {
       return this.message(
         0,
-        'Unable to extract group/key from the string provided.',
+        'You should specify key or --top.'
       );
     }
 
