@@ -2084,9 +2084,10 @@ class Zotero {
     } else {
       console.log(`zotero->enclose_item_in_collection: group_id ${group_id}`)
     }
-    const zotero = new Zotero();
+    // const zotero = new Zotero();
     // Failure previously here.
-    const response = await zotero.item({ key: key, group_id: group_id });
+    // const response = await zotero.item({ key: key, group_id: group_id });
+    const response = await this.item({ key: key, group_id: group_id });
     // console.log("response = " + JSON.stringify(response, null, 2))
     // TODO: Have automated test to see whether successful.
     output.push({ response1: response });
@@ -2106,7 +2107,7 @@ class Zotero {
     // Everything below here should be done as Promise.all
     // This causes the problem.
     console.log('collections -- base', base_collection);
-    const new_coll = await zotero.collections({
+    const new_coll = await this.collections({
       group_id: group_id,
       key: this.as_value(base_collection),
       create_child: this.as_array(child_name),
@@ -2118,14 +2119,14 @@ class Zotero {
 
     console.log('Move item to collection');
     const ecoll = this.as_array(new_coll[0].key);
-    const res = await zotero.item({
+    const res = await this.item({
       key,
       addtocollection: ecoll,
     });
     output.push({ response2: res });
 
     console.log('0-link');
-    const link0 = await zotero.attach_link({
+    const link0 = await this.attach_link({
       group_id,
       key,
       url: `zotero://select/groups/${group_id}/collections/${new_coll[0].key}`,
@@ -2135,7 +2136,7 @@ class Zotero {
     output.push({ link: link0 });
 
     console.log('1-collections');
-    const refcol_res = await zotero.collections({
+    const refcol_res = await this.collections({
       group_id,
       key: ecoll,
       create_child: ['✅_References'],
@@ -2145,7 +2146,7 @@ class Zotero {
     console.log(`1-links: ${group_id}:${key}`);
     console.log('TEMPORARY=' + JSON.stringify(refcol_res, null, 2));
     const refcol = refcol_res[0].key;
-    const link1 = await zotero.attach_link({
+    const link1 = await this.attach_link({
       group_id,
       key,
       url: `zotero://select/groups/${group_id}/collections/${refcol}`,
@@ -2155,7 +2156,7 @@ class Zotero {
     output.push({ link: link1 });
 
     console.log('2-collection');
-    const refcol_citing = await zotero.collections({
+    const refcol_citing = await this.collections({
       group_id,
       key: ecoll,
       create_child: ['✅Citing articles'],
@@ -2163,7 +2164,7 @@ class Zotero {
     output.push({ collection: refcol_citing });
     const citingcol = refcol_citing[0].key;
     console.log('2-link');
-    const link2 = await zotero.attach_link({
+    const link2 = await this.attach_link({
       group_id,
       key,
       url: `zotero://select/groups/${group_id}/collections/${citingcol}`,
@@ -2173,7 +2174,7 @@ class Zotero {
     output.push({ link: link2 });
 
     console.log('3-collection');
-    const refcol_rem = await zotero.collections({
+    const refcol_rem = await this.collections({
       group_id,
       key: ecoll,
       create_child: ['✅Removed references'],
@@ -2181,7 +2182,7 @@ class Zotero {
     output.push({ collection: refcol_rem });
     const refremcol = refcol_rem[0].key;
     console.log('3-link');
-    const link3 = await zotero.attach_link({
+    const link3 = await this.attach_link({
       group_id,
       key,
       url: `zotero://select/groups/${group_id}/collections/${refremcol}`,
@@ -2202,7 +2203,7 @@ class Zotero {
     });
     output.push({ note });
 
-    const response3 = await zotero.item({ key });
+    const response3 = await this.item({ key });
     output.push({ response3 });
     // console.log("-->" + response2.collections)
     console.log('TEMPORARY=' + JSON.stringify(output, null, 2));
