@@ -2085,7 +2085,8 @@ class Zotero {
       console.log(`zotero->enclose_item_in_collection: group_id ${group_id}`)
     }
     const zotero = new Zotero();
-    const response = await zotero.item({ key: key });
+    // Failure previously here.
+    const response = await zotero.item({ key: key, group_id: group_id });
     // console.log("response = " + JSON.stringify(response, null, 2))
     // TODO: Have automated test to see whether successful.
     output.push({ response1: response });
