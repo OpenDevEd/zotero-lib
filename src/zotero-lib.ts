@@ -2081,6 +2081,8 @@ class Zotero {
     ); */
     if (!group_id) {
       console.log("ERROR ERROR ERROR - no group id in zotero->enclose_item_in_collection")
+    } else {
+      console.log(`zotero->enclose_item_in_collection: group_id ${group_id}`)
     }
     const zotero = new Zotero();
     const response = await zotero.item({ key: key });
@@ -2104,7 +2106,7 @@ class Zotero {
     // This causes the problem.
     console.log('collections -- base', base_collection);
     const new_coll = await zotero.collections({
-      group_id,
+      group_id: group_id,
       key: this.as_value(base_collection),
       create_child: this.as_array(child_name),
     });
