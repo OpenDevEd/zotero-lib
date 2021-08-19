@@ -6,7 +6,6 @@ import logger from './logger';
 import sleep from './utils/sleep';
 import formatAsXMP from './utils/formatAsXMP';
 import printJSON from './utils/printJSON';
-import { ConsoleTransportOptions } from 'winston/lib/winston/transports';
 
 require('dotenv').config();
 require('docstring');
