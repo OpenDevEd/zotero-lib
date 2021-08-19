@@ -6,6 +6,7 @@ import logger from './logger';
 import sleep from './utils/sleep';
 import formatAsXMP from './utils/formatAsXMP';
 import printJSON from './utils/printJSON';
+import { ConsoleTransportOptions } from 'winston/lib/winston/transports';
 
 require('dotenv').config();
 require('docstring');
@@ -2035,6 +2036,12 @@ class Zotero {
         help:
           'The Zotero collection key in which the new collection is created. (Otherwise created at top level.)',
       });
+      argparser.add_argument('--group-id', {
+        nargs: 1,
+        action: 'store',
+        help:
+          'The Zotero group id.',
+      });
       argparser.add_argument('--title', {
         nargs: 1,
         action: 'store',
@@ -2065,7 +2072,7 @@ class Zotero {
     const base_collection = this.as_value(
       this.extractKeyAndSetGroup(args.collection),
     );
-    const group_id = this.config.group_id;
+    const group_id = args.group_id ? args.group_id : this.config.group_id;
     /* console.log(
       `CHECKING
       Key = ${key};
@@ -2073,7 +2080,9 @@ class Zotero {
       ${this.extractGroupAndSetGroup(args.key)},
       ${this.extractGroupAndSetGroup(args.collection)}`,
     ); */
-
+    if (!group_id) {
+      console.log("ERROR ERROR ERROR - no group id in zotero->enclose_item_in_collection")
+    }
     const zotero = new Zotero();
     const response = await zotero.item({ key: key });
     // console.log("response = " + JSON.stringify(response, null, 2))
