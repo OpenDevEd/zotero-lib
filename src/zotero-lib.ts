@@ -321,6 +321,7 @@ class Zotero {
       params?: any;
       resolveWithFullResponse?: boolean;
       json?: boolean;
+      arraybuffer?: boolean;
     } = {},
   ) {
     if (typeof options.userOrGroupPrefix === 'undefined')
@@ -351,13 +352,20 @@ class Zotero {
     if (this.config.verbose) console.error('GET', uri);
     logger.info('get uri: %s', uri);
 
-    const res = await axios({
+    const requestConfig = {
       url: uri,
       headers: this.headers,
       encoding: null,
       json: options.json,
       resolveWithFullResponse: options.resolveWithFullResponse,
-    })
+    }
+
+    const requestConfig2 = options.arraybuffer ? {
+      ...requestConfig,
+      responseType: 'arraybuffer'
+    } : requestConfig
+
+    const res = await axios(requestConfig2)
       .then(
         // (resp) => resp.data
         /*
@@ -1646,13 +1654,38 @@ class Zotero {
       }
     }
 
+    /*
+        const response = await this.get(`/items/${args.key}/file`, { arraybuffer: true });
+        // console.log("TEMPORARY="+JSON.stringify( response           ,null,2))
+        console.log("Got response")
+        try {
+          const blob = new Blob([response.body.data], {
+            type: 'application/pdf',
+          });
+          fs.writeFileSync(
+            args.save,
+            blob,
+            'binary',
+          );
+        } catch (e) {
+          console.log(e)
+        }
+    */
+
+    const blob = await this.get(`/items/${args.key}/file`, { arraybuffer: true });
+
     fs.writeFileSync(
       args.save,
-      await this.get(`/items/${args.key}/file`),
+      blob,
       'binary',
     );
+
     // TODO return better value.
-    return this.message(0, 'File saved', args.save);
+    const response = await this.get(`/items/${args.key}`)
+    // console.log("TEMPORARY=" + JSON.stringify(response.data.md5, null, 2))
+    // At this point we should compare response.data.md5 and the md5sum(blob)
+
+    return this.message(0, 'File saved', { filename: args.save, md5: response.data.md5, mtime: response.data.mtime });
   }
 
   public async create_item(args, subparsers?) {
