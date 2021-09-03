@@ -1306,7 +1306,32 @@ class Zotero {
       });
       parser_item.add_argument('--crossref', {
         action: 'store_true',
-        help: 'Provide output in xmp format',
+        help: 'Provide output in CrossRef XML format.',
+      });
+      // Not implemented:
+      parser_item.add_argument('--crossref-user', {
+        action: 'store',
+        help: 'Supply a json file with user data for crossref: {depositor_name: "user@domain:role", email_address: "user@domain"}. If --crossref is specified without --crossref-user, default settings in your configuration directory are checked: ~/.config/zotero-cli/crossref-user.json',
+      });
+      // doi_batch_id: "optional", timestamp: "optional"
+      // Not implemented:
+      parser_item.add_argument('--crossref-submit', {
+        action: 'store',
+        help: `Supply a json file with user password for crossref: {password: "..."}. If --crossref is specified without --crossref-user, default settings in your configuration directory are checked: ~/.config/zotero-cli/crossref-password.json. This operation effectively runs curl -F 'operation=doMDUpload'  -F 'login_id=.../...' -F 'login_passwd=...' -F 'fname=@data.xml' https://doi.crossref.org/servlet/deposit`
+      });
+      // Not implemented:      
+      parser_item.add_argument('--zenodo', {
+        action: 'store_true',
+        help: 'Provide output in zenodo json format.',
+      });
+      /*
+      The processing for authordata options in zotzen-lib is basic - need to check what we have in zenodo-lib. However, it might make sense to get Zotero to produce the required json for Zenodo.
+      See 370755a6-0cfd-11ec-851b-77cdfd2128b9 in zotzen-lib
+      */
+      // Not implemented:
+      parser_item.add_argument('--author-data', {
+        action: 'store',
+        help: 'Supply a json file with authors database, enabling extra author information to be added for crossref. If --crossref or --zenodo are specified without --author-data, default settings in your configuration director are checked: ~/.config/zotero-cli/author-data.json',
       });
       parser_item.add_argument('--switch-names', {
         action: 'store_true',
