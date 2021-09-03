@@ -5,6 +5,7 @@ import Ajv from 'ajv';
 import logger from './logger';
 import sleep from './utils/sleep';
 import formatAsXMP from './utils/formatAsXMP';
+import formatAsCrossRefXML from './utils/formatAsCrossRefXML';
 import printJSON from './utils/printJSON';
 
 require('dotenv').config();
@@ -1303,7 +1304,10 @@ class Zotero {
         action: 'store_true',
         help: 'Provide output in xmp format',
       });
-
+      parser_item.add_argument('--crossref', {
+        action: 'store_true',
+        help: 'Provide output in xmp format',
+      });
       parser_item.add_argument('--switch-names', {
         action: 'store_true',
         help:
@@ -3580,6 +3584,9 @@ class Zotero {
         let result = await this[args.func](args);
         if (args.xmp) {
           result = formatAsXMP(result);
+        }
+        if (args.crossref) {
+          result = formatAsCrossRefXML(result);
         }
         if (args.verbose) {
           const myout = {
