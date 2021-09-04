@@ -9,6 +9,7 @@ import formatAsCrossRefXML from './utils/formatAsCrossRefXML';
 import printJSON from './utils/printJSON';
 import processExtraField from './utils/processExtraField';
 import newVanityDOI from './utils/newVanityDOI';
+import formatAsZenodoJson from './utils/formatAsZenodoJson';
 
 require('dotenv').config();
 require('docstring');
@@ -3645,11 +3646,15 @@ class Zotero {
         // await this[args.command.replace(/-/g, '_')]()
         if (args.verbose) console.log('ARGS=' + JSON.stringify(args, null, 2));
         let result = await this[args.func](args);
+        // This really just works for 'item'... should realy move those functions elsewhere
         if (args.xmp) {
           result = formatAsXMP(result);
         }
         if (args.crossref) {
           result = await formatAsCrossRefXML(result, args);
+        }
+        if (args.zenodo) {
+          result = await formatAsZenodoJson(result,args)
         }
         if (args.verbose) {
           const myout = {
