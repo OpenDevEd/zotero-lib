@@ -1576,11 +1576,10 @@ class Zotero {
             title: '👀View item via CrossRef DOI',
             tags: ['_r:doi','_r:crossref'],
           });
-          } else {
+          output.push({ link: link0 });
+        } else {
           output.push({ organise_extra: null });
         }
-        output.push({ link: link0 });
-        process.exit(1)
       }
 
       if (args.removefromcollection) {
