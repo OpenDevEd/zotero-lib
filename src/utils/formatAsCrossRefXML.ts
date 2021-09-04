@@ -222,12 +222,18 @@ export default async function formatAsCrossRefXML(item: ZoteroItem = {} as Zoter
         //handle error
         console.log(response);
       });
+      if (args.crossref_confirm) {
+	  // We want to check (every 3 secs) for 
+	  const doiorg =  `https://doi.org/${doi}`
+	  // until it turns from a 404 into a 302/200.
+	  console.log(doiorg)
+      }
   } else {
     await fs.writeFile("crossref.xml", result, 'utf-8', function (err) {
       if (err) return console.log(err);
     })
     console.log(`You can submit your data like this:\ncurl -F 'operation=doMDUpload'  -F 'login_id=${crossRefUser.depositor_name.replace(':', '/')}' -F 'login_passwd=${crossRefUser.password}' -F 'fname=@crossref.xml' https://doi.crossref.org/servlet/deposit`);
-    console.log("You can check your xml at https://www.crossref.org/02publishers/parser.html")
+    console.log("You can check your xml at https://www.crossref.org/02publishers/parser.html\nor check the uploaded record here:\nhttps://doi.crossref.org/servlet/submissionAdmin")
   }
 
   return result;
