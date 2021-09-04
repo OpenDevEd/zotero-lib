@@ -7,6 +7,8 @@ import sleep from './utils/sleep';
 import formatAsXMP from './utils/formatAsXMP';
 import formatAsCrossRefXML from './utils/formatAsCrossRefXML';
 import printJSON from './utils/printJSON';
+import processExtraField from './utils/processExtraField';
+import newVanityDOI from './utils/newVanityDOI';
 
 require('dotenv').config();
 require('docstring');
@@ -790,11 +792,12 @@ class Zotero {
   }
 
   /*
+  This should not be needed bc this.config.group_id is the group id.
   private extractGroupAndSetGroup(key) {
-    // console.log("extractGroupAndSetGroup")
+    logger.info("extractGroupAndSetGroup")
     return this.extractKeyGroupVariable(key, 1);
   }
-  */
+*/
 
   public objectifyTags(tags) {
     const tagsarr = [];
@@ -1311,13 +1314,13 @@ class Zotero {
       // Not implemented:
       parser_item.add_argument('--crossref-user', {
         action: 'store',
-        help: 'Supply a json file with user data for crossref: {depositor_name: "user@domain:role", email_address: "user@domain"}. If --crossref is specified without --crossref-user, default settings in your configuration directory are checked: ~/.config/zotero-cli/crossref-user.json',
+        help: 'Supply a json file with user data for crossref: {depositor_name: "user@domain:role", email_address: "user@domain", password: ...}. If --crossref is specified without --crossref-user, default settings in your configuration directory are checked: ~/.config/zotero-cli/crossref-user.json',
       });
       // doi_batch_id: "optional", timestamp: "optional"
       // Not implemented:
       parser_item.add_argument('--crossref-submit', {
-        action: 'store',
-        help: `Supply a json file with user password for crossref: {password: "..."}. If --crossref is specified without --crossref-user, default settings in your configuration directory are checked: ~/.config/zotero-cli/crossref-password.json. This operation effectively runs curl -F 'operation=doMDUpload'  -F 'login_id=.../...' -F 'login_passwd=...' -F 'fname=@data.xml' https://doi.crossref.org/servlet/deposit`
+        action: 'store_true',
+        help: `Password needs --crossref-user. This operation effectively runs curl -F 'operation=doMDUpload'  -F 'login_id=.../...' -F 'login_passwd=...' -F 'fname=@data.xml' https://doi.crossref.org/servlet/deposit`
       });
       // Not implemented:      
       parser_item.add_argument('--zenodo', {
@@ -1338,6 +1341,10 @@ class Zotero {
         help:
           'Switch firstName with lastName and vice versa in creators, ignoring name only creators',
         dest: 'switchNames',
+      });
+      parser_item.add_argument('--organise-extra', {
+        action: 'store_true',
+        help: 'Organise extra field (processExtraField)',
       });
 
       parser_item.add_argument('--children', {
@@ -1542,6 +1549,38 @@ class Zotero {
           item.version,
         );
         output.push({ switchNames: res });
+      }
+
+      if (args.organise_extra) {
+        logger.info('organise extra: ' + item.data.extra);
+        let updatedExtra = item.data.extra
+        const vanityDOI = newVanityDOI(item, this.config.group_id, args.crossref_user)
+        if (vanityDOI && !updatedExtra.match(`DOI: ${vanityDOI}`)) {
+          updatedExtra = `DOI: ${vanityDOI}\n` + updatedExtra;
+        }
+        updatedExtra = processExtraField(updatedExtra)
+        // logger.info(updatedExtra)
+        if (item.data.extra != updatedExtra) {
+          const res = await this.patch(
+            `/items/${args.key}`,
+            JSON.stringify({ extra: updatedExtra }),
+            item.version,
+          );          
+          logger.info('organise extra: ' + updatedExtra);
+          output.push({ organise_extra: res });
+          logger.info("We have added a new DOI - add a link as well.")
+          const link0 = await this.attach_link({
+            group_id: this.config.group_id,
+            key: args.key,
+            url: `https://doi.org/${vanityDOI}`,
+            title: '👀View item via CrossRef DOI',
+            tags: ['_r:doi','_r:crossref'],
+          });
+          } else {
+          output.push({ organise_extra: null });
+        }
+        output.push({ link: link0 });
+        process.exit(1)
       }
 
       if (args.removefromcollection) {
@@ -3611,7 +3650,7 @@ class Zotero {
           result = formatAsXMP(result);
         }
         if (args.crossref) {
-          result = formatAsCrossRefXML(result);
+          result = await formatAsCrossRefXML(result, args);
         }
         if (args.verbose) {
           const myout = {
