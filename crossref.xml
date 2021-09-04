@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
   <doi_batch version="4.4.2" xmlns="http://www.crossref.org/schema/4.4.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:jats="http://www.ncbi.nlm.nih.gov/JATS1" xsi:schemaLocation="http://www.crossref.org/schema/4.4.2 http://www.crossref.org/schema/deposit/crossref4.4.2.xsd">
   <head>
-  <doi_batch_id>BATCH_20210904135216000</doi_batch_id>
-  <timestamp>20210904135216000</timestamp>
+  <doi_batch_id>BATCH_20210904210347000</doi_batch_id>
+  <timestamp>20210904210347000</timestamp>
   <depositor>
     <depositor_name>bjoern@opendeved.net:odel</depositor_name> 
     <email_address>bjoern@opendeved.net</email_address>
@@ -14,38 +14,34 @@
       <report-paper_metadata>
         <contributors>
         <person_name sequence='first' contributor_role='author'>
-      <given_name>Paul</given_name>
-      <surname>Lynch</surname>
-</person_name>
+      <given_name>Björn</given_name>
+      <surname>Haßler</surname><ORCID>https://orcid.org/0000-0002-5277-9947</ORCID>
+</person_name><organization sequence='first' contributor_role='author'>Open Development &amp; Education</organization>
 <person_name sequence='additional' contributor_role='author'>
-      <given_name>Tom</given_name>
-      <surname>Kaye</surname>
-</person_name>
-<person_name sequence='additional' contributor_role='author'>
-      <given_name>Emmanouela</given_name>
-      <surname>Terlektsi</surname>
+      <given_name>Gesine</given_name>
+      <surname>Haseloff</surname>
 </person_name>
         </contributors>
         <titles>
-         <title>Pakistan Distance-Learning Topic Brief: Primary-level Deaf Children</title>
+         <title>TVET research in SSA: Recommendations for Thematic Priorities</title>
         </titles>
         <jats:abstract xml:lang='en'>
-        <jats:p>The COVID-19 crisis has severely impacted the ability of national education actors to provide access to education services for all students.This brief provides guidance and recommendations on how to support the education of deaf children in Pakistan using alternative learning approaches. It presents the rationale for adopting certain teaching and learning strategies when supporting the learning and well-being of deaf children during global uncertainty. Children with deafness and hearing loss are particularly vulnerable now that schools are closed. They are isolated at home and unable to access information as easily as when they were attending school. This brief presents some of the practices that are reportedly working well for deaf children in different contexts.</jats:p>
+        <jats:p></jats:p>
         </jats:abstract>    
         <publication_date media_type='online'>
-        <month>06</month>
-        <day>17</day>
-        <year>2020</year>
+        <month>01</month>
+        <day>01</day>
+        <year>2021</year>
         </publication_date>
         <publisher>
-         <publisher_name>EdTech Hub</publisher_name>
+         <publisher_name>undefined</publisher_name>
         </publisher>
         <institution>
-         <institution_name>EdTech Hub</institution_name>
+         <institution_name>undefined</institution_name>
         </institution>
         <doi_data>
-         <doi>10.53832/edtechhub.0043</doi>
-         <resource>https://docs.edtechhub.org/lib/LP4PGMNA</resource>
+         <doi>10.53832/opendeved.0200</doi>
+         <resource>https://docs.opendeved.net/lib/TMQ5DIM2</resource>
         </doi_data>
     </report-paper_metadata>
    </report-paper>

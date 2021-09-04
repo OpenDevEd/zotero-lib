@@ -143,9 +143,9 @@ export default async function formatAsCrossRefXML(item: ZoteroItem = {} as Zoter
   let itemdate = item.date;
   const match = item.date.match(/(\d\d?)\/(\d\d?)\/(\d\d\d\d)/)
   if (match) {
-    itemdate = match[3] + "-"  + match[2] + "-" + match[1]
+    itemdate = match[3] + "-" + match[2] + "-" + match[1]
   }
-  logger.info("DATE: "+itemdate)
+  logger.info("DATE: " + itemdate)
   try {
     itemdate = Sugar.Date.create(itemdate)
   } catch (error) {
@@ -201,6 +201,7 @@ export default async function formatAsCrossRefXML(item: ZoteroItem = {} as Zoter
 `;
 
   if (args.crossref_submit) {
+    /*
     const FormData = require('form-data');
     const axios = require('axios');
     var form = new FormData();
@@ -221,13 +222,49 @@ export default async function formatAsCrossRefXML(item: ZoteroItem = {} as Zoter
       .catch(function (response) {
         //handle error
         console.log(response);
+      }); */
+    await fs.writeFile("crossref.xml", result, 'utf-8', function (err) {
+      if (err) return console.log(err);
+    })
+    const { Curl } = require('node-libcurl');
+    try {
+      const curl = new Curl();
+      const close = curl.close.bind(curl);
+
+      curl.setOpt(Curl.option.URL, 'https://doi.crossref.org/servlet/deposits');
+      curl.setOpt(Curl.option.HTTPPOST, [
+        { name: 'operation', contents: 'doMDUpload' },
+        { name: 'login_id', contents: crossRefUser.depositor_name.replace(':', '/') },
+        { name: 'login_passwd', contents: crossRefUser.password },
+        { name: 'fname', file: 'crossref.xml', type: 'text/plain' },
+      ]);
+      // curl.setOpt(Curl.option.POST, true)
+
+      curl.on('end', function (statusCode, data, headers) {
+        console.log("CURL **** Status code " + statusCode);
+        console.log("***");
+        console.log("Our response: " + data);
+        console.log("***");
+        console.log("Length: " + data.length);
+        console.log("***");
+        console.log("Total time taken: " + this.getInfo("TOTAL_TIME"));
+        this.close();
       });
-      if (args.crossref_confirm) {
-	  // We want to check (every 3 secs) for 
-	  const doiorg =  `https://doi.org/${doi}`
-	  // until it turns from a 404 into a 302/200.
-	  console.log(doiorg)
-      }
+      curl.on('error', function () {
+        console.log("CURL ERROR");
+        this.close();
+      });
+      await curl.perform();
+      console.log("DONE!")
+    } catch (error) {
+      console.log("ERROR! " + error)
+    }
+    if (args.crossref_confirm) {
+      // We want to check (every 3 secs) for 
+      const doiorg = `https://doi.org/${doi}`
+      // until it turns from a 404 into a 302/200.
+      console.log(doiorg)
+    }
   } else {
     await fs.writeFile("crossref.xml", result, 'utf-8', function (err) {
       if (err) return console.log(err);
