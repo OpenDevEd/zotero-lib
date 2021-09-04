@@ -1,6 +1,7 @@
 const fs = require('fs');
 const os = require('os');
 const Sugar = require('sugar');
+const xmlescape = require('xml-escape');
 
 type Creator =
   | { name: string; creatorType: string }
@@ -160,10 +161,10 @@ export default async function formatAsCrossRefXML(item: ZoteroItem = {} as Zoter
         ${creatorsList}
         </contributors>
         <titles>
-         <title>${item.title}</title>
+         <title>${xmlescape(item.title)}</title>
         </titles>
         <jats:abstract xml:lang='en'>
-        <jats:p>${item.abstractNote}</jats:p>
+        <jats:p>${xmlescape(item.abstractNote)}</jats:p>
         </jats:abstract>    
         <publication_date media_type='online'>
         <month>${month}</month>
@@ -171,10 +172,10 @@ export default async function formatAsCrossRefXML(item: ZoteroItem = {} as Zoter
         <year>${year}</year>
         </publication_date>
         <publisher>
-         <publisher_name>${institution}</publisher_name>
+         <publisher_name>${xmlescape(institution)}</publisher_name>
         </publisher>
         <institution>
-         <institution_name>${institution}</institution_name>
+         <institution_name>${xmlescape(institution)}</institution_name>
         </institution>
         <doi_data>
          <doi>${doi}</doi>
