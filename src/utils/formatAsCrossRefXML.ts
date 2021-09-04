@@ -67,6 +67,14 @@ export default async function formatAsCrossRefXML(item: ZoteroItem = {} as Zoter
   }
   */
 
+  let authorDataExpanded = {}
+  for (const key in authorData) {
+    authorDataExpanded[key] = authorData[key]
+    for (const variation in authorData[key].aliases) {
+      authorDataExpanded[authorData[key].aliases[variation]] = authorData[key]
+    }
+  }
+
   let seq = "first"
   const creatorsList = creators
     .map((c: Creator) => {
@@ -74,12 +82,12 @@ export default async function formatAsCrossRefXML(item: ZoteroItem = {} as Zoter
       let orcid = ""
       let org = ""
       const fullname = 'name' in c ? c.name : `${c.firstName} ${c.lastName}`;
-      if (fullname in authorData) {
-        if (authorData[fullname]["orcid"]) {
-          orcid = `<ORCID>${authorData[fullname]["orcid"]}</ORCID>`;
+      if (fullname in authorDataExpanded) {
+        if (authorDataExpanded[fullname]["orcid"]) {
+          orcid = `<ORCID>${authorDataExpanded[fullname]["orcid"]}</ORCID>`;
         }
-        if (authorData[fullname]["organization"]) {
-          org = `<organization sequence='${seq}' contributor_role='${c.creatorType}'>${authorData[fullname]["organization"]}</organization>`;
+        if (authorDataExpanded[fullname]["organization"]) {
+          org = `<organization sequence='${seq}' contributor_role='${c.creatorType}'>${authorDataExpanded[fullname]["organization"]}</organization>`;
         }
       }
       if ('name' in c) {

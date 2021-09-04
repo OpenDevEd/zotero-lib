@@ -21,7 +21,9 @@ interface ZoteroItem {
   date: string;
 }
 
-// TODO: complete
+// TODO: complete: This needs to check for multiple DOI locations: item.doi and then extra.
+// It then needs to check whether this is a zenodo doi.
+// Also, we need a new "zenodoRecord: 123" and "zenodoConcept: 123"
 function zenodoParseIDFromZoteroRecord(item) {
   logger.info('item = %O', item);
   const extra = item.extra.split('\n');
@@ -78,31 +80,39 @@ export default async function formatAsZenodoJson(item: ZoteroItem = {} as Zotero
   let updateDoc = {
     id: zenodoID,
     title: item.title,
-    description: item.abstractNote,
+    description: item.abstractNote ? item.abstractNote : "[No description available.]",
     authors: [],
     publication_date: ""
   };
+
+  console.log("TEMPORARY=" + JSON.stringify(authorData, null, 2))
+  let authorDataExpanded = {}
+  for (const key in authorData) {
+    authorDataExpanded[key] = authorData[key]
+    for (const variation in authorData[key].aliases) {
+      authorDataExpanded[authorData[key].aliases[variation]] = authorData[key]
+    }
+  }
+  console.log("TEMPORARY=" + JSON.stringify(authorDataExpanded, null, 2))
 
   if (Array.isArray(item.creators) && item.creators.length) {
     logger.info('adding name from zotero');
     updateDoc.authors = item.creators.map(
       function (c) {
-        const fullname = c["name"] ? c["name"] : `${c["lastName"]}, ${c["firstName"]} `;
+        const fullname = c["name"] ? c["name"] : `${c["lastName"]}, ${c["firstName"]}`;
         let res = {
           name: fullname
         }
-        if (fullname in authorData) {
-          if ("orcid" in authorData[fullname])
-            res["orcid"] = authorData[fullname]["orcid"]
-          if ("organization" in authorData[fullname])
-            res["affiliation"] = authorData[fullname]["organization"]
+        if (fullname in authorDataExpanded) {
+          if ("orcid" in authorDataExpanded[fullname])
+            res["orcid"] = authorDataExpanded[fullname]["orcid"]
+          if ("organization" in authorDataExpanded[fullname])
+            res["affiliation"] = authorDataExpanded[fullname]["organization"]
         }
         return res
       });
   }
-  if (item.date) {
-    updateDoc["publication_date"] = item.date;
-  }
+
 
   //    const today = Sugar.Date.format(new Date(), '%Y%m%d%H%M%S') + "000"; // "[THEDATE]" // new Date().toDateString('DD-MMM-YYYY')  
 
@@ -119,12 +129,26 @@ export default async function formatAsZenodoJson(item: ZoteroItem = {} as Zotero
       }
     });
     if (doi) { console.log(`DOI from item.extra: ${doi}`) }
+    updateDoc["doi"] = doi
   }
 
+  updateDoc["upload_type"] = "publication"
+  updateDoc["publication_type"] = "report"
+
+  // We should sort out the licence too
+  /*
+  updateDoc["access_right"] = "open"
+  updateDoc["license"] = "..."
+  */
   //const url = item.url
   //const institution = item.institution
   // console.log("TEMPORARY="+JSON.stringify(   item         ,null,2))
-
+  /*
+  updateDoc["related_identifiers"] ... zotero://
+  */
+  // references
+  // communities
+  // language
   let itemdate = item.date;
   const match = item.date.match(/(\d\d?)\/(\d\d?)\/(\d\d\d\d)/)
   if (match) {
@@ -136,6 +160,8 @@ export default async function formatAsZenodoJson(item: ZoteroItem = {} as Zotero
   } catch (error) {
     itemdate = Sugar.Date.format(new Date(), '%Y-%m-%d')
   }
+
+  updateDoc["publication_date"] = item.date;
 
   await fs.writeFile("updateDoc.json", JSON.stringify(updateDoc), 'utf-8', function (err) {
     if (err) console.log(err);
