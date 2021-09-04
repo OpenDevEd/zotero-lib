@@ -229,9 +229,9 @@ export default async function formatAsCrossRefXML(item: ZoteroItem = {} as Zoter
     const { Curl } = require('node-libcurl');
     try {
       const curl = new Curl();
-      const close = curl.close.bind(curl);
+      // const close = curl.close.bind(curl);
 
-      curl.setOpt(Curl.option.URL, 'https://doi.crossref.org/servlet/deposits');
+      curl.setOpt(Curl.option.URL, 'https://doi.crossref.org/servlet/deposit');
       curl.setOpt(Curl.option.HTTPPOST, [
         { name: 'operation', contents: 'doMDUpload' },
         { name: 'login_id', contents: crossRefUser.depositor_name.replace(':', '/') },
@@ -241,7 +241,7 @@ export default async function formatAsCrossRefXML(item: ZoteroItem = {} as Zoter
       // curl.setOpt(Curl.option.POST, true)
 
       curl.on('end', function (statusCode, data, headers) {
-        console.log("CURL **** Status code " + statusCode);
+        console.log("******** CURL SUBMISSION **** Status code " + statusCode);
         console.log("***");
         console.log("Our response: " + data);
         console.log("***");
@@ -255,15 +255,57 @@ export default async function formatAsCrossRefXML(item: ZoteroItem = {} as Zoter
         this.close();
       });
       await curl.perform();
+      /* This await doesn't work. */
       console.log("DONE!")
     } catch (error) {
-      console.log("ERROR! " + error)
+      console.log("ERROR! [in submission]" + error)
     }
     if (args.crossref_confirm) {
+      function sleep(ms) {
+        return new Promise((resolve) => {
+          setTimeout(resolve, ms);
+        });
+      }
+      console.log("Confirming...")
+      // Adding a sleep here - the await above doesn't work.
+      await sleep(3000)
+      let loopit = true
+      let counter = 0
       // We want to check (every 3 secs) for 
       const doiorg = `https://doi.org/${doi}`
       // until it turns from a 404 into a 302/200.
       console.log(doiorg)
+      while (loopit) {
+        counter++;
+        console.log(counter)
+        const curl = new Curl();
+        // const close = curl.close.bind(curl);      
+        curl.setOpt(Curl.option.URL, doiorg);
+        curl.setOpt('FOLLOWLOCATION', true);
+        curl.on('end', function (statusCode, data, headers) {
+          console.log("******** CURL CHECK **** Status code " + statusCode);
+          //console.log("***");
+          //console.log("Our response: " + data);
+          //console.log("***");
+          console.log("Length: " + data.length);
+          //console.log("***");
+          console.log("Total time taken: " + this.getInfo("TOTAL_TIME"));
+          this.close();
+          if (statusCode == 200) {
+            loopit = false
+          } else {
+            // await sleep(1000);
+          }
+        });
+        curl.on('error', function () {
+          console.log("CURL ERROR");
+          // await sleep(1000);
+          this.close();
+        });
+        await curl.perform();
+        if (loopit)
+          await sleep(5000);
+      }
     }
   } else {
     await fs.writeFile("crossref.xml", result, 'utf-8', function (err) {
@@ -275,3 +317,5 @@ export default async function formatAsCrossRefXML(item: ZoteroItem = {} as Zoter
 
   return result;
 }
+
+

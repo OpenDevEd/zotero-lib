@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
   <doi_batch version="4.4.2" xmlns="http://www.crossref.org/schema/4.4.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:jats="http://www.ncbi.nlm.nih.gov/JATS1" xsi:schemaLocation="http://www.crossref.org/schema/4.4.2 http://www.crossref.org/schema/deposit/crossref4.4.2.xsd">
   <head>
-  <doi_batch_id>BATCH_20210904210347000</doi_batch_id>
-  <timestamp>20210904210347000</timestamp>
+  <doi_batch_id>BATCH_20210904212918000</doi_batch_id>
+  <timestamp>20210904212918000</timestamp>
   <depositor>
     <depositor_name>bjoern@opendeved.net:odel</depositor_name> 
     <email_address>bjoern@opendeved.net</email_address>
