@@ -1,3 +1,5 @@
+import logger from "../logger";
+
 const fs = require('fs');
 const os = require('os');
 const Sugar = require('sugar');
@@ -138,7 +140,18 @@ export default async function formatAsCrossRefXML(item: ZoteroItem = {} as Zoter
   const institution = item.institution
   // console.log("TEMPORARY="+JSON.stringify(   item         ,null,2))
 
-  const itemdate = Sugar.Date.create(item.date) ? Sugar.Date.create(item.date) : new Date()
+  let itemdate = item.date;
+  const match = item.date.match(/(\d\d?)\/(\d\d?)\/(\d\d\d\d)/)
+  if (match) {
+    itemdate = match[3] + "-"  + match[2] + "-" + match[1]
+  }
+  logger.info("DATE: "+itemdate)
+  try {
+    itemdate = Sugar.Date.create(itemdate)
+  } catch (error) {
+    itemdate = Sugar.Date.format(new Date(), '%Y-%m-%d')
+  }
+
   const year = Sugar.Date.format(itemdate, '%Y');
   const month = Sugar.Date.format(itemdate, '%m');
   const day = Sugar.Date.format(itemdate, '%d');
