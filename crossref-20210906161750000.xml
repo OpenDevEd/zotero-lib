@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+  <doi_batch version="4.4.2" xmlns="http://www.crossref.org/schema/4.4.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:jats="http://www.ncbi.nlm.nih.gov/JATS1" xsi:schemaLocation="http://www.crossref.org/schema/4.4.2 http://www.crossref.org/schema/deposit/crossref4.4.2.xsd">
+  <head>
+  <doi_batch_id>BATCH_20210906161750000</doi_batch_id>
+  <timestamp>20210906161750000</timestamp>
+  <depositor>
+    <depositor_name>bjoern@opendeved.net:odel</depositor_name> 
+    <email_address>bjoern@opendeved.net</email_address>
+  </depositor>
+  <registrant>zotero-lib</registrant> 
+  </head>
+  <body>
+    <report-paper>
+      <report-paper_metadata>
+        <contributors>
+        <person_name sequence='first' contributor_role='author'>
+      <given_name>Björn</given_name>
+      <surname>Haßler</surname><ORCID>https://orcid.org/0000-0002-5277-9947</ORCID>
+</person_name><organization sequence='first' contributor_role='author'>Open Development &amp; Education</organization>
+<person_name sequence='additional' contributor_role='author'>
+      <given_name>Gesine</given_name>
+      <surname>Haseloff</surname>
+</person_name>
+        </contributors>
+        <titles>
+         <title>TVET research in SSA: Recommendations for Thematic Priorities</title>
+        </titles>
+        <jats:abstract xml:lang='en'>
+        <jats:p></jats:p>
+        </jats:abstract>    
+        <publication_date media_type='online'>
+        <month>01</month>
+        <day>01</day>
+        <year>2021</year>
+        </publication_date>
+        <publisher>
+         <publisher_name>undefined</publisher_name>
+        </publisher>
+        <institution>
+         <institution_name>undefined</institution_name>
+        </institution>
+        <doi_data>
+         <doi>10.53832/opendeved.0200</doi>
+         <resource>https://docs.opendeved.net/lib/TMQ5DIM2</resource>
+        </doi_data>
+    </report-paper_metadata>
+   </report-paper>
+  </body>
+  </doi_batch>

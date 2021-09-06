@@ -231,7 +231,8 @@ export default async function formatAsCrossRefXML(item: ZoteroItem = {} as Zoter
         //handle error
         console.log(response);
       }); */
-    await fs.writeFile("crossref.xml", result, 'utf-8', function (err) {
+    const fname = `crossref-${CreateDate}.xml`;
+    await fs.writeFile(fname, result, 'utf-8', function (err) {
       if (err) return console.log(err);
     })
     const { Curl } = require('node-libcurl');
@@ -244,7 +245,7 @@ export default async function formatAsCrossRefXML(item: ZoteroItem = {} as Zoter
         { name: 'operation', contents: 'doMDUpload' },
         { name: 'login_id', contents: crossRefUser.depositor_name.replace(':', '/') },
         { name: 'login_passwd', contents: crossRefUser.password },
-        { name: 'fname', file: 'crossref.xml', type: 'text/plain' },
+        { name: 'fname', file: fname, type: 'text/plain' },
       ]);
       // curl.setOpt(Curl.option.POST, true)
 
@@ -280,28 +281,36 @@ export default async function formatAsCrossRefXML(item: ZoteroItem = {} as Zoter
       let loopit = true
       let counter = 0
       // We want to check (every 3 secs) for 
+      // https://doi.crossref.org/servlet/submissionDownload?usr=name@someplace.com/role&pwd=_password_&doi_batch_id=_doi batch id_&file_name=filename&type=_submission type_
+      // https://doi.crossref.org/servlet/submissionDownload?usr=_role_&pwd=_password_&doi_batch_id=_doi batch id_&file_name=filename&type=_submission type_
       const doiorg = `https://doi.org/${doi}`
-      // until it turns from a 404 into a 302/200.
       console.log(doiorg)
       while (loopit) {
         counter++;
         console.log(counter)
         const curl = new Curl();
         // const close = curl.close.bind(curl);      
-        curl.setOpt(Curl.option.URL, doiorg);
-        curl.setOpt('FOLLOWLOCATION', true);
+        curl.setOpt(Curl.option.URL, 'https://doi.crossref.org/servlet/submissionDownload');
+        curl.setOpt(Curl.option.HTTPPOST, [
+          { name: 'operation', contents: 'doMDUpload' },
+          { name: 'usr', contents: crossRefUser.depositor_name.replace(':', '/') },
+          { name: 'pwd', contents: crossRefUser.password },
+          { name: 'type', contents: 'result'},
+          { name: 'file_name', contents: fname},
+        ]);
         curl.on('end', function (statusCode, data, headers) {
           console.log("******** CURL CHECK **** Status code " + statusCode);
-          //console.log("***");
-          //console.log("Our response: " + data);
-          //console.log("***");
+          console.log("***");
+          console.log("Our response: " + data);
+          console.log("***");
           console.log("Length: " + data.length);
-          //console.log("***");
+          console.log("***");
           console.log("Total time taken: " + this.getInfo("TOTAL_TIME"));
           this.close();
-          if (statusCode == 200) {
+          if (data.match("<success_count>1</success_count>")) {
             loopit = false
           } else {
+            console.log("Doing another iteration.")
             // await sleep(1000);
           }
         });
@@ -315,6 +324,44 @@ export default async function formatAsCrossRefXML(item: ZoteroItem = {} as Zoter
           await sleep(5000);
       }
     }
+    /*
+    Version 1:
+          // We want to check (every 3 secs) for 
+          const doiorg = `https://doi.org/${doi}`
+          console.log(doiorg)
+          while (loopit) {
+            counter++;
+            console.log(counter)
+            const curl = new Curl();
+            // const close = curl.close.bind(curl);      
+            curl.setOpt(Curl.option.URL, doiorg);
+            curl.setOpt('FOLLOWLOCATION', true);
+            curl.on('end', function (statusCode, data, headers) {
+              console.log("******** CURL CHECK **** Status code " + statusCode);
+              //console.log("***");
+              //console.log("Our response: " + data);
+              //console.log("***");
+              console.log("Length: " + data.length);
+              //console.log("***");
+              console.log("Total time taken: " + this.getInfo("TOTAL_TIME"));
+              this.close();
+              if (statusCode == 200) {
+                loopit = false
+              } else {
+                // await sleep(1000);
+              }
+            });
+            curl.on('error', function () {
+              console.log("CURL ERROR");
+              // await sleep(1000);
+              this.close();
+            });
+            await curl.perform();
+            if (loopit)
+              await sleep(5000);
+          }
+        }
+        */
   } else {
     await fs.writeFile("crossref.xml", result, 'utf-8', function (err) {
       if (err) return console.log(err);
