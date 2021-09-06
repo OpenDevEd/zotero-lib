@@ -1321,7 +1321,7 @@ class Zotero {
         action: 'store_true',
         help: `Password needs --crossref-user. This operation effectively runs curl -F 'operation=doMDUpload'  -F 'login_id=.../...' -F 'login_passwd=...' -F 'fname=@data.xml' https://doi.crossref.org/servlet/deposit`
       });
-      parser_item.add_argument('--crossref-confirm', {
+      parser_item.add_argument('--crossref-no-confirm', {
         action: 'store_true',
         help: `Checks whether the DOI successfully activates (requires --crossref-submit). If you are submitting an update (i.e., if the DOI is already active), this doesn't do anything useful.`
       });

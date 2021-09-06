@@ -209,159 +209,10 @@ export default async function formatAsCrossRefXML(item: ZoteroItem = {} as Zoter
 `;
 
   if (args.crossref_submit) {
-    /*
-    const FormData = require('form-data');
-    const axios = require('axios');
-    var form = new FormData();
-    form.append('operation', 'doMDUpload');
-    form.append('login_id', crossRefUser.depositor_name.replace(':', '/'));
-    form.append('login_passwd', crossRefUser.password);
-    form.append('fname', result);
-    await axios({
-      method: "post",
-      url: "https://doi.crossref.org/servlet/deposit",
-      data: form,
-      headers: { "Content-Type": "multipart/form-data" },
-    })
-      .then(function (response) {
-        //handle success
-        console.log(response);
-      })
-      .catch(function (response) {
-        //handle error
-        console.log(response);
-      }); */
-    const fname = `crossref-${CreateDate}.xml`;
-    await fs.writeFile(fname, result, 'utf-8', function (err) {
-      if (err) return console.log(err);
-    })
-    const { Curl } = require('node-libcurl');
-    try {
-      const curl = new Curl();
-      // const close = curl.close.bind(curl);
-
-      curl.setOpt(Curl.option.URL, 'https://doi.crossref.org/servlet/deposit');
-      curl.setOpt(Curl.option.HTTPPOST, [
-        { name: 'operation', contents: 'doMDUpload' },
-        { name: 'login_id', contents: crossRefUser.depositor_name.replace(':', '/') },
-        { name: 'login_passwd', contents: crossRefUser.password },
-        { name: 'fname', file: fname, type: 'text/plain' },
-      ]);
-      // curl.setOpt(Curl.option.POST, true)
-
-      curl.on('end', function (statusCode, data, headers) {
-        console.log("******** CURL SUBMISSION **** Status code " + statusCode);
-        console.log("***");
-        console.log("Our response: " + data);
-        console.log("***");
-        console.log("Length: " + data.length);
-        console.log("***");
-        console.log("Total time taken: " + this.getInfo("TOTAL_TIME"));
-        this.close();
-      });
-      curl.on('error', function () {
-        console.log("CURL ERROR");
-        this.close();
-      });
-      await curl.perform();
-      /* This await doesn't work. */
-      console.log("DONE!")
-    } catch (error) {
-      console.log("ERROR! [in submission]" + error)
+    const fname = await crossref_submit(CreateDate, result, crossRefUser)
+    if (!args.crossref_no_confirm) {
+      await crossref_confirm(fname, doi, crossRefUser)
     }
-    if (args.crossref_confirm) {
-      function sleep(ms) {
-        return new Promise((resolve) => {
-          setTimeout(resolve, ms);
-        });
-      }
-      console.log("Confirming...")
-      // Adding a sleep here - the await above doesn't work.
-      await sleep(3000)
-      let loopit = true
-      let counter = 0
-      // We want to check (every 3 secs) for 
-      // https://doi.crossref.org/servlet/submissionDownload?usr=name@someplace.com/role&pwd=_password_&doi_batch_id=_doi batch id_&file_name=filename&type=_submission type_
-      // https://doi.crossref.org/servlet/submissionDownload?usr=_role_&pwd=_password_&doi_batch_id=_doi batch id_&file_name=filename&type=_submission type_
-      const doiorg = `https://doi.org/${doi}`
-      console.log(doiorg)
-      while (loopit) {
-        counter++;
-        console.log(counter)
-        const curl = new Curl();
-        // const close = curl.close.bind(curl);      
-        curl.setOpt(Curl.option.URL, 'https://doi.crossref.org/servlet/submissionDownload');
-        curl.setOpt(Curl.option.HTTPPOST, [
-          { name: 'operation', contents: 'doMDUpload' },
-          { name: 'usr', contents: crossRefUser.depositor_name.replace(':', '/') },
-          { name: 'pwd', contents: crossRefUser.password },
-          { name: 'type', contents: 'result'},
-          { name: 'file_name', contents: fname},
-        ]);
-        curl.on('end', function (statusCode, data, headers) {
-          console.log("******** CURL CHECK **** Status code " + statusCode);
-          console.log("***");
-          console.log("Our response: " + data);
-          console.log("***");
-          console.log("Length: " + data.length);
-          console.log("***");
-          console.log("Total time taken: " + this.getInfo("TOTAL_TIME"));
-          this.close();
-          if (data.match("<success_count>1</success_count>")) {
-            loopit = false
-          } else {
-            console.log("Doing another iteration.")
-            // await sleep(1000);
-          }
-        });
-        curl.on('error', function () {
-          console.log("CURL ERROR");
-          // await sleep(1000);
-          this.close();
-        });
-        await curl.perform();
-        if (loopit)
-          await sleep(5000);
-      }
-    }
-    /*
-    Version 1:
-          // We want to check (every 3 secs) for 
-          const doiorg = `https://doi.org/${doi}`
-          console.log(doiorg)
-          while (loopit) {
-            counter++;
-            console.log(counter)
-            const curl = new Curl();
-            // const close = curl.close.bind(curl);      
-            curl.setOpt(Curl.option.URL, doiorg);
-            curl.setOpt('FOLLOWLOCATION', true);
-            curl.on('end', function (statusCode, data, headers) {
-              console.log("******** CURL CHECK **** Status code " + statusCode);
-              //console.log("***");
-              //console.log("Our response: " + data);
-              //console.log("***");
-              console.log("Length: " + data.length);
-              //console.log("***");
-              console.log("Total time taken: " + this.getInfo("TOTAL_TIME"));
-              this.close();
-              if (statusCode == 200) {
-                loopit = false
-              } else {
-                // await sleep(1000);
-              }
-            });
-            curl.on('error', function () {
-              console.log("CURL ERROR");
-              // await sleep(1000);
-              this.close();
-            });
-            await curl.perform();
-            if (loopit)
-              await sleep(5000);
-          }
-        }
-        */
   } else {
     await fs.writeFile("crossref.xml", result, 'utf-8', function (err) {
       if (err) return console.log(err);
@@ -369,8 +220,171 @@ export default async function formatAsCrossRefXML(item: ZoteroItem = {} as Zoter
     console.log(`You can submit your data like this:\ncurl -F 'operation=doMDUpload'  -F 'login_id=${crossRefUser.depositor_name.replace(':', '/')}' -F 'login_passwd=${crossRefUser.password}' -F 'fname=@crossref.xml' https://doi.crossref.org/servlet/deposit`);
     console.log("You can check your xml at https://www.crossref.org/02publishers/parser.html\nor check the uploaded record here:\nhttps://doi.crossref.org/servlet/submissionAdmin")
   }
-
   return result;
 }
 
+async function crossref_submit(CreateDate, result, crossRefUser) {
+  /*
+  const FormData = require('form-data');
+  const axios = require('axios');
+  var form = new FormData();
+  form.append('operation', 'doMDUpload');
+  form.append('login_id', crossRefUser.depositor_name.replace(':', '/'));
+  form.append('login_passwd', crossRefUser.password);
+  form.append('fname', result);
+  await axios({
+    method: "post",
+    url: "https://doi.crossref.org/servlet/deposit",
+    data: form,
+    headers: { "Content-Type": "multipart/form-data" },
+  })
+    .then(function (response) {
+      //handle success
+      console.log(response);
+    })
+    .catch(function (response) {
+      //handle error
+      console.log(response);
+    }); */
+  const fname = `crossref-${CreateDate}.xml`;
+  await fs.writeFile(fname, result, 'utf-8', function (err) {
+    if (err) return console.log(err);
+  })
+  const { Curl } = require('node-libcurl');
+  try {
+    const curl = new Curl();
+    // const close = curl.close.bind(curl);
+
+    curl.setOpt(Curl.option.URL, 'https://doi.crossref.org/servlet/deposit');
+    curl.setOpt(Curl.option.HTTPPOST, [
+      { name: 'operation', contents: 'doMDUpload' },
+      { name: 'login_id', contents: crossRefUser.depositor_name.replace(':', '/') },
+      { name: 'login_passwd', contents: crossRefUser.password },
+      { name: 'fname', file: fname, type: 'text/plain' },
+    ]);
+    // curl.setOpt(Curl.option.POST, true)
+
+    curl.on('end', function (statusCode, data, headers) {
+      console.log("******** SUBMISSION **** Status code " + statusCode);
+      // console.log("***");
+      // console.log("Our response: " + data);
+      // console.log("***");
+      // console.log("Length: " + data.length);
+      /// console.log("***");
+      // TODO: What if this fails?
+      console.log("Total time taken: " + this.getInfo("TOTAL_TIME"));
+      this.close();
+    });
+    curl.on('error', function () {
+      console.log("CURL ERROR");
+      this.close();
+    });
+    await curl.perform();
+    /* This await doesn't work. */
+    console.log("DONE!")
+  } catch (error) {
+    console.log("ERROR! [in submission]" + error)
+  }
+  return fname;
+}
+
+async function crossref_confirm(fname, doi, crossRefUser) {
+  const { Curl } = require('node-libcurl');
+  console.log("Checking submission progress.")
+  function sleep(ms) {
+    return new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
+  }
+  // console.log("Confirming...")
+  // Adding a sleep here - the await above doesn't work.
+  await sleep(3000)
+  let loopit = true
+  let counter = 0
+  // We want to check (every 3 secs) for 
+  // https://doi.crossref.org/servlet/submissionDownload?usr=name@someplace.com/role&pwd=_password_&doi_batch_id=_doi batch id_&file_name=filename&type=_submission type_
+  // https://doi.crossref.org/servlet/submissionDownload?usr=_role_&pwd=_password_&doi_batch_id=_doi batch id_&file_name=filename&type=_submission type_
+  while (loopit) {
+    counter++;
+    console.log(counter)
+    const curl = new Curl();
+    // const close = curl.close.bind(curl);      
+    curl.setOpt(Curl.option.URL, 'https://doi.crossref.org/servlet/submissionDownload');
+    curl.setOpt(Curl.option.HTTPPOST, [
+      { name: 'usr', contents: crossRefUser.depositor_name.replace(':', '/') },
+      { name: 'pwd', contents: crossRefUser.password },
+      { name: 'type', contents: 'result' },
+      { name: 'file_name', contents: fname },
+    ]);
+    curl.on('end', function (statusCode, data, headers) {
+      // console.log("*** CHECKING BATCH " + statusCode);
+      const stat = data.match("doi_batch_diagnostic status=\"(.*?)\"")
+      if (stat) {
+        console.log("Batch Status: " + stat[1]);
+      }
+      /* console.log("***");
+      console.log("Our response: " + data);
+      console.log("***");
+      console.log("Length: " + data.length);
+      console.log("***");
+      console.log("Total time taken: " + this.getInfo("TOTAL_TIME")); */
+      this.close();
+      // TODO: The following won't work if ther eare several items in the batch
+      // Also: If there's a problem, the process will never exit.
+      if (data.match("<success_count>1</success_count>")) {
+        loopit = false
+      } else {
+        // console.log("Doing another iteration.")
+        // await sleep(1000);
+      }
+    });
+    curl.on('error', function () {
+      console.log("CURL ERROR");
+      // await sleep(1000);
+      this.close();
+    });
+    await curl.perform();
+    if (loopit)
+      await sleep(3000);
+  }
+  // We want to check (every 3 secs) for 
+  const doiorg = `https://doi.org/${doi}`
+  console.log(`DOI with link: ${doiorg}`)
+  loopit = true
+  while (loopit) {
+    counter++;
+    console.log(counter)
+    const curl = new Curl();
+    // const close = curl.close.bind(curl);      
+    curl.setOpt(Curl.option.URL, doiorg);
+    curl.setOpt('FOLLOWLOCATION', true);
+    curl.on('end', function (statusCode, data, headers) {
+      console.log("*** CHECKING DOI: Status code " + statusCode);
+      //console.log("***");
+      //console.log("Our response: " + data);
+      //console.log("***");
+      // console.log("Length: " + data.length);
+      //console.log("***");
+      // console.log("Total time taken: " + this.getInfo("TOTAL_TIME"));
+      this.close();
+      if (statusCode == 200) {
+        console.log("Success!")
+        loopit = false
+      } else {
+        // await sleep(1000);
+      }
+    });
+    curl.on('error', function () {
+      console.log("CURL ERROR");
+      // await sleep(1000);
+      this.close();
+    });
+    await curl.perform();
+    console.log("X")
+    if (loopit)
+      await sleep(2000);
+    console.log("Y")
+  }
+  console.log("Done")
+}
 
