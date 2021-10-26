@@ -1566,7 +1566,7 @@ class Zotero {
             `/items/${args.key}`,
             JSON.stringify({ extra: updatedExtra }),
             item.version,
-          );          
+          );
           logger.info('organise extra: ' + updatedExtra);
           output.push({ organise_extra: res });
           logger.info("We have added a new DOI - add a link as well.")
@@ -1575,7 +1575,7 @@ class Zotero {
             key: args.key,
             url: `https://doi.org/${vanityDOI}`,
             title: '👀View item via CrossRef DOI',
-            tags: ['_r:doi','_r:crossref'],
+            tags: ['_r:doi', '_r:crossref'],
           });
           output.push({ link: link0 });
         } else {
@@ -1799,14 +1799,49 @@ class Zotero {
           0,
           'Need at least one item (args.items) to create or use args.template',
         );
+      //  all items are read into a single structure:
       const items = args.files.map((item) =>
         JSON.parse(fs.readFileSync(item, 'utf-8')),
       );
+      const itemsflat = items.flat(1);
       // console.log("input")
       // this.show(items)
-      const result = await this.post('/items', JSON.stringify(items));
-      const res = result;
-      this.show(res);
+      let res = [];
+      const batchSize = 50;
+      if (itemsflat.length <= batchSize) {
+        const result = await this.post('/items', JSON.stringify(itemsflat));
+        res.push(result);
+        this.show(res);
+      } else {
+        /* items.length = 151
+        0..49 (end=50)
+        50..99 (end=100)
+        100..149 (end=150)
+        150..150 (end=151)
+        */
+        for (var start = 0; start < itemsflat.length; start += batchSize) {
+          const end =
+            start + batchSize <= itemsflat.length
+              ? start + batchSize
+              : itemsflat.length + 1;
+          // Safety check - should always be true:
+          if (itemsflat.slice(start, end).length) {
+            console.error(`Uploading objects ${start} to ${end}-1`);
+            console.log(`Uploading objects ${start} to ${end}-1`);
+            console.log(`${itemsflat.slice(start, end).length}`);
+            const result = await this.post(
+              '/items',
+              JSON.stringify(itemsflat.slice(start, end)),
+            );
+            res.push(result);
+          } else {
+            console.error(`NOT Uploading objects ${start} to ${end}-1`);
+            console.log(`NOT Uploading objects ${start} to ${end}-1`);
+            console.log(`${itemsflat.slice(start, end).length}`);
+          };
+        }
+        // this.show(res);
+      }
       // TODO: see how to use pruneData
       return res;
     } else if ('items' in args && args.items.length > 0) {
@@ -1897,7 +1932,7 @@ class Zotero {
     if (args.version) {
       originalItemVersion = args.version;
     } else {
-      const originalItem = await this.get(`/items/${args.key}`);
+      const originalItem = await this.get(`/ items / ${args.key}`);
       originalItemVersion = originalItem.version;
     }
     // console.log("3")
@@ -1913,7 +1948,7 @@ class Zotero {
       jsonstr = fs.readFileSync(args.file);
     }
     const result = await this[args.replace ? 'put' : 'patch'](
-      `/items/${args.key}`,
+      `/ items / ${args.key}`,
       jsonstr,
       originalItemVersion,
     );
@@ -2094,7 +2129,8 @@ class Zotero {
 
     let rawTags = null;
     if (args.filter) {
-      rawTags = await this.all(`/tags/${encodeURIComponent(args.filter)}`);
+      rawTags = await this.all(`/ tags / ${encodeURIComponent(args.filter)
+        } `);
     } else {
       rawTags = await this.all('/tags');
     }
@@ -2175,15 +2211,15 @@ class Zotero {
     const group_id = args.group_id ? args.group_id : this.config.group_id;
     /* console.log(
       `CHECKING
-      Key = ${key};
-      group_id = ${group_id};
-      ${this.extractGroupAndSetGroup(args.key)},
-      ${this.extractGroupAndSetGroup(args.collection)}`,
+        Key = ${ key };
+        group_id = ${ group_id };
+      ${ this.extractGroupAndSetGroup(args.key) },
+      ${ this.extractGroupAndSetGroup(args.collection) } `,
     ); */
     if (!group_id) {
       console.log("ERROR ERROR ERROR - no group id in zotero->enclose_item_in_collection")
     } else {
-      console.log(`zotero->enclose_item_in_collection: group_id ${group_id}`)
+      console.log(`zotero -> enclose_item_in_collection: group_id ${group_id} `)
     }
     // const zotero = new Zotero();
     // Failure previously here.
@@ -3654,7 +3690,7 @@ class Zotero {
           result = await formatAsCrossRefXML(result, args);
         }
         if (args.zenodo) {
-          result = await formatAsZenodoJson(result,args)
+          result = await formatAsZenodoJson(result, args)
         }
         if (args.verbose) {
           const myout = {

@@ -32,7 +32,11 @@ async function main() {
         sourcegroup = x.split('/')[4];
         sourcekey = x.split('/')[6];
       }
-      copy_item(sourcegroup, sourcekey, targetgroup, targetcollections);
+      if (sourcegroup != targetgroup) {
+	copy_item(sourcegroup, sourcekey, targetgroup, targetcollections);
+      } else {
+	console.log("Not duplicating in the same library.");
+      };
     });
   } else {
     targetgroup = process.argv[2];
