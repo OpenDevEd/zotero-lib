@@ -329,8 +329,8 @@ class Zotero {
     } = {},
   ) {
     if (typeof options.userOrGroupPrefix === 'undefined')
-      options.userOrGroupPrefix = true
-    true;
+      options.userOrGroupPrefix = true;
+
     if (typeof options.params === 'undefined') options.params = {};
     if (typeof options.json === 'undefined') options.json = true;
 
@@ -349,10 +349,12 @@ class Zotero {
       })
       .join('&');
 
+    //console.log("URIII: "+uri);
+    //console.log("URIII: "+options);
     if (!options.fulluri) {
       uri = `${this.base}${prefix}${uri}${params ? '?' + params : ''}`;
     }
-
+    //console.log("URIII: "+uri);
     if (this.config.verbose) console.error('GET', uri);
     logger.info('get uri: %s', uri);
 
@@ -1932,7 +1934,7 @@ class Zotero {
     if (args.version) {
       originalItemVersion = args.version;
     } else {
-      const originalItem = await this.get(`/ items / ${args.key}`);
+      const originalItem = await this.get(`/items/${args.key}`);
       originalItemVersion = originalItem.version;
     }
     // console.log("3")
