@@ -2443,12 +2443,18 @@ class Zotero {
         action: 'store',
         help: 'The DOI for the item',
       });
+      argparser.add_argument('--zenodorecordid', {
+        nargs: 1,
+        action: 'store',
+        help: 'The Zenodo record number for the item',
+      });
       return { status: 0, message: 'success' };
     }
     args.fullresponse = false;
     const item = await this.item(args);
+    const existingDOI = this.get_doi_from_item(item)
     // const item = this.pruneData(response)
-    if (args.doi) {
+    if (args.doi || args.zenodorecordid) {
       // TODO: should scan item.extra and check for existing DOI
       /* if (!item.doi)
         console.log(
@@ -2456,11 +2462,26 @@ class Zotero {
         );
         // This is solved below.
         */
-      const extra = `DOI: ${args.doi}\n` + item.extra;
+      let json = {};
+      let extra2 = "";
+      if (args.zenodorecordid) {
+        extra2 = `ZenodoArchiveID: ${args.zenodorecordid}\n`;
+      }
+      if (args.doi != existingDOI) {
+        if ('doi' in item) {
+          json["doi"] = args.doi
+        } else {
+          extra2 = `DOI: ${args.doi}\n` + extra2;
+        }
+      }
+      if (extra2 != "") {
+        json["extra"] = extra2 + item.extra;
+      }
+      // const extra = `DOI: ${args.doi}\n` + item.extra;
       const updateargs = {
         key: args.key,
         version: item.version,
-        json: item.doi ? { doi: args.doi } : { extra },
+        json: json,
         fullresponse: false,
         show: true,
       };
