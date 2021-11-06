@@ -1950,7 +1950,7 @@ class Zotero {
       jsonstr = fs.readFileSync(args.file);
     }
     const result = await this[args.replace ? 'put' : 'patch'](
-      `/ items / ${args.key}`,
+      `/items/${args.key}`,
       jsonstr,
       originalItemVersion,
     );
