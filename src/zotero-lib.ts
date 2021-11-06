@@ -2384,7 +2384,7 @@ class Zotero {
     }
   */
 
-  // Update the DOI of the item provided.
+  // Get the DOI of the item provided.
   public async get_doi(args, subparsers?) {
     this.reconfigure(args);
     // We dont know what kind of item this is - gotta get the item to see
@@ -2402,6 +2402,14 @@ class Zotero {
     }
     args.fullresponse = false;
     const item = await this.item(args);
+    const doi = this.get_doi_from_item(item);
+    console.log(`DOI: ${doi}, ${typeof doi}`);
+    // ACTION: return values
+    // doi = 'doi->' + doi;
+    return doi;
+  }
+
+  public get_doi_from_item(item) {
     let doi = '';
     if ('doi' in item) {
       doi = item.doi;
@@ -2413,10 +2421,7 @@ class Zotero {
         }
       });
     }
-    console.log(`DOI: ${doi}, ${typeof doi}`);
-    // ACTION: return values
-    doi = 'doi->' + doi;
-    return doi;
+    return doi
   }
 
   // Update the DOI of the item provided.
@@ -2445,11 +2450,13 @@ class Zotero {
     // const item = this.pruneData(response)
     if (args.doi) {
       // TODO: should scan item.extra and check for existing DOI
-      if (!item.doi)
+      /* if (!item.doi)
         console.log(
           'TODO: zotero-lib - should scan item.extra and check for existing DOI',
         );
-      const extra = item.extra + `\nDOI: ${args.doi}`;
+        // This is solved below.
+        */
+      const extra = `DOI: ${args.doi}\n` + item.extra;
       const updateargs = {
         key: args.key,
         version: item.version,
@@ -2465,8 +2472,7 @@ class Zotero {
         // const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         var today = new Date();
         // const message = `Attached new DOI ${args.doi} on ${today.toLocaleDateString("en-US", options)}`
-        const message = `Attached new DOI ${args.doi
-          } on ${today.toLocaleDateString()}`;
+        const message = `Attached new DOI ${args.doi} on ${today.toLocaleDateString()}`;
         await this.attachNoteToItem(args.key, {
           content: message,
           tags: ['_r:message'],
