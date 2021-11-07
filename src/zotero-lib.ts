@@ -3716,6 +3716,17 @@ class Zotero {
     */
   }
 
+  public async getZenodoJson(item, args: any) {
+    const updateDoc = await formatAsZenodoJson(item, args);
+    // console.log("getZenodoJson updateDoc="+JSON.stringify(    updateDoc        ,null,2))
+     
+    if (args.zenodoWriteFile) {
+      await fs.writeFile("updateDoc.json", JSON.stringify(updateDoc), 'utf-8', function (err) {
+        if (err) console.log(err);
+      })
+    };
+    return updateDoc;
+  }
   /**
    *  Command Line Interface
    *
@@ -3766,7 +3777,8 @@ class Zotero {
           result = await formatAsCrossRefXML(result, args);
         }
         if (args.zenodo) {
-          result = await formatAsZenodoJson(result, args)
+          args.zenodoWriteFile = true;
+          result = await this.getZenodoJson(result, args)
         }
         if (args.verbose) {
           const myout = {

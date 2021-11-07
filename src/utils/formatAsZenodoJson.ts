@@ -29,11 +29,27 @@ function zenodoParseIDFromZoteroRecord(item) {
   const extra = item.extra.split('\n');
   // let doi = '';
   let id = '';
-  extra.forEach((element) => {
+/*  extra.forEach((element) => {
     let res = element.match(/^\s*doi:\s*(.*?(\d+))$/i);
     if (res) {
       // doi = res[1];
-      id = res[2];
+      id = res[1];
+    }
+  }); */
+  let candidate = '';
+  extra.forEach((element) => {
+    console.log(element);
+    let res = element.match(
+      /^\s*(doi:\s*10\.5281\/zenodo\.|previousDOI:\s*10\.5281\/zenodo\.|ZenodoArchiveID:\s*|Archive: https:\/\/zenodo.org\/record\/)(\d+)\s*$/i
+    );
+    if (res) {
+      // doi = res[1];
+      candidate = res[2];
+      //console.log("?? " + candidate)
+      if (parseInt(id) < parseInt(candidate)) {
+        id = candidate;
+        //console.log("-- " + candidate)
+      }
     }
   });
 
@@ -54,9 +70,18 @@ function zenodoParseIDFromZoteroRecord(item) {
   return id;
 }
 
-
-export default async function formatAsZenodoJson(item: ZoteroItem = {} as ZoteroItem, args: any) {
+export default async function formatAsZenodoJson(
+  item: ZoteroItem = {} as ZoteroItem,
+  args: any,
+): Promise<{
+  id: string;
+  title: string;
+  description: string;
+  authors: any[];
+  publication_date: string;
+}> {
   // const { creators = [] } = item;
+  logger.info('formatAsZenodoJson');
 
   const authorDataIn: string = [
     args.author_data,
@@ -84,8 +109,8 @@ export default async function formatAsZenodoJson(item: ZoteroItem = {} as Zotero
     authors: [],
     publication_date: ""
   };
-
-  console.log("TEMPORARY=" + JSON.stringify(authorData, null, 2))
+  // logger.info("formatAsZenodoJson updateDoc=" + JSON.stringify(updateDoc, null, 2))
+  // logger.info("formatAsZenodoJson authorData=" + JSON.stringify(authorData, null, 2))
   let authorDataExpanded = {}
   for (const key in authorData) {
     authorDataExpanded[key] = authorData[key]
@@ -93,10 +118,10 @@ export default async function formatAsZenodoJson(item: ZoteroItem = {} as Zotero
       authorDataExpanded[authorData[key].aliases[variation]] = authorData[key]
     }
   }
-  console.log("TEMPORARY=" + JSON.stringify(authorDataExpanded, null, 2))
+  // logger.info("formatAsZenodoJson authorDataExpanded=" + JSON.stringify(authorDataExpanded, null, 2))
 
   if (Array.isArray(item.creators) && item.creators.length) {
-    logger.info('adding name from zotero');
+    // logger.info('formatAsZenodoJson: adding name from zotero');
     updateDoc.authors = item.creators.map(
       function (c) {
         const fullname = c["name"] ? c["name"] : `${c["lastName"]}, ${c["firstName"]}`;
@@ -120,7 +145,7 @@ export default async function formatAsZenodoJson(item: ZoteroItem = {} as Zotero
   let doi = ""
   if ('doi' in item) {
     doi = item.doi;
-    console.log(`DOI from item.doi: ${doi}`)
+    logger.info(`formatAsZenodoJson: DOI from item.doi: ${doi}`)
   } else {
     extra.split('\n').forEach((element) => {
       var mymatch = element.match(/^DOI\:\s*(.*?)\s*$/);
@@ -128,7 +153,7 @@ export default async function formatAsZenodoJson(item: ZoteroItem = {} as Zotero
         doi = mymatch[1];
       }
     });
-    if (doi) { console.log(`DOI from item.extra: ${doi}`) }
+    if (doi) { console.log(`formatAsZenodoJson: DOI from item.extra: ${doi}`) }
     updateDoc["doi"] = doi
   }
 
@@ -149,7 +174,15 @@ export default async function formatAsZenodoJson(item: ZoteroItem = {} as Zotero
   // references
   // communities
   // language
-  let itemdate = item.date;
+
+  Sugar.Date.setLocale('en-GB');
+  //Sugar.Date.getLocale('en').addFormat('{day}/{month}/{year}');
+  // console.log("isodate: "+mydate);
+  const now = new Sugar.Date.create(item.date);
+  // console.log("isodate: "+now);
+  const isodate = Sugar.Date.format(now, "ISO8601")
+
+  /* let itemdate = item.date;
   const match = item.date.match(/(\d\d?)\/(\d\d?)\/(\d\d\d\d)/)
   if (match) {
     itemdate = match[3] + "-" + match[2] + "-" + match[1]
@@ -159,13 +192,11 @@ export default async function formatAsZenodoJson(item: ZoteroItem = {} as Zotero
     itemdate = Sugar.Date.create(itemdate)
   } catch (error) {
     itemdate = Sugar.Date.format(new Date(), '%Y-%m-%d')
-  }
+  } */
 
-  updateDoc["publication_date"] = item.date;
+  updateDoc["publication_date"] = isodate;
+  // logger.info("formatAsZenodoJson updateDoc=" + JSON.stringify(updateDoc, null, 2))
 
-  await fs.writeFile("updateDoc.json", JSON.stringify(updateDoc), 'utf-8', function (err) {
-    if (err) console.log(err);
-  })
   return updateDoc;
 }
 
