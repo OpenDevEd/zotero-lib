@@ -497,7 +497,7 @@ class Zotero {
     return res;
   }
 
-  // TODO: Add       resolveWithFullResponse: options.resolveWithFullResponse,
+  // TODO: Add resolveWithFullResponse: options.resolveWithFullResponse,
   async put(uri, data) {
     const prefix = this.config.user_id
       ? `/users/${this.config.user_id}`
@@ -506,12 +506,26 @@ class Zotero {
     uri = `${this.base}${prefix}${uri}`;
     if (this.config.verbose) console.error('PUT', uri);
 
-    return axios({
+    const response = axios({
       method: 'PUT',
       url: uri,
       headers: { ...this.headers, 'Content-Type': 'application/json' },
       data,
-    }).then((res) => res.data);
+    }).then((response) => {
+      const out = {
+        body: response.data,
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+        config: response.config
+      };
+      // console.log("TEMPOARY PAT=" + JSON.stringify(out, null, 2));
+      return out;
+    }).catch((error) => {
+      console.log('PUT ERROR=' + JSON.stringify(error, null, 2));
+      return error;
+    });;
+    return response;
   }
 
   public async __put(args, subparsers?) {
@@ -556,9 +570,19 @@ class Zotero {
       data,
       resolveWithFullResponse: true,
     })
-      .then((resp) => resp.data)
+      .then((response) => {
+        const out = {
+          body: response.data,
+          statusCode: response.status,
+          statusText: response.statusText,
+          headers: response.headers,
+          config: response.config
+        };
+        // console.log("TEMPOARY PAT=" + JSON.stringify(out, null, 2));
+        return out;
+      })
       .catch((error) => {
-        console.log('TEMPORARY=' + JSON.stringify(error, null, 2));
+        console.log('PAT ERROR=' + JSON.stringify(error, null, 2));
         return error;
       });
     return res;
@@ -1949,12 +1973,16 @@ class Zotero {
       args.file = this.as_value(args.file);
       jsonstr = fs.readFileSync(args.file);
     }
+    console.log("update_item TEMPORARY=" + JSON.stringify(jsonstr, null, 2))
+
     const result = await this[args.replace ? 'put' : 'patch'](
       `/items/${args.key}`,
       jsonstr,
       originalItemVersion,
     );
     // console.log("X=" + JSON.stringify(result, null, 2))
+    console.log("update_item TEMPORARY=" + JSON.stringify(result, null, 2))
+
     return result;
   }
 
@@ -2421,7 +2449,7 @@ class Zotero {
         }
       });
     }
-    return doi
+    return doi;
   }
 
   // Update the DOI of the item provided.
@@ -2443,7 +2471,7 @@ class Zotero {
         action: 'store',
         help: 'The DOI for the item',
       });
-      argparser.add_argument('--zenodorecordid', {
+      argparser.add_argument('--zenodoRecordID', {
         nargs: 1,
         action: 'store',
         help: 'The Zenodo record number for the item',
@@ -2451,10 +2479,13 @@ class Zotero {
       return { status: 0, message: 'success' };
     }
     args.fullresponse = false;
+    args.key = this.as_value(args.key);
     const item = await this.item(args);
     const existingDOI = this.get_doi_from_item(item)
     // const item = this.pruneData(response)
-    if (args.doi || args.zenodorecordid) {
+    // console.log("update_doi TEMPORARY aRGS ARGS =" + JSON.stringify(args, null, 2))
+    if ('doi' in args || 'zenodoRecordID' in args) {
+      // console.log("update_doi: Processing update_doi")
       // TODO: should scan item.extra and check for existing DOI
       /* if (!item.doi)
         console.log(
@@ -2463,11 +2494,16 @@ class Zotero {
         // This is solved below.
         */
       let json = {};
+      let update = false;
       let extra2 = "";
-      if (args.zenodorecordid) {
-        extra2 = `ZenodoArchiveID: ${args.zenodorecordid}\n`;
+      if ('zenodoRecordID' in args) {
+        // console.log("update_doi: " + `ZenodoArchiveID: ${args.zenodoRecordID}`)
+        extra2 = `ZenodoArchiveID: ${args.zenodoRecordID}\n`;
+        update = true;
       }
+      // console.log("update_doi: " + `${args.doi} != ${existingDOI}`)
       if (args.doi != existingDOI) {
+        update = true;
         if ('doi' in item) {
           json["doi"] = args.doi
         } else {
@@ -2475,39 +2511,50 @@ class Zotero {
         }
       }
       if (extra2 != "") {
+        update = true;
         json["extra"] = extra2 + item.extra;
       }
       // const extra = `DOI: ${args.doi}\n` + item.extra;
-      const updateargs = {
-        key: args.key,
-        version: item.version,
-        json: json,
-        fullresponse: false,
-        show: true,
-      };
-      // ACTION: check arguments
-      // ACTION: run code
-      const update = await this.update_item(updateargs);
-      if (update.statusCode == 204) {
-        console.log('update successfull - getting record');
-        // const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        var today = new Date();
-        // const message = `Attached new DOI ${args.doi} on ${today.toLocaleDateString("en-US", options)}`
-        const message = `Attached new DOI ${args.doi} on ${today.toLocaleDateString()}`;
-        await this.attachNoteToItem(args.key, {
-          content: message,
-          tags: ['_r:message'],
-        });
-        const zoteroRecord = await this.item({ key: args.key });
-        if (args.verbose)
-          console.log('Result=' + JSON.stringify(zoteroRecord, null, 2));
-        return zoteroRecord;
+      if (update) {
+        // console.log("UPDATE WITH TEMPORARY=" + JSON.stringify(json, null, 2))
+        const updateargs = {
+          key: args.key,
+          version: item.version,
+          json: json,
+          fullresponse: false,
+          show: true,
+        };
+        // ACTION: check arguments
+        // ACTION: run code
+        const update = await this.update_item(updateargs);
+        // console.log("async update_doi - update TEMPORARY=" + JSON.stringify(update, null, 2))
+        // console.log(`async update_doi - update status: ${update.statusCode}`);
+        if (update.statusCode == 204) {
+          // console.log('async update_doi - update successfull - getting record');
+          // const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+          var today = new Date();
+          // const message = `Attached new DOI ${args.doi} on ${today.toLocaleDateString("en-US", options)}`
+          if (args.doi != existingDOI) {
+            const message = `Attached new DOI ${args.doi} on ${today.toLocaleDateString()}`;
+            await this.attachNoteToItem(args.key, {
+              content: message,
+              tags: ['_r:message'],
+            });
+          };
+          const zoteroRecord = await this.item({ key: args.key });
+          if (args.verbose)
+            console.log('Result=' + JSON.stringify(zoteroRecord, null, 2));
+          return zoteroRecord;
+        } else {
+          console.log('async update_doi - update failed');
+          console.log("async update_doi TEMPORARY=" + JSON.stringify(update, null, 2))
+          return this.message(1, 'async update_doi - update failed');
+        }
       } else {
-        console.log('update failed');
-        return this.message(1, 'update failed');
+        console.log("async update_doi. No updates required.")
       }
     } else {
-      return this.message(1, 'update failed - no doi provided');
+      return this.message(1, 'async update_doi - update failed - no doi provided');
     }
     // ACTION: return values
     // return 1
@@ -2678,7 +2725,7 @@ class Zotero {
     if (args.zenodo) {
       let xdoi = await this.get_doi(args);
       xdoi = 'x' + xdoi;
-      const mymatch = xdoi.match(/zenodo\.(\d+)/);
+      const mymatch = xdoi.match(/10.5281\/zenodo\.(\d+)/);
       const id = mymatch[1];
       // args.id = id
       args.id = id;
