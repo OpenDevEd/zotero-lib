@@ -329,10 +329,37 @@ async function crossref_confirm(fname, doi, crossRefUser) {
       console.log("***");
       console.log("Total time taken: " + this.getInfo("TOTAL_TIME")); */
       this.close();
-      // TODO: The following won't work if ther eare several items in the batch
-      // Also: If there's a problem, the process will never exit.
-      if (data.match("<success_count>1</success_count>")) {
-        loopit = false
+      // Addressed: The following won't work if ther are several items in the batch - should be fixed apart from error count/warning count
+      /*
+      <batch_data>
+      <record_count>1</record_count>
+      <success_count>0</success_count>
+      <warning_count>0</warning_count>
+      <failure_count>1</failure_count>
+      </batch_data>
+      */
+      // FIXED: If there's a problem, the process will never exit - process now terminates on error.
+      const recordCountStr = data.match(/<record_count>(\d+)<\/record_count>/);
+      let recordCount = "0";
+      if (recordCountStr) {
+        recordCount = recordCount[2];
+        console.log(`recordCount = ${recordCount}`);
+      }
+      const successCountStr = data.match(/<success_count>(\d+)<\/success_count>/);
+      let successCount = "0";
+      if (successCountStr) {
+        successCount = successCountStr[2];
+        if (successCount == recordCount) {
+          loopit = false;
+        };
+        console.log(`successCount = ${successCount}`);
+      } else {
+        // console.log("Doing another iteration.")
+        // await sleep(1000);
+      }
+      if (data.match(/<failure_count>\d+<\/failure_count>/)) {
+        loopit = false;
+        console.log(`There was an error!! Message = ${data}`);
       } else {
         // console.log("Doing another iteration.")
         // await sleep(1000);
