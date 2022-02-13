@@ -316,6 +316,7 @@ class Zotero {
   /**
    * get/put-type functions
    */
+
   // The Zotero API uses several commands: get, post, patch, delete - these are defined below.
   async get(
     uri,
@@ -349,12 +350,12 @@ class Zotero {
       })
       .join('&');
 
-    //console.log("URIII: "+uri);
-    //console.log("URIII: "+options);
+    // console.log("URIII: "+uri);
+    // console.log("URIII: "+options);
     if (!options.fulluri) {
       uri = `${this.base}${prefix}${uri}${params ? '?' + params : ''}`;
     }
-    //console.log("URIII: "+uri);
+    // console.log("URIII: "+uri);
     if (this.config.verbose) console.error('GET', uri);
     logger.info('get uri: %s', uri);
 

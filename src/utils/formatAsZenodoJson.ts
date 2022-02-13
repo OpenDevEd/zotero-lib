@@ -29,7 +29,7 @@ function zenodoParseIDFromZoteroRecord(item) {
   const extra = item.extra.split('\n');
   // let doi = '';
   let id = '';
-/*  extra.forEach((element) => {
+  /*  extra.forEach((element) => {
     let res = element.match(/^\s*doi:\s*(.*?(\d+))$/i);
     if (res) {
       // doi = res[1];
@@ -45,10 +45,10 @@ function zenodoParseIDFromZoteroRecord(item) {
     if (res) {
       // doi = res[1];
       candidate = res[2];
-      //console.log("?? " + candidate)
+      // console.log("?? " + candidate)
       if (parseInt(id) < parseInt(candidate)) {
         id = candidate;
-        //console.log("-- " + candidate)
+        // console.log("-- " + candidate)
       }
     }
   });
@@ -139,8 +139,7 @@ export default async function formatAsZenodoJson(
   }
 
 
-  //    const today = Sugar.Date.format(new Date(), '%Y%m%d%H%M%S') + "000"; // "[THEDATE]" // new Date().toDateString('DD-MMM-YYYY')  
-
+  // const today = Sugar.Date.format(new Date(), '%Y%m%d%H%M%S') + "000"; // "[THEDATE]" // new Date().toDateString('DD-MMM-YYYY')
   const extra = item.extra;
   let doi = ""
   if ('doi' in item) {
@@ -165,8 +164,8 @@ export default async function formatAsZenodoJson(
   updateDoc["access_right"] = "open"
   updateDoc["license"] = "..."
   */
-  //const url = item.url
-  //const institution = item.institution
+  // const url = item.url
+  // const institution = item.institution
   // console.log("TEMPORARY="+JSON.stringify(   item         ,null,2))
   /*
   updateDoc["related_identifiers"] ... zotero://
@@ -199,4 +198,3 @@ export default async function formatAsZenodoJson(
 
   return updateDoc;
 }
-

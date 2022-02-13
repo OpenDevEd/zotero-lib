@@ -108,13 +108,13 @@ export default async function formatAsCrossRefXML(item: ZoteroItem = {} as Zoter
   // <ORCID>https://orcid.org/...</ORCID>
 
   const today = Sugar.Date.format(new Date(), '%Y%m%d%H%M%S') + "000"; // "[THEDATE]" // new Date().toDateString('DD-MMM-YYYY')
-  //const ModifyDate = today;
+  // const ModifyDate = today;
   const CreateDate = today;
-  //const MetadataDate = today;
-  //const DocumentID = '';
-  //const InstanceID = '';
-  //const keywords = '';
-  //const Producer = '';
+  // const MetadataDate = today;
+  // const DocumentID = '';
+  // const InstanceID = '';
+  // const keywords = '';
+  // const Producer = '';
 
   // help: 'Supply a json file with user data for crossref: {depositor_name: "user@domain:role", email_address: "user@domain"}. If --crossref is specified without --crossref-user, default settings in your configuration directory are checked: ~/.config/zotero-cli/crossref-user.json',
   const crossRefUserIn: string = [
@@ -301,14 +301,14 @@ async function crossref_confirm(fname, doi, crossRefUser) {
   await sleep(3000)
   let loopit = true
   let counter = 0
-  // We want to check (every 3 secs) for 
+  // We want to check (every 3 secs) for
   // https://doi.crossref.org/servlet/submissionDownload?usr=name@someplace.com/role&pwd=_password_&doi_batch_id=_doi batch id_&file_name=filename&type=_submission type_
   // https://doi.crossref.org/servlet/submissionDownload?usr=_role_&pwd=_password_&doi_batch_id=_doi batch id_&file_name=filename&type=_submission type_
   while (loopit) {
     counter++;
     console.log(counter)
     const curl = new Curl();
-    // const close = curl.close.bind(curl);      
+    // const close = curl.close.bind(curl);
     curl.setOpt(Curl.option.URL, 'https://doi.crossref.org/servlet/submissionDownload');
     curl.setOpt(Curl.option.HTTPPOST, [
       { name: 'usr', contents: crossRefUser.depositor_name.replace(':', '/') },
@@ -329,7 +329,7 @@ async function crossref_confirm(fname, doi, crossRefUser) {
       console.log("***");
       console.log("Total time taken: " + this.getInfo("TOTAL_TIME")); */
       this.close();
-      // Addressed: The following won't work if ther are several items in the batch - should be fixed apart from error count/warning count
+      // Addressed: The following won't work if there are several items in the batch - should be fixed apart from error count/warning count
       /*
       <batch_data>
       <record_count>1</record_count>
@@ -374,7 +374,7 @@ async function crossref_confirm(fname, doi, crossRefUser) {
     if (loopit)
       await sleep(3000);
   }
-  // We want to check (every 3 secs) for 
+  // We want to check (every 3 secs) for
   const doiorg = `https://doi.org/${doi}`
   console.log(`DOI with link: ${doiorg}`)
   loopit = true
@@ -382,16 +382,16 @@ async function crossref_confirm(fname, doi, crossRefUser) {
     counter++;
     console.log(counter)
     const curl = new Curl();
-    // const close = curl.close.bind(curl);      
+    // const close = curl.close.bind(curl);
     curl.setOpt(Curl.option.URL, doiorg);
     curl.setOpt('FOLLOWLOCATION', true);
     curl.on('end', function (statusCode, data, headers) {
       console.log("*** CHECKING DOI: Status code " + statusCode);
-      //console.log("***");
-      //console.log("Our response: " + data);
-      //console.log("***");
+      // console.log("***");
+      // console.log("Our response: " + data);
+      // console.log("***");
       // console.log("Length: " + data.length);
-      //console.log("***");
+      // console.log("***");
       // console.log("Total time taken: " + this.getInfo("TOTAL_TIME"));
       this.close();
       if (statusCode == 200) {
@@ -414,4 +414,3 @@ async function crossref_confirm(fname, doi, crossRefUser) {
   }
   console.log("Done")
 }
-
