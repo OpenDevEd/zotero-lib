@@ -1,0 +1,1566 @@
+info: zotzen version=1.0.76
+info: going to check for group id args = {
+  zotero_config: 'zotero-cli.toml',
+  zenodo_config: 'config.json',
+  zotero_config_json: undefined,
+  zenodo_config_json: undefined,
+  zotero_api_key: undefined,
+  zenodo_access_token: undefined,
+  zenodo_sandbox: false,
+  verbose: false,
+  debug: false,
+  show: false,
+  open: false,
+  oapp: false,
+  dump: false,
+  dryrun: false,
+  version: false,
+  metadata: false,
+  attachments: false,
+  type: 'all',
+  tag: undefined,
+  publish: false,
+  func: [AsyncFunction: zotzenSync],
+  key: 'zotero://select/groups/2129771/items/NXIGDXWV'
+}
+info: parsed group: 2129771 from key: zotero://select/groups/2129771/items/NXIGDXWV
+info: item = {
+  key: 'NXIGDXWV',
+  version: 22280,
+  itemType: 'report',
+  title: "The CDB / CARICOM / OECS Model Learning Recovery and Improvement Programme for Caribbean Schools: Let's REAP! — Overview",
+  creators: [
+    { creatorType: 'author', name: 'Caribbean Development Bank' },
+    { creatorType: 'author', name: 'CARICOM' },
+    {
+      creatorType: 'author',
+      name: 'Organisation of Eastern Caribbean States'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Björn',
+      lastName: 'Haßler'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Callista',
+      lastName: 'Regis'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Abdullah',
+      lastName: 'Khalayleh'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Chris',
+      lastName: 'McBurnie'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Ghislaine',
+      lastName: 'Megha-Bongnkar'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Tom',
+      lastName: 'Blower'
+    }
+  ],
+  abstractNote: '',
+  reportNumber: '1',
+  reportType: 'Let It Rip! Guide',
+  seriesTitle: '',
+  place: '',
+  institution: 'Open Development & Education',
+  date: '2021-06-30',
+  pages: '',
+  language: '',
+  shortTitle: '',
+  url: 'https://docs.opendeved.net/lib/NXIGDXWV',
+  accessDate: '',
+  archive: '',
+  archiveLocation: '',
+  libraryCatalog: '',
+  callNumber: '0251',
+  rights: 'Creative Commons Attribution 4.0 International',
+  extra: 'DOI: 10.53832/opendeved.0251\n' +
+    'previousDOI: 10.5281/zenodo.5021278\n' +
+    'previousDOI: 10.5281/zenodo.5306708\n' +
+    'ZenodoArchiveID: 5021278\n' +
+    'ZenodoArchiveConcept: 5306707\n' +
+    'KerkoCite.ItemAlsoKnownAs: 10.5281/zenodo.5021278 10.5281/zenodo.5306708 2129771:NXIGDXWV',
+  tags: [
+    { tag: 'Author:Haßler' },
+    { tag: 'AuthorFirst:Haßler' },
+    { tag: '_DOILIVE' },
+    { tag: '_yl:u' },
+    { tag: '_zenodo:submitted' },
+    { tag: '_zenodoETH:submitted' }
+  ],
+  collections: [ 'VS4JZG6H', 'GGUM26IC', 'KJKJIZVF' ],
+  relations: { 'owl:sameAs': 'http://zotero.org/groups/2129771/items/HE476DQM' },
+  dateAdded: '2021-06-23T21:10:04Z',
+  dateModified: '2021-10-31T19:04:47Z'
+}
+warn: You did not provided an 'id' (for a zenodo item) = {
+  zotero_config: 'zotero-cli.toml',
+  zenodo_config: 'config.json',
+  zotero_config_json: undefined,
+  zenodo_config_json: undefined,
+  zotero_api_key: undefined,
+  zenodo_access_token: undefined,
+  zenodo_sandbox: false,
+  verbose: false,
+  debug: false,
+  show: false,
+  open: false,
+  oapp: false,
+  dump: false,
+  dryrun: false,
+  version: false,
+  metadata: false,
+  attachments: false,
+  type: 'all',
+  tag: undefined,
+  publish: false,
+  func: [AsyncFunction: zotzenSync],
+  key: 'NXIGDXWV',
+  group_id: '2129771',
+  id: null
+}
+info: going to check for group id args = {
+  zotero_config: 'zotero-cli.toml',
+  zenodo_config: 'config.json',
+  zotero_config_json: undefined,
+  zenodo_config_json: undefined,
+  zotero_api_key: undefined,
+  zenodo_access_token: undefined,
+  zenodo_sandbox: false,
+  verbose: false,
+  debug: false,
+  show: false,
+  open: false,
+  oapp: false,
+  dump: false,
+  dryrun: false,
+  version: false,
+  metadata: false,
+  attachments: false,
+  type: 'all',
+  tag: undefined,
+  publish: false,
+  func: [AsyncFunction: zotzenSync],
+  key: 'NXIGDXWV',
+  group_id: '2129771',
+  id: '5306708'
+}
+info: getting group_id from args
+info: item = {
+  key: 'NXIGDXWV',
+  version: 22280,
+  itemType: 'report',
+  title: "The CDB / CARICOM / OECS Model Learning Recovery and Improvement Programme for Caribbean Schools: Let's REAP! — Overview",
+  creators: [
+    { creatorType: 'author', name: 'Caribbean Development Bank' },
+    { creatorType: 'author', name: 'CARICOM' },
+    {
+      creatorType: 'author',
+      name: 'Organisation of Eastern Caribbean States'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Björn',
+      lastName: 'Haßler'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Callista',
+      lastName: 'Regis'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Abdullah',
+      lastName: 'Khalayleh'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Chris',
+      lastName: 'McBurnie'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Ghislaine',
+      lastName: 'Megha-Bongnkar'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Tom',
+      lastName: 'Blower'
+    }
+  ],
+  abstractNote: '',
+  reportNumber: '1',
+  reportType: 'Let It Rip! Guide',
+  seriesTitle: '',
+  place: '',
+  institution: 'Open Development & Education',
+  date: '2021-06-30',
+  pages: '',
+  language: '',
+  shortTitle: '',
+  url: 'https://docs.opendeved.net/lib/NXIGDXWV',
+  accessDate: '',
+  archive: '',
+  archiveLocation: '',
+  libraryCatalog: '',
+  callNumber: '0251',
+  rights: 'Creative Commons Attribution 4.0 International',
+  extra: 'DOI: 10.53832/opendeved.0251\n' +
+    'previousDOI: 10.5281/zenodo.5021278\n' +
+    'previousDOI: 10.5281/zenodo.5306708\n' +
+    'ZenodoArchiveID: 5021278\n' +
+    'ZenodoArchiveConcept: 5306707\n' +
+    'KerkoCite.ItemAlsoKnownAs: 10.5281/zenodo.5021278 10.5281/zenodo.5306708 2129771:NXIGDXWV',
+  tags: [
+    { tag: 'Author:Haßler' },
+    { tag: 'AuthorFirst:Haßler' },
+    { tag: '_DOILIVE' },
+    { tag: '_yl:u' },
+    { tag: '_zenodo:submitted' },
+    { tag: '_zenodoETH:submitted' }
+  ],
+  collections: [ 'VS4JZG6H', 'GGUM26IC', 'KJKJIZVF' ],
+  relations: { 'owl:sameAs': 'http://zotero.org/groups/2129771/items/HE476DQM' },
+  dateAdded: '2021-06-23T21:10:04Z',
+  dateModified: '2021-10-31T19:04:47Z'
+}
+info: publish = false
+info: allArgs = {
+  "zotero_config": "zotero-cli.toml",
+  "zenodo_config": "config.json",
+  "zenodo_sandbox": false,
+  "verbose": false,
+  "debug": false,
+  "show": false,
+  "open": false,
+  "oapp": false,
+  "dump": false,
+  "dryrun": false,
+  "version": false,
+  "metadata": false,
+  "attachments": false,
+  "type": "all",
+  "publish": false,
+  "key": "NXIGDXWV",
+  "group_id": "2129771",
+  "id": 5306708
+}
+info: outputDir not exist, creating
+info: checking Attachments.
+info: outputDir not exist, created
+info: saving output to file data/5306708.json
+info: finalactions called in getRecord
+info: args in finalactions2 = {
+  zotero_config: 'zotero-cli.toml',
+  zenodo_config: 'config.json',
+  zotero_config_json: undefined,
+  zenodo_config_json: undefined,
+  zotero_api_key: undefined,
+  zenodo_access_token: undefined,
+  zenodo_sandbox: false,
+  verbose: false,
+  debug: false,
+  show: false,
+  open: false,
+  oapp: false,
+  dump: false,
+  dryrun: false,
+  version: false,
+  metadata: false,
+  attachments: false,
+  type: 'all',
+  tag: undefined,
+  publish: false,
+  func: [AsyncFunction: zotzenSync],
+  key: 'NXIGDXWV',
+  group_id: '2129771',
+  id: 5306708,
+  strict: true
+}
+info: not publishing in finalactions2
+info: updating zenodo record, data = {
+  "id": "5306708",
+  "strict": true,
+  "publish": false
+}
+info: wrote the file successfully data/5306708.json
+info: zenodoUpdate metadata = {
+  access_right: 'open',
+  communities: [ { identifier: 'zenodo' } ],
+  creators: [
+    { name: 'Caribbean Development Bank' },
+    { name: 'CARICOM' },
+    { name: 'Organisation of Eastern Caribbean States' },
+    { name: 'Björn Haßler' },
+    { name: 'Callista Regis' },
+    { name: 'Abdullah Khalayleh' },
+    { name: 'Chris McBurnie' },
+    { name: 'Ghislaine Megha-Bongnkar' },
+    { name: 'Tom Blower' }
+  ],
+  description: 'No description available.',
+  doi: '10.5281/zenodo.5306708',
+  license: 'CC-BY-4.0',
+  prereserve_doi: { doi: '10.5281/zenodo.5306708', recid: 5306708 },
+  publication_date: '2021-06-23',
+  publication_type: 'report',
+  related_identifiers: [
+    {
+      identifier: 'zotero://select/groups/2129771/items/NXIGDXWV',
+      relation: 'isAlternateIdentifier',
+      resource_type: 'other',
+      scheme: 'url'
+    }
+  ],
+  title: "The CDB / CARICOM / OECS Model Learning Recovery and Improvement Programme for Caribbean Schools: Let's REAP! — Overview",
+  upload_type: 'publication'
+}
+info: finalactions called in update
+info: args in finalactions2 = { id: '5306708', strict: true, publish: false }
+info: not publishing in finalactions2
+info: updated zenodo record = {
+  conceptdoi: '10.5281/zenodo.5021277',
+  conceptrecid: '5021277',
+  created: '2021-08-28T19:05:55.907558+00:00',
+  doi: '10.5281/zenodo.5306708',
+  doi_url: 'https://doi.org/10.5281/zenodo.5306708',
+  files: [
+    {
+      checksum: 'a781d3c509cd4351ff4515220df437ed',
+      filename: 'Caribbean Development Bank et al_2021_The CDB - CARICOM - OECS Model Learning Recovery and Improvement Programme for.pdf',
+      filesize: 1795930,
+      id: 'd996a36c-c127-4792-8c8f-bef1375c529b',
+      links: [Object]
+    }
+  ],
+  id: 5306708,
+  links: {
+    badge: 'https://zenodo.org/badge/doi/10.5281/zenodo.5306708.svg',
+    bucket: 'https://zenodo.org/api/files/fd9099cc-e894-42a9-b055-da61b4acd3ed',
+    conceptbadge: 'https://zenodo.org/badge/doi/10.5281/zenodo.5021277.svg',
+    conceptdoi: 'https://doi.org/10.5281/zenodo.5021277',
+    discard: 'https://zenodo.org/api/deposit/depositions/5306708/actions/discard',
+    doi: 'https://doi.org/10.5281/zenodo.5306708',
+    edit: 'https://zenodo.org/api/deposit/depositions/5306708/actions/edit',
+    files: 'https://zenodo.org/api/deposit/depositions/5306708/files',
+    html: 'https://zenodo.org/deposit/5306708',
+    latest: 'https://zenodo.org/api/records/5306708',
+    latest_html: 'https://zenodo.org/record/5306708',
+    newversion: 'https://zenodo.org/api/deposit/depositions/5306708/actions/newversion',
+    publish: 'https://zenodo.org/api/deposit/depositions/5306708/actions/publish',
+    record: 'https://zenodo.org/api/records/5306708',
+    record_html: 'https://zenodo.org/record/5306708',
+    registerconceptdoi: 'https://zenodo.org/api/deposit/depositions/5306708/actions/registerconceptdoi',
+    self: 'https://zenodo.org/api/deposit/depositions/5306708'
+  },
+  metadata: {
+    access_right: 'open',
+    communities: [ [Object] ],
+    creators: [
+      [Object], [Object],
+      [Object], [Object],
+      [Object], [Object],
+      [Object], [Object],
+      [Object]
+    ],
+    description: 'No description available.',
+    doi: '10.5281/zenodo.5306708',
+    license: 'CC-BY-4.0',
+    prereserve_doi: { doi: '10.5281/zenodo.5306708', recid: 5306708 },
+    publication_date: '2021-06-23',
+    publication_type: 'report',
+    related_identifiers: [ [Object] ],
+    title: "The CDB / CARICOM / OECS Model Learning Recovery and Improvement Programme for Caribbean Schools: Let's REAP! — Overview",
+    upload_type: 'publication'
+  },
+  modified: '2021-10-31T19:21:57.874056+00:00',
+  owner: 43304,
+  record_id: 5306708,
+  state: 'inprogress',
+  submitted: true,
+  title: "The CDB / CARICOM / OECS Model Learning Recovery and Improvement Programme for Caribbean Schools: Let's REAP! — Overview"
+}
+info: zotzen version=1.0.76
+info: going to check for group id args = {
+  zotero_config: 'zotero-cli.toml',
+  zenodo_config: 'config.json',
+  zotero_config_json: undefined,
+  zenodo_config_json: undefined,
+  zotero_api_key: undefined,
+  zenodo_access_token: undefined,
+  zenodo_sandbox: false,
+  verbose: false,
+  debug: false,
+  show: false,
+  open: false,
+  oapp: false,
+  dump: false,
+  dryrun: false,
+  version: false,
+  metadata: false,
+  attachments: false,
+  type: 'all',
+  tag: undefined,
+  publish: false,
+  func: [AsyncFunction: zotzenSync],
+  key: 'zotero://select/groups/2129771/items/NXIGDXWV'
+}
+info: parsed group: 2129771 from key: zotero://select/groups/2129771/items/NXIGDXWV
+info: item = {
+  key: 'NXIGDXWV',
+  version: 22280,
+  itemType: 'report',
+  title: "The CDB / CARICOM / OECS Model Learning Recovery and Improvement Programme for Caribbean Schools: Let's REAP! — Overview",
+  creators: [
+    { creatorType: 'author', name: 'Caribbean Development Bank' },
+    { creatorType: 'author', name: 'CARICOM' },
+    {
+      creatorType: 'author',
+      name: 'Organisation of Eastern Caribbean States'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Björn',
+      lastName: 'Haßler'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Callista',
+      lastName: 'Regis'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Abdullah',
+      lastName: 'Khalayleh'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Chris',
+      lastName: 'McBurnie'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Ghislaine',
+      lastName: 'Megha-Bongnkar'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Tom',
+      lastName: 'Blower'
+    }
+  ],
+  abstractNote: '',
+  reportNumber: '1',
+  reportType: 'Let It Rip! Guide',
+  seriesTitle: '',
+  place: '',
+  institution: 'Open Development & Education',
+  date: '2021-06-30',
+  pages: '',
+  language: '',
+  shortTitle: '',
+  url: 'https://docs.opendeved.net/lib/NXIGDXWV',
+  accessDate: '',
+  archive: '',
+  archiveLocation: '',
+  libraryCatalog: '',
+  callNumber: '0251',
+  rights: 'Creative Commons Attribution 4.0 International',
+  extra: 'DOI: 10.53832/opendeved.0251\n' +
+    'previousDOI: 10.5281/zenodo.5021278\n' +
+    'previousDOI: 10.5281/zenodo.5306708\n' +
+    'ZenodoArchiveID: 5021278\n' +
+    'ZenodoArchiveConcept: 5306707\n' +
+    'KerkoCite.ItemAlsoKnownAs: 10.5281/zenodo.5021278 10.5281/zenodo.5306708 2129771:NXIGDXWV',
+  tags: [
+    { tag: 'Author:Haßler' },
+    { tag: 'AuthorFirst:Haßler' },
+    { tag: '_DOILIVE' },
+    { tag: '_yl:u' },
+    { tag: '_zenodo:submitted' },
+    { tag: '_zenodoETH:submitted' }
+  ],
+  collections: [ 'VS4JZG6H', 'GGUM26IC', 'KJKJIZVF' ],
+  relations: { 'owl:sameAs': 'http://zotero.org/groups/2129771/items/HE476DQM' },
+  dateAdded: '2021-06-23T21:10:04Z',
+  dateModified: '2021-10-31T19:04:47Z'
+}
+warn: You did not provided an 'id' (for a zenodo item) = {
+  zotero_config: 'zotero-cli.toml',
+  zenodo_config: 'config.json',
+  zotero_config_json: undefined,
+  zenodo_config_json: undefined,
+  zotero_api_key: undefined,
+  zenodo_access_token: undefined,
+  zenodo_sandbox: false,
+  verbose: false,
+  debug: false,
+  show: false,
+  open: false,
+  oapp: false,
+  dump: false,
+  dryrun: false,
+  version: false,
+  metadata: false,
+  attachments: false,
+  type: 'all',
+  tag: undefined,
+  publish: false,
+  func: [AsyncFunction: zotzenSync],
+  key: 'NXIGDXWV',
+  group_id: '2129771',
+  id: null
+}
+info: going to check for group id args = {
+  zotero_config: 'zotero-cli.toml',
+  zenodo_config: 'config.json',
+  zotero_config_json: undefined,
+  zenodo_config_json: undefined,
+  zotero_api_key: undefined,
+  zenodo_access_token: undefined,
+  zenodo_sandbox: false,
+  verbose: false,
+  debug: false,
+  show: false,
+  open: false,
+  oapp: false,
+  dump: false,
+  dryrun: false,
+  version: false,
+  metadata: false,
+  attachments: false,
+  type: 'all',
+  tag: undefined,
+  publish: false,
+  func: [AsyncFunction: zotzenSync],
+  key: 'NXIGDXWV',
+  group_id: '2129771',
+  id: '5306708'
+}
+info: getting group_id from args
+info: item = {
+  key: 'NXIGDXWV',
+  version: 22280,
+  itemType: 'report',
+  title: "The CDB / CARICOM / OECS Model Learning Recovery and Improvement Programme for Caribbean Schools: Let's REAP! — Overview",
+  creators: [
+    { creatorType: 'author', name: 'Caribbean Development Bank' },
+    { creatorType: 'author', name: 'CARICOM' },
+    {
+      creatorType: 'author',
+      name: 'Organisation of Eastern Caribbean States'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Björn',
+      lastName: 'Haßler'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Callista',
+      lastName: 'Regis'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Abdullah',
+      lastName: 'Khalayleh'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Chris',
+      lastName: 'McBurnie'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Ghislaine',
+      lastName: 'Megha-Bongnkar'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Tom',
+      lastName: 'Blower'
+    }
+  ],
+  abstractNote: '',
+  reportNumber: '1',
+  reportType: 'Let It Rip! Guide',
+  seriesTitle: '',
+  place: '',
+  institution: 'Open Development & Education',
+  date: '2021-06-30',
+  pages: '',
+  language: '',
+  shortTitle: '',
+  url: 'https://docs.opendeved.net/lib/NXIGDXWV',
+  accessDate: '',
+  archive: '',
+  archiveLocation: '',
+  libraryCatalog: '',
+  callNumber: '0251',
+  rights: 'Creative Commons Attribution 4.0 International',
+  extra: 'DOI: 10.53832/opendeved.0251\n' +
+    'previousDOI: 10.5281/zenodo.5021278\n' +
+    'previousDOI: 10.5281/zenodo.5306708\n' +
+    'ZenodoArchiveID: 5021278\n' +
+    'ZenodoArchiveConcept: 5306707\n' +
+    'KerkoCite.ItemAlsoKnownAs: 10.5281/zenodo.5021278 10.5281/zenodo.5306708 2129771:NXIGDXWV',
+  tags: [
+    { tag: 'Author:Haßler' },
+    { tag: 'AuthorFirst:Haßler' },
+    { tag: '_DOILIVE' },
+    { tag: '_yl:u' },
+    { tag: '_zenodo:submitted' },
+    { tag: '_zenodoETH:submitted' }
+  ],
+  collections: [ 'VS4JZG6H', 'GGUM26IC', 'KJKJIZVF' ],
+  relations: { 'owl:sameAs': 'http://zotero.org/groups/2129771/items/HE476DQM' },
+  dateAdded: '2021-06-23T21:10:04Z',
+  dateModified: '2021-10-31T19:04:47Z'
+}
+info: publish = false
+info: allArgs = {
+  "zotero_config": "zotero-cli.toml",
+  "zenodo_config": "config.json",
+  "zenodo_sandbox": false,
+  "verbose": false,
+  "debug": false,
+  "show": false,
+  "open": false,
+  "oapp": false,
+  "dump": false,
+  "dryrun": false,
+  "version": false,
+  "metadata": false,
+  "attachments": false,
+  "type": "all",
+  "publish": false,
+  "key": "NXIGDXWV",
+  "group_id": "2129771",
+  "id": 5306708
+}
+info: saving output to file data/5306708.json
+info: checking Attachments.
+info: finalactions called in getRecord
+info: args in finalactions2 = {
+  zotero_config: 'zotero-cli.toml',
+  zenodo_config: 'config.json',
+  zotero_config_json: undefined,
+  zenodo_config_json: undefined,
+  zotero_api_key: undefined,
+  zenodo_access_token: undefined,
+  zenodo_sandbox: false,
+  verbose: false,
+  debug: false,
+  show: false,
+  open: false,
+  oapp: false,
+  dump: false,
+  dryrun: false,
+  version: false,
+  metadata: false,
+  attachments: false,
+  type: 'all',
+  tag: undefined,
+  publish: false,
+  func: [AsyncFunction: zotzenSync],
+  key: 'NXIGDXWV',
+  group_id: '2129771',
+  id: 5306708,
+  strict: true
+}
+info: not publishing in finalactions2
+info: updating zenodo record, data = {
+  "id": "5306708",
+  "strict": true,
+  "publish": false
+}
+info: wrote the file successfully data/5306708.json
+info: zenodoUpdate metadata = {
+  access_right: 'open',
+  communities: [ { identifier: 'zenodo' } ],
+  creators: [
+    { name: 'Caribbean Development Bank' },
+    { name: 'CARICOM' },
+    { name: 'Organisation of Eastern Caribbean States' },
+    { name: 'Björn Haßler' },
+    { name: 'Callista Regis' },
+    { name: 'Abdullah Khalayleh' },
+    { name: 'Chris McBurnie' },
+    { name: 'Ghislaine Megha-Bongnkar' },
+    { name: 'Tom Blower' }
+  ],
+  description: 'No description available.',
+  doi: '10.5281/zenodo.5306708',
+  license: 'CC-BY-4.0',
+  prereserve_doi: { doi: '10.5281/zenodo.5306708', recid: 5306708 },
+  publication_date: '2021-06-23',
+  publication_type: 'report',
+  related_identifiers: [
+    {
+      identifier: 'zotero://select/groups/2129771/items/NXIGDXWV',
+      relation: 'isAlternateIdentifier',
+      resource_type: 'other',
+      scheme: 'url'
+    }
+  ],
+  title: "The CDB / CARICOM / OECS Model Learning Recovery and Improvement Programme for Caribbean Schools: Let's REAP! — Overview",
+  upload_type: 'publication'
+}
+info: finalactions called in update
+info: args in finalactions2 = { id: '5306708', strict: true, publish: false }
+info: not publishing in finalactions2
+info: updated zenodo record = {
+  conceptdoi: '10.5281/zenodo.5021277',
+  conceptrecid: '5021277',
+  created: '2021-08-28T19:05:55.907558+00:00',
+  doi: '10.5281/zenodo.5306708',
+  doi_url: 'https://doi.org/10.5281/zenodo.5306708',
+  files: [
+    {
+      checksum: 'a781d3c509cd4351ff4515220df437ed',
+      filename: 'Caribbean Development Bank et al_2021_The CDB - CARICOM - OECS Model Learning Recovery and Improvement Programme for.pdf',
+      filesize: 1795930,
+      id: 'd996a36c-c127-4792-8c8f-bef1375c529b',
+      links: [Object]
+    }
+  ],
+  id: 5306708,
+  links: {
+    badge: 'https://zenodo.org/badge/doi/10.5281/zenodo.5306708.svg',
+    bucket: 'https://zenodo.org/api/files/fd9099cc-e894-42a9-b055-da61b4acd3ed',
+    conceptbadge: 'https://zenodo.org/badge/doi/10.5281/zenodo.5021277.svg',
+    conceptdoi: 'https://doi.org/10.5281/zenodo.5021277',
+    discard: 'https://zenodo.org/api/deposit/depositions/5306708/actions/discard',
+    doi: 'https://doi.org/10.5281/zenodo.5306708',
+    edit: 'https://zenodo.org/api/deposit/depositions/5306708/actions/edit',
+    files: 'https://zenodo.org/api/deposit/depositions/5306708/files',
+    html: 'https://zenodo.org/deposit/5306708',
+    latest: 'https://zenodo.org/api/records/5306708',
+    latest_html: 'https://zenodo.org/record/5306708',
+    newversion: 'https://zenodo.org/api/deposit/depositions/5306708/actions/newversion',
+    publish: 'https://zenodo.org/api/deposit/depositions/5306708/actions/publish',
+    record: 'https://zenodo.org/api/records/5306708',
+    record_html: 'https://zenodo.org/record/5306708',
+    registerconceptdoi: 'https://zenodo.org/api/deposit/depositions/5306708/actions/registerconceptdoi',
+    self: 'https://zenodo.org/api/deposit/depositions/5306708'
+  },
+  metadata: {
+    access_right: 'open',
+    communities: [ [Object] ],
+    creators: [
+      [Object], [Object],
+      [Object], [Object],
+      [Object], [Object],
+      [Object], [Object],
+      [Object]
+    ],
+    description: 'No description available.',
+    doi: '10.5281/zenodo.5306708',
+    license: 'CC-BY-4.0',
+    prereserve_doi: { doi: '10.5281/zenodo.5306708', recid: 5306708 },
+    publication_date: '2021-06-23',
+    publication_type: 'report',
+    related_identifiers: [ [Object] ],
+    title: "The CDB / CARICOM / OECS Model Learning Recovery and Improvement Programme for Caribbean Schools: Let's REAP! — Overview",
+    upload_type: 'publication'
+  },
+  modified: '2021-10-31T19:22:16.025164+00:00',
+  owner: 43304,
+  record_id: 5306708,
+  state: 'inprogress',
+  submitted: true,
+  title: "The CDB / CARICOM / OECS Model Learning Recovery and Improvement Programme for Caribbean Schools: Let's REAP! — Overview"
+}
+info: zotzen version=1.0.76
+info: going to check for group id args = {
+  zotero_config: 'zotero-cli.toml',
+  zenodo_config: 'config.json',
+  zotero_config_json: undefined,
+  zenodo_config_json: undefined,
+  zotero_api_key: undefined,
+  zenodo_access_token: undefined,
+  zenodo_sandbox: false,
+  verbose: false,
+  debug: false,
+  show: false,
+  open: false,
+  oapp: false,
+  dump: false,
+  dryrun: false,
+  version: false,
+  metadata: false,
+  attachments: false,
+  type: 'all',
+  tag: undefined,
+  publish: false,
+  func: [AsyncFunction: zotzenSync],
+  key: 'zotero://select/groups/2129771/items/NXIGDXWV'
+}
+info: parsed group: 2129771 from key: zotero://select/groups/2129771/items/NXIGDXWV
+info: item = {
+  key: 'NXIGDXWV',
+  version: 22280,
+  itemType: 'report',
+  title: "The CDB / CARICOM / OECS Model Learning Recovery and Improvement Programme for Caribbean Schools: Let's REAP! — Overview",
+  creators: [
+    { creatorType: 'author', name: 'Caribbean Development Bank' },
+    { creatorType: 'author', name: 'CARICOM' },
+    {
+      creatorType: 'author',
+      name: 'Organisation of Eastern Caribbean States'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Björn',
+      lastName: 'Haßler'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Callista',
+      lastName: 'Regis'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Abdullah',
+      lastName: 'Khalayleh'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Chris',
+      lastName: 'McBurnie'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Ghislaine',
+      lastName: 'Megha-Bongnkar'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Tom',
+      lastName: 'Blower'
+    }
+  ],
+  abstractNote: '',
+  reportNumber: '1',
+  reportType: 'Let It Rip! Guide',
+  seriesTitle: '',
+  place: '',
+  institution: 'Open Development & Education',
+  date: '2021-06-30',
+  pages: '',
+  language: '',
+  shortTitle: '',
+  url: 'https://docs.opendeved.net/lib/NXIGDXWV',
+  accessDate: '',
+  archive: '',
+  archiveLocation: '',
+  libraryCatalog: '',
+  callNumber: '0251',
+  rights: 'Creative Commons Attribution 4.0 International',
+  extra: 'DOI: 10.53832/opendeved.0251\n' +
+    'previousDOI: 10.5281/zenodo.5021278\n' +
+    'previousDOI: 10.5281/zenodo.5306708\n' +
+    'ZenodoArchiveID: 5021278\n' +
+    'ZenodoArchiveConcept: 5306707\n' +
+    'KerkoCite.ItemAlsoKnownAs: 10.5281/zenodo.5021278 10.5281/zenodo.5306708 2129771:NXIGDXWV',
+  tags: [
+    { tag: 'Author:Haßler' },
+    { tag: 'AuthorFirst:Haßler' },
+    { tag: '_DOILIVE' },
+    { tag: '_yl:u' },
+    { tag: '_zenodo:submitted' },
+    { tag: '_zenodoETH:submitted' }
+  ],
+  collections: [ 'VS4JZG6H', 'GGUM26IC', 'KJKJIZVF' ],
+  relations: { 'owl:sameAs': 'http://zotero.org/groups/2129771/items/HE476DQM' },
+  dateAdded: '2021-06-23T21:10:04Z',
+  dateModified: '2021-10-31T19:04:47Z'
+}
+warn: You did not provided an 'id' (for a zenodo item) = {
+  zotero_config: 'zotero-cli.toml',
+  zenodo_config: 'config.json',
+  zotero_config_json: undefined,
+  zenodo_config_json: undefined,
+  zotero_api_key: undefined,
+  zenodo_access_token: undefined,
+  zenodo_sandbox: false,
+  verbose: false,
+  debug: false,
+  show: false,
+  open: false,
+  oapp: false,
+  dump: false,
+  dryrun: false,
+  version: false,
+  metadata: false,
+  attachments: false,
+  type: 'all',
+  tag: undefined,
+  publish: false,
+  func: [AsyncFunction: zotzenSync],
+  key: 'NXIGDXWV',
+  group_id: '2129771',
+  id: null
+}
+info: going to check for group id args = {
+  zotero_config: 'zotero-cli.toml',
+  zenodo_config: 'config.json',
+  zotero_config_json: undefined,
+  zenodo_config_json: undefined,
+  zotero_api_key: undefined,
+  zenodo_access_token: undefined,
+  zenodo_sandbox: false,
+  verbose: false,
+  debug: false,
+  show: false,
+  open: false,
+  oapp: false,
+  dump: false,
+  dryrun: false,
+  version: false,
+  metadata: false,
+  attachments: false,
+  type: 'all',
+  tag: undefined,
+  publish: false,
+  func: [AsyncFunction: zotzenSync],
+  key: 'NXIGDXWV',
+  group_id: '2129771',
+  id: '5306708'
+}
+info: getting group_id from args
+info: item = {
+  key: 'NXIGDXWV',
+  version: 22280,
+  itemType: 'report',
+  title: "The CDB / CARICOM / OECS Model Learning Recovery and Improvement Programme for Caribbean Schools: Let's REAP! — Overview",
+  creators: [
+    { creatorType: 'author', name: 'Caribbean Development Bank' },
+    { creatorType: 'author', name: 'CARICOM' },
+    {
+      creatorType: 'author',
+      name: 'Organisation of Eastern Caribbean States'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Björn',
+      lastName: 'Haßler'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Callista',
+      lastName: 'Regis'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Abdullah',
+      lastName: 'Khalayleh'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Chris',
+      lastName: 'McBurnie'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Ghislaine',
+      lastName: 'Megha-Bongnkar'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Tom',
+      lastName: 'Blower'
+    }
+  ],
+  abstractNote: '',
+  reportNumber: '1',
+  reportType: 'Let It Rip! Guide',
+  seriesTitle: '',
+  place: '',
+  institution: 'Open Development & Education',
+  date: '2021-06-30',
+  pages: '',
+  language: '',
+  shortTitle: '',
+  url: 'https://docs.opendeved.net/lib/NXIGDXWV',
+  accessDate: '',
+  archive: '',
+  archiveLocation: '',
+  libraryCatalog: '',
+  callNumber: '0251',
+  rights: 'Creative Commons Attribution 4.0 International',
+  extra: 'DOI: 10.53832/opendeved.0251\n' +
+    'previousDOI: 10.5281/zenodo.5021278\n' +
+    'previousDOI: 10.5281/zenodo.5306708\n' +
+    'ZenodoArchiveID: 5021278\n' +
+    'ZenodoArchiveConcept: 5306707\n' +
+    'KerkoCite.ItemAlsoKnownAs: 10.5281/zenodo.5021278 10.5281/zenodo.5306708 2129771:NXIGDXWV',
+  tags: [
+    { tag: 'Author:Haßler' },
+    { tag: 'AuthorFirst:Haßler' },
+    { tag: '_DOILIVE' },
+    { tag: '_yl:u' },
+    { tag: '_zenodo:submitted' },
+    { tag: '_zenodoETH:submitted' }
+  ],
+  collections: [ 'VS4JZG6H', 'GGUM26IC', 'KJKJIZVF' ],
+  relations: { 'owl:sameAs': 'http://zotero.org/groups/2129771/items/HE476DQM' },
+  dateAdded: '2021-06-23T21:10:04Z',
+  dateModified: '2021-10-31T19:04:47Z'
+}
+info: publish = false
+info: allArgs = {
+  "zotero_config": "zotero-cli.toml",
+  "zenodo_config": "config.json",
+  "zenodo_sandbox": false,
+  "verbose": false,
+  "debug": false,
+  "show": false,
+  "open": false,
+  "oapp": false,
+  "dump": false,
+  "dryrun": false,
+  "version": false,
+  "metadata": false,
+  "attachments": false,
+  "type": "all",
+  "publish": false,
+  "key": "NXIGDXWV",
+  "group_id": "2129771",
+  "id": 5306708
+}
+info: saving output to file data/5306708.json
+info: checking Attachments.
+info: finalactions called in getRecord
+info: args in finalactions2 = {
+  zotero_config: 'zotero-cli.toml',
+  zenodo_config: 'config.json',
+  zotero_config_json: undefined,
+  zenodo_config_json: undefined,
+  zotero_api_key: undefined,
+  zenodo_access_token: undefined,
+  zenodo_sandbox: false,
+  verbose: false,
+  debug: false,
+  show: false,
+  open: false,
+  oapp: false,
+  dump: false,
+  dryrun: false,
+  version: false,
+  metadata: false,
+  attachments: false,
+  type: 'all',
+  tag: undefined,
+  publish: false,
+  func: [AsyncFunction: zotzenSync],
+  key: 'NXIGDXWV',
+  group_id: '2129771',
+  id: 5306708,
+  strict: true
+}
+info: not publishing in finalactions2
+info: updating zenodo record, data = {
+  "id": "5306708",
+  "strict": true,
+  "publish": false
+}
+info: wrote the file successfully data/5306708.json
+info: zenodoUpdate metadata = {
+  access_right: 'open',
+  communities: [ { identifier: 'zenodo' } ],
+  creators: [
+    { name: 'Caribbean Development Bank' },
+    { name: 'CARICOM' },
+    { name: 'Organisation of Eastern Caribbean States' },
+    { name: 'Björn Haßler' },
+    { name: 'Callista Regis' },
+    { name: 'Abdullah Khalayleh' },
+    { name: 'Chris McBurnie' },
+    { name: 'Ghislaine Megha-Bongnkar' },
+    { name: 'Tom Blower' }
+  ],
+  description: 'No description available.',
+  doi: '10.5281/zenodo.5306708',
+  license: 'CC-BY-4.0',
+  prereserve_doi: { doi: '10.5281/zenodo.5306708', recid: 5306708 },
+  publication_date: '2021-06-23',
+  publication_type: 'report',
+  related_identifiers: [
+    {
+      identifier: 'zotero://select/groups/2129771/items/NXIGDXWV',
+      relation: 'isAlternateIdentifier',
+      resource_type: 'other',
+      scheme: 'url'
+    }
+  ],
+  title: "The CDB / CARICOM / OECS Model Learning Recovery and Improvement Programme for Caribbean Schools: Let's REAP! — Overview",
+  upload_type: 'publication'
+}
+info: finalactions called in update
+info: args in finalactions2 = { id: '5306708', strict: true, publish: false }
+info: not publishing in finalactions2
+info: updated zenodo record = {
+  conceptdoi: '10.5281/zenodo.5021277',
+  conceptrecid: '5021277',
+  created: '2021-08-28T19:05:55.907558+00:00',
+  doi: '10.5281/zenodo.5306708',
+  doi_url: 'https://doi.org/10.5281/zenodo.5306708',
+  files: [
+    {
+      checksum: 'a781d3c509cd4351ff4515220df437ed',
+      filename: 'Caribbean Development Bank et al_2021_The CDB - CARICOM - OECS Model Learning Recovery and Improvement Programme for.pdf',
+      filesize: 1795930,
+      id: 'd996a36c-c127-4792-8c8f-bef1375c529b',
+      links: [Object]
+    }
+  ],
+  id: 5306708,
+  links: {
+    badge: 'https://zenodo.org/badge/doi/10.5281/zenodo.5306708.svg',
+    bucket: 'https://zenodo.org/api/files/fd9099cc-e894-42a9-b055-da61b4acd3ed',
+    conceptbadge: 'https://zenodo.org/badge/doi/10.5281/zenodo.5021277.svg',
+    conceptdoi: 'https://doi.org/10.5281/zenodo.5021277',
+    discard: 'https://zenodo.org/api/deposit/depositions/5306708/actions/discard',
+    doi: 'https://doi.org/10.5281/zenodo.5306708',
+    edit: 'https://zenodo.org/api/deposit/depositions/5306708/actions/edit',
+    files: 'https://zenodo.org/api/deposit/depositions/5306708/files',
+    html: 'https://zenodo.org/deposit/5306708',
+    latest: 'https://zenodo.org/api/records/5306708',
+    latest_html: 'https://zenodo.org/record/5306708',
+    newversion: 'https://zenodo.org/api/deposit/depositions/5306708/actions/newversion',
+    publish: 'https://zenodo.org/api/deposit/depositions/5306708/actions/publish',
+    record: 'https://zenodo.org/api/records/5306708',
+    record_html: 'https://zenodo.org/record/5306708',
+    registerconceptdoi: 'https://zenodo.org/api/deposit/depositions/5306708/actions/registerconceptdoi',
+    self: 'https://zenodo.org/api/deposit/depositions/5306708'
+  },
+  metadata: {
+    access_right: 'open',
+    communities: [ [Object] ],
+    creators: [
+      [Object], [Object],
+      [Object], [Object],
+      [Object], [Object],
+      [Object], [Object],
+      [Object]
+    ],
+    description: 'No description available.',
+    doi: '10.5281/zenodo.5306708',
+    license: 'CC-BY-4.0',
+    prereserve_doi: { doi: '10.5281/zenodo.5306708', recid: 5306708 },
+    publication_date: '2021-06-23',
+    publication_type: 'report',
+    related_identifiers: [ [Object] ],
+    title: "The CDB / CARICOM / OECS Model Learning Recovery and Improvement Programme for Caribbean Schools: Let's REAP! — Overview",
+    upload_type: 'publication'
+  },
+  modified: '2021-10-31T19:25:10.913451+00:00',
+  owner: 43304,
+  record_id: 5306708,
+  state: 'inprogress',
+  submitted: true,
+  title: "The CDB / CARICOM / OECS Model Learning Recovery and Improvement Programme for Caribbean Schools: Let's REAP! — Overview"
+}
+info: zotzen version=1.0.76
+info: going to check for group id args = {
+  zotero_config: 'zotero-cli.toml',
+  zenodo_config: 'config.json',
+  zotero_config_json: undefined,
+  zenodo_config_json: undefined,
+  zotero_api_key: undefined,
+  zenodo_access_token: undefined,
+  zenodo_sandbox: false,
+  verbose: false,
+  debug: false,
+  show: false,
+  open: false,
+  oapp: false,
+  dump: false,
+  dryrun: false,
+  version: false,
+  metadata: false,
+  attachments: false,
+  type: 'all',
+  tag: undefined,
+  publish: false,
+  func: [AsyncFunction: zotzenSync],
+  key: 'zotero://select/groups/2129771/items/NXIGDXWV'
+}
+info: parsed group: 2129771 from key: zotero://select/groups/2129771/items/NXIGDXWV
+info: item = {
+  key: 'NXIGDXWV',
+  version: 22280,
+  itemType: 'report',
+  title: "The CDB / CARICOM / OECS Model Learning Recovery and Improvement Programme for Caribbean Schools: Let's REAP! — Overview",
+  creators: [
+    { creatorType: 'author', name: 'Caribbean Development Bank' },
+    { creatorType: 'author', name: 'CARICOM' },
+    {
+      creatorType: 'author',
+      name: 'Organisation of Eastern Caribbean States'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Björn',
+      lastName: 'Haßler'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Callista',
+      lastName: 'Regis'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Abdullah',
+      lastName: 'Khalayleh'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Chris',
+      lastName: 'McBurnie'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Ghislaine',
+      lastName: 'Megha-Bongnkar'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Tom',
+      lastName: 'Blower'
+    }
+  ],
+  abstractNote: '',
+  reportNumber: '1',
+  reportType: 'Let It Rip! Guide',
+  seriesTitle: '',
+  place: '',
+  institution: 'Open Development & Education',
+  date: '2021-06-30',
+  pages: '',
+  language: '',
+  shortTitle: '',
+  url: 'https://docs.opendeved.net/lib/NXIGDXWV',
+  accessDate: '',
+  archive: '',
+  archiveLocation: '',
+  libraryCatalog: '',
+  callNumber: '0251',
+  rights: 'Creative Commons Attribution 4.0 International',
+  extra: 'DOI: 10.53832/opendeved.0251\n' +
+    'previousDOI: 10.5281/zenodo.5021278\n' +
+    'previousDOI: 10.5281/zenodo.5306708\n' +
+    'ZenodoArchiveID: 5021278\n' +
+    'ZenodoArchiveConcept: 5306707\n' +
+    'KerkoCite.ItemAlsoKnownAs: 10.5281/zenodo.5021278 10.5281/zenodo.5306708 2129771:NXIGDXWV',
+  tags: [
+    { tag: 'Author:Haßler' },
+    { tag: 'AuthorFirst:Haßler' },
+    { tag: '_DOILIVE' },
+    { tag: '_yl:u' },
+    { tag: '_zenodo:submitted' },
+    { tag: '_zenodoETH:submitted' }
+  ],
+  collections: [ 'VS4JZG6H', 'GGUM26IC', 'KJKJIZVF' ],
+  relations: { 'owl:sameAs': 'http://zotero.org/groups/2129771/items/HE476DQM' },
+  dateAdded: '2021-06-23T21:10:04Z',
+  dateModified: '2021-10-31T19:04:47Z'
+}
+warn: You did not provided an 'id' (for a zenodo item) = {
+  zotero_config: 'zotero-cli.toml',
+  zenodo_config: 'config.json',
+  zotero_config_json: undefined,
+  zenodo_config_json: undefined,
+  zotero_api_key: undefined,
+  zenodo_access_token: undefined,
+  zenodo_sandbox: false,
+  verbose: false,
+  debug: false,
+  show: false,
+  open: false,
+  oapp: false,
+  dump: false,
+  dryrun: false,
+  version: false,
+  metadata: false,
+  attachments: false,
+  type: 'all',
+  tag: undefined,
+  publish: false,
+  func: [AsyncFunction: zotzenSync],
+  key: 'NXIGDXWV',
+  group_id: '2129771',
+  id: null
+}
+info: going to check for group id args = {
+  zotero_config: 'zotero-cli.toml',
+  zenodo_config: 'config.json',
+  zotero_config_json: undefined,
+  zenodo_config_json: undefined,
+  zotero_api_key: undefined,
+  zenodo_access_token: undefined,
+  zenodo_sandbox: false,
+  verbose: false,
+  debug: false,
+  show: false,
+  open: false,
+  oapp: false,
+  dump: false,
+  dryrun: false,
+  version: false,
+  metadata: false,
+  attachments: false,
+  type: 'all',
+  tag: undefined,
+  publish: false,
+  func: [AsyncFunction: zotzenSync],
+  key: 'NXIGDXWV',
+  group_id: '2129771',
+  id: '5306708'
+}
+info: getting group_id from args
+info: item = {
+  key: 'NXIGDXWV',
+  version: 22280,
+  itemType: 'report',
+  title: "The CDB / CARICOM / OECS Model Learning Recovery and Improvement Programme for Caribbean Schools: Let's REAP! — Overview",
+  creators: [
+    { creatorType: 'author', name: 'Caribbean Development Bank' },
+    { creatorType: 'author', name: 'CARICOM' },
+    {
+      creatorType: 'author',
+      name: 'Organisation of Eastern Caribbean States'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Björn',
+      lastName: 'Haßler'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Callista',
+      lastName: 'Regis'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Abdullah',
+      lastName: 'Khalayleh'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Chris',
+      lastName: 'McBurnie'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Ghislaine',
+      lastName: 'Megha-Bongnkar'
+    },
+    {
+      creatorType: 'contributor',
+      firstName: 'Tom',
+      lastName: 'Blower'
+    }
+  ],
+  abstractNote: '',
+  reportNumber: '1',
+  reportType: 'Let It Rip! Guide',
+  seriesTitle: '',
+  place: '',
+  institution: 'Open Development & Education',
+  date: '2021-06-30',
+  pages: '',
+  language: '',
+  shortTitle: '',
+  url: 'https://docs.opendeved.net/lib/NXIGDXWV',
+  accessDate: '',
+  archive: '',
+  archiveLocation: '',
+  libraryCatalog: '',
+  callNumber: '0251',
+  rights: 'Creative Commons Attribution 4.0 International',
+  extra: 'DOI: 10.53832/opendeved.0251\n' +
+    'previousDOI: 10.5281/zenodo.5021278\n' +
+    'previousDOI: 10.5281/zenodo.5306708\n' +
+    'ZenodoArchiveID: 5021278\n' +
+    'ZenodoArchiveConcept: 5306707\n' +
+    'KerkoCite.ItemAlsoKnownAs: 10.5281/zenodo.5021278 10.5281/zenodo.5306708 2129771:NXIGDXWV',
+  tags: [
+    { tag: 'Author:Haßler' },
+    { tag: 'AuthorFirst:Haßler' },
+    { tag: '_DOILIVE' },
+    { tag: '_yl:u' },
+    { tag: '_zenodo:submitted' },
+    { tag: '_zenodoETH:submitted' }
+  ],
+  collections: [ 'VS4JZG6H', 'GGUM26IC', 'KJKJIZVF' ],
+  relations: { 'owl:sameAs': 'http://zotero.org/groups/2129771/items/HE476DQM' },
+  dateAdded: '2021-06-23T21:10:04Z',
+  dateModified: '2021-10-31T19:04:47Z'
+}
+info: publish = false
+info: allArgs = {
+  "zotero_config": "zotero-cli.toml",
+  "zenodo_config": "config.json",
+  "zenodo_sandbox": false,
+  "verbose": false,
+  "debug": false,
+  "show": false,
+  "open": false,
+  "oapp": false,
+  "dump": false,
+  "dryrun": false,
+  "version": false,
+  "metadata": false,
+  "attachments": false,
+  "type": "all",
+  "publish": false,
+  "key": "NXIGDXWV",
+  "group_id": "2129771",
+  "id": 5306708
+}
+info: saving output to file data/5306708.json
+info: checking Attachments.
+info: finalactions called in getRecord
+info: args in finalactions2 = {
+  zotero_config: 'zotero-cli.toml',
+  zenodo_config: 'config.json',
+  zotero_config_json: undefined,
+  zenodo_config_json: undefined,
+  zotero_api_key: undefined,
+  zenodo_access_token: undefined,
+  zenodo_sandbox: false,
+  verbose: false,
+  debug: false,
+  show: false,
+  open: false,
+  oapp: false,
+  dump: false,
+  dryrun: false,
+  version: false,
+  metadata: false,
+  attachments: false,
+  type: 'all',
+  tag: undefined,
+  publish: false,
+  func: [AsyncFunction: zotzenSync],
+  key: 'NXIGDXWV',
+  group_id: '2129771',
+  id: 5306708,
+  strict: true
+}
+info: not publishing in finalactions2
+info: updating zenodo record, data = {
+  "id": "5306708",
+  "strict": true,
+  "publish": false
+}
+info: wrote the file successfully data/5306708.json
+info: zenodoUpdate metadata = {
+  access_right: 'open',
+  communities: [ { identifier: 'zenodo' } ],
+  creators: [
+    { name: 'Caribbean Development Bank' },
+    { name: 'CARICOM' },
+    { name: 'Organisation of Eastern Caribbean States' },
+    { name: 'Björn Haßler' },
+    { name: 'Callista Regis' },
+    { name: 'Abdullah Khalayleh' },
+    { name: 'Chris McBurnie' },
+    { name: 'Ghislaine Megha-Bongnkar' },
+    { name: 'Tom Blower' }
+  ],
+  description: 'No description available.',
+  doi: '10.5281/zenodo.5306708',
+  license: 'CC-BY-4.0',
+  prereserve_doi: { doi: '10.5281/zenodo.5306708', recid: 5306708 },
+  publication_date: '2021-06-23',
+  publication_type: 'report',
+  related_identifiers: [
+    {
+      identifier: 'zotero://select/groups/2129771/items/NXIGDXWV',
+      relation: 'isAlternateIdentifier',
+      resource_type: 'other',
+      scheme: 'url'
+    }
+  ],
+  title: "The CDB / CARICOM / OECS Model Learning Recovery and Improvement Programme for Caribbean Schools: Let's REAP! — Overview",
+  upload_type: 'publication'
+}
+info: finalactions called in update
+info: args in finalactions2 = { id: '5306708', strict: true, publish: false }
+info: not publishing in finalactions2
+info: updated zenodo record = {
+  conceptdoi: '10.5281/zenodo.5021277',
+  conceptrecid: '5021277',
+  created: '2021-08-28T19:05:55.907558+00:00',
+  doi: '10.5281/zenodo.5306708',
+  doi_url: 'https://doi.org/10.5281/zenodo.5306708',
+  files: [
+    {
+      checksum: 'a781d3c509cd4351ff4515220df437ed',
+      filename: 'Caribbean Development Bank et al_2021_The CDB - CARICOM - OECS Model Learning Recovery and Improvement Programme for.pdf',
+      filesize: 1795930,
+      id: 'd996a36c-c127-4792-8c8f-bef1375c529b',
+      links: [Object]
+    }
+  ],
+  id: 5306708,
+  links: {
+    badge: 'https://zenodo.org/badge/doi/10.5281/zenodo.5306708.svg',
+    bucket: 'https://zenodo.org/api/files/fd9099cc-e894-42a9-b055-da61b4acd3ed',
+    conceptbadge: 'https://zenodo.org/badge/doi/10.5281/zenodo.5021277.svg',
+    conceptdoi: 'https://doi.org/10.5281/zenodo.5021277',
+    discard: 'https://zenodo.org/api/deposit/depositions/5306708/actions/discard',
+    doi: 'https://doi.org/10.5281/zenodo.5306708',
+    edit: 'https://zenodo.org/api/deposit/depositions/5306708/actions/edit',
+    files: 'https://zenodo.org/api/deposit/depositions/5306708/files',
+    html: 'https://zenodo.org/deposit/5306708',
+    latest: 'https://zenodo.org/api/records/5306708',
+    latest_html: 'https://zenodo.org/record/5306708',
+    newversion: 'https://zenodo.org/api/deposit/depositions/5306708/actions/newversion',
+    publish: 'https://zenodo.org/api/deposit/depositions/5306708/actions/publish',
+    record: 'https://zenodo.org/api/records/5306708',
+    record_html: 'https://zenodo.org/record/5306708',
+    registerconceptdoi: 'https://zenodo.org/api/deposit/depositions/5306708/actions/registerconceptdoi',
+    self: 'https://zenodo.org/api/deposit/depositions/5306708'
+  },
+  metadata: {
+    access_right: 'open',
+    communities: [ [Object] ],
+    creators: [
+      [Object], [Object],
+      [Object], [Object],
+      [Object], [Object],
+      [Object], [Object],
+      [Object]
+    ],
+    description: 'No description available.',
+    doi: '10.5281/zenodo.5306708',
+    license: 'CC-BY-4.0',
+    prereserve_doi: { doi: '10.5281/zenodo.5306708', recid: 5306708 },
+    publication_date: '2021-06-23',
+    publication_type: 'report',
+    related_identifiers: [ [Object] ],
+    title: "The CDB / CARICOM / OECS Model Learning Recovery and Improvement Programme for Caribbean Schools: Let's REAP! — Overview",
+    upload_type: 'publication'
+  },
+  modified: '2021-10-31T19:27:23.356288+00:00',
+  owner: 43304,
+  record_id: 5306708,
+  state: 'inprogress',
+  submitted: true,
+  title: "The CDB / CARICOM / OECS Model Learning Recovery and Improvement Programme for Caribbean Schools: Let's REAP! — Overview"
+}

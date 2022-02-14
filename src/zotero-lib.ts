@@ -5,7 +5,11 @@ import Ajv from 'ajv';
 import logger from './logger';
 import sleep from './utils/sleep';
 import formatAsXMP from './utils/formatAsXMP';
+import formatAsCrossRefXML from './utils/formatAsCrossRefXML';
 import printJSON from './utils/printJSON';
+import processExtraField from './utils/processExtraField';
+import newVanityDOI from './utils/newVanityDOI';
+import formatAsZenodoJson from './utils/formatAsZenodoJson';
 
 require('dotenv').config();
 require('docstring');
@@ -321,11 +325,12 @@ class Zotero {
       params?: any;
       resolveWithFullResponse?: boolean;
       json?: boolean;
+      arraybuffer?: boolean;
     } = {},
   ) {
     if (typeof options.userOrGroupPrefix === 'undefined')
-      options.userOrGroupPrefix = true
-    true;
+      options.userOrGroupPrefix = true;
+
     if (typeof options.params === 'undefined') options.params = {};
     if (typeof options.json === 'undefined') options.json = true;
 
@@ -344,20 +349,29 @@ class Zotero {
       })
       .join('&');
 
+    //console.log("URIII: "+uri);
+    //console.log("URIII: "+options);
     if (!options.fulluri) {
       uri = `${this.base}${prefix}${uri}${params ? '?' + params : ''}`;
     }
-
+    //console.log("URIII: "+uri);
     if (this.config.verbose) console.error('GET', uri);
     logger.info('get uri: %s', uri);
 
-    const res = await axios({
+    const requestConfig = {
       url: uri,
       headers: this.headers,
       encoding: null,
       json: options.json,
       resolveWithFullResponse: options.resolveWithFullResponse,
-    })
+    }
+
+    const requestConfig2 = options.arraybuffer ? {
+      ...requestConfig,
+      responseType: 'arraybuffer'
+    } : requestConfig
+
+    const res = await axios(requestConfig2)
       .then(
         // (resp) => resp.data
         /*
@@ -483,7 +497,7 @@ class Zotero {
     return res;
   }
 
-  // TODO: Add       resolveWithFullResponse: options.resolveWithFullResponse,
+  // TODO: Add resolveWithFullResponse: options.resolveWithFullResponse,
   async put(uri, data) {
     const prefix = this.config.user_id
       ? `/users/${this.config.user_id}`
@@ -492,12 +506,26 @@ class Zotero {
     uri = `${this.base}${prefix}${uri}`;
     if (this.config.verbose) console.error('PUT', uri);
 
-    return axios({
+    const response = axios({
       method: 'PUT',
       url: uri,
       headers: { ...this.headers, 'Content-Type': 'application/json' },
       data,
-    }).then((res) => res.data);
+    }).then((response) => {
+      const out = {
+        body: response.data,
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+        config: response.config
+      };
+      // console.log("TEMPOARY PAT=" + JSON.stringify(out, null, 2));
+      return out;
+    }).catch((error) => {
+      console.log('PUT ERROR=' + JSON.stringify(error, null, 2));
+      return error;
+    });;
+    return response;
   }
 
   public async __put(args, subparsers?) {
@@ -542,9 +570,19 @@ class Zotero {
       data,
       resolveWithFullResponse: true,
     })
-      .then((resp) => resp.data)
+      .then((response) => {
+        const out = {
+          body: response.data,
+          statusCode: response.status,
+          statusText: response.statusText,
+          headers: response.headers,
+          config: response.config
+        };
+        // console.log("TEMPOARY PAT=" + JSON.stringify(out, null, 2));
+        return out;
+      })
       .catch((error) => {
-        console.log('TEMPORARY=' + JSON.stringify(error, null, 2));
+        console.log('PAT ERROR=' + JSON.stringify(error, null, 2));
         return error;
       });
     return res;
@@ -781,11 +819,12 @@ class Zotero {
   }
 
   /*
+  This should not be needed bc this.config.group_id is the group id.
   private extractGroupAndSetGroup(key) {
-    // console.log("extractGroupAndSetGroup")
+    logger.info("extractGroupAndSetGroup")
     return this.extractKeyGroupVariable(key, 1);
   }
-  */
+*/
 
   public objectifyTags(tags) {
     const tagsarr = [];
@@ -905,10 +944,12 @@ class Zotero {
     if (args.key) {
       args.key = this.extractKeyAndSetGroup(this.as_value(args.key));
     }
-    if (!args.create_child && !args.top) {
+    // if (!args.create_child && !args.top) {
+    // 'Unable to extract group/key from the string provided.',
+    if (!args.key && !args.top) {
       return this.message(
         0,
-        'Unable to extract group/key from the string provided.',
+        'You should specify key or --top.'
       );
     }
 
@@ -1293,12 +1334,44 @@ class Zotero {
         action: 'store_true',
         help: 'Provide output in xmp format',
       });
-
+      parser_item.add_argument('--crossref', {
+        action: 'store_true',
+        help: 'Provide output in CrossRef XML format.',
+      });
+      parser_item.add_argument('--crossref-user', {
+        action: 'store',
+        help: 'Supply a json file with user data for crossref: {depositor_name: "user@domain:role", email_address: "user@domain", password: ...}. If --crossref is specified without --crossref-user, default settings in your configuration directory are checked: ~/.config/zotero-cli/crossref-user.json',
+      });
+      // doi_batch_id: "optional", timestamp: "optional"
+      parser_item.add_argument('--crossref-submit', {
+        action: 'store_true',
+        help: `Password needs --crossref-user. This operation effectively runs curl -F 'operation=doMDUpload'  -F 'login_id=.../...' -F 'login_passwd=...' -F 'fname=@data.xml' https://doi.crossref.org/servlet/deposit`
+      });
+      parser_item.add_argument('--crossref-no-confirm', {
+        action: 'store_true',
+        help: `Checks whether the DOI successfully activates (requires --crossref-submit). If you are submitting an update (i.e., if the DOI is already active), this doesn't do anything useful.`
+      });
+      parser_item.add_argument('--zenodo', {
+        action: 'store_true',
+        help: 'Provide output in zenodo json format.',
+      });
+      /*
+      The processing for authordata options in zotzen-lib is basic - need to check what we have in zenodo-lib. However, it might make sense to get Zotero to produce the required json for Zenodo.
+      See 370755a6-0cfd-11ec-851b-77cdfd2128b9 in zotzen-lib
+      */
+      parser_item.add_argument('--author-data', {
+        action: 'store',
+        help: 'Supply a json file with authors database, enabling extra author information to be added for crossref. If --crossref or --zenodo are specified without --author-data, default settings in your configuration director are checked: ~/.config/zotero-cli/author-data.json',
+      });
       parser_item.add_argument('--switch-names', {
         action: 'store_true',
         help:
           'Switch firstName with lastName and vice versa in creators, ignoring name only creators',
         dest: 'switchNames',
+      });
+      parser_item.add_argument('--organise-extra', {
+        action: 'store_true',
+        help: 'Organise extra field (processExtraField)',
       });
 
       parser_item.add_argument('--children', {
@@ -1505,6 +1578,37 @@ class Zotero {
         output.push({ switchNames: res });
       }
 
+      if (args.organise_extra) {
+        logger.info('organise extra: ' + item.data.extra);
+        let updatedExtra = item.data.extra
+        const vanityDOI = newVanityDOI(item, this.config.group_id, args.crossref_user)
+        if (vanityDOI && !updatedExtra.match(`DOI: ${vanityDOI}`)) {
+          updatedExtra = `DOI: ${vanityDOI}\n` + updatedExtra;
+        }
+        updatedExtra = processExtraField(updatedExtra)
+        // logger.info(updatedExtra)
+        if (item.data.extra != updatedExtra) {
+          const res = await this.patch(
+            `/items/${args.key}`,
+            JSON.stringify({ extra: updatedExtra }),
+            item.version,
+          );
+          logger.info('organise extra: ' + updatedExtra);
+          output.push({ organise_extra: res });
+          logger.info("We have added a new DOI - add a link as well.")
+          const link0 = await this.attach_link({
+            group_id: this.config.group_id,
+            key: args.key,
+            url: `https://doi.org/${vanityDOI}`,
+            title: '👀View item via CrossRef DOI',
+            tags: ['_r:doi', '_r:crossref'],
+          });
+          output.push({ link: link0 });
+        } else {
+          output.push({ organise_extra: null });
+        }
+      }
+
       if (args.removefromcollection) {
         args.removefromcollection = this.extractKeyAndSetGroup(
           args.removefromcollection,
@@ -1644,13 +1748,38 @@ class Zotero {
       }
     }
 
+    /*
+        const response = await this.get(`/items/${args.key}/file`, { arraybuffer: true });
+        // console.log("TEMPORARY="+JSON.stringify( response           ,null,2))
+        console.log("Got response")
+        try {
+          const blob = new Blob([response.body.data], {
+            type: 'application/pdf',
+          });
+          fs.writeFileSync(
+            args.save,
+            blob,
+            'binary',
+          );
+        } catch (e) {
+          console.log(e)
+        }
+    */
+
+    const blob = await this.get(`/items/${args.key}/file`, { arraybuffer: true });
+
     fs.writeFileSync(
       args.save,
-      await this.get(`/items/${args.key}/file`),
+      blob,
       'binary',
     );
+
     // TODO return better value.
-    return this.message(0, 'File saved', args.save);
+    const response = await this.get(`/items/${args.key}`)
+    // console.log("TEMPORARY=" + JSON.stringify(response.data.md5, null, 2))
+    // At this point we should compare response.data.md5 and the md5sum(blob)
+
+    return this.message(0, 'File saved', { filename: args.save, md5: response.data.md5, mtime: response.data.mtime });
   }
 
   public async create_item(args, subparsers?) {
@@ -1696,14 +1825,49 @@ class Zotero {
           0,
           'Need at least one item (args.items) to create or use args.template',
         );
+      //  all items are read into a single structure:
       const items = args.files.map((item) =>
         JSON.parse(fs.readFileSync(item, 'utf-8')),
       );
+      const itemsflat = items.flat(1);
       // console.log("input")
       // this.show(items)
-      const result = await this.post('/items', JSON.stringify(items));
-      const res = result;
-      this.show(res);
+      let res = [];
+      const batchSize = 50;
+      if (itemsflat.length <= batchSize) {
+        const result = await this.post('/items', JSON.stringify(itemsflat));
+        res.push(result);
+        this.show(res);
+      } else {
+        /* items.length = 151
+        0..49 (end=50)
+        50..99 (end=100)
+        100..149 (end=150)
+        150..150 (end=151)
+        */
+        for (var start = 0; start < itemsflat.length; start += batchSize) {
+          const end =
+            start + batchSize <= itemsflat.length
+              ? start + batchSize
+              : itemsflat.length + 1;
+          // Safety check - should always be true:
+          if (itemsflat.slice(start, end).length) {
+            console.error(`Uploading objects ${start} to ${end}-1`);
+            console.log(`Uploading objects ${start} to ${end}-1`);
+            console.log(`${itemsflat.slice(start, end).length}`);
+            const result = await this.post(
+              '/items',
+              JSON.stringify(itemsflat.slice(start, end)),
+            );
+            res.push(result);
+          } else {
+            console.error(`NOT Uploading objects ${start} to ${end}-1`);
+            console.log(`NOT Uploading objects ${start} to ${end}-1`);
+            console.log(`${itemsflat.slice(start, end).length}`);
+          };
+        }
+        // this.show(res);
+      }
       // TODO: see how to use pruneData
       return res;
     } else if ('items' in args && args.items.length > 0) {
@@ -1809,12 +1973,16 @@ class Zotero {
       args.file = this.as_value(args.file);
       jsonstr = fs.readFileSync(args.file);
     }
+    console.log("update_item TEMPORARY=" + JSON.stringify(jsonstr, null, 2))
+
     const result = await this[args.replace ? 'put' : 'patch'](
       `/items/${args.key}`,
       jsonstr,
       originalItemVersion,
     );
     // console.log("X=" + JSON.stringify(result, null, 2))
+    console.log("update_item TEMPORARY=" + JSON.stringify(result, null, 2))
+
     return result;
   }
 
@@ -1991,7 +2159,8 @@ class Zotero {
 
     let rawTags = null;
     if (args.filter) {
-      rawTags = await this.all(`/tags/${encodeURIComponent(args.filter)}`);
+      rawTags = await this.all(`/ tags / ${encodeURIComponent(args.filter)
+        } `);
     } else {
       rawTags = await this.all('/tags');
     }
@@ -2033,6 +2202,12 @@ class Zotero {
         help:
           'The Zotero collection key in which the new collection is created. (Otherwise created at top level.)',
       });
+      argparser.add_argument('--group-id', {
+        nargs: 1,
+        action: 'store',
+        help:
+          'The Zotero group id.',
+      });
       argparser.add_argument('--title', {
         nargs: 1,
         action: 'store',
@@ -2063,17 +2238,23 @@ class Zotero {
     const base_collection = this.as_value(
       this.extractKeyAndSetGroup(args.collection),
     );
-    const group_id = this.config.group_id;
+    const group_id = args.group_id ? args.group_id : this.config.group_id;
     /* console.log(
       `CHECKING
-      Key = ${key};
-      group_id = ${group_id};
-      ${this.extractGroupAndSetGroup(args.key)},
-      ${this.extractGroupAndSetGroup(args.collection)}`,
+        Key = ${ key };
+        group_id = ${ group_id };
+      ${ this.extractGroupAndSetGroup(args.key) },
+      ${ this.extractGroupAndSetGroup(args.collection) } `,
     ); */
-
-    const zotero = new Zotero();
-    const response = await zotero.item({ key: key });
+    if (!group_id) {
+      console.log("ERROR ERROR ERROR - no group id in zotero->enclose_item_in_collection")
+    } else {
+      console.log(`zotero -> enclose_item_in_collection: group_id ${group_id} `)
+    }
+    // const zotero = new Zotero();
+    // Failure previously here.
+    // const response = await zotero.item({ key: key, group_id: group_id });
+    const response = await this.item({ key: key, group_id: group_id });
     // console.log("response = " + JSON.stringify(response, null, 2))
     // TODO: Have automated test to see whether successful.
     output.push({ response1: response });
@@ -2093,8 +2274,8 @@ class Zotero {
     // Everything below here should be done as Promise.all
     // This causes the problem.
     console.log('collections -- base', base_collection);
-    const new_coll = await zotero.collections({
-      group_id,
+    const new_coll = await this.collections({
+      group_id: group_id,
       key: this.as_value(base_collection),
       create_child: this.as_array(child_name),
     });
@@ -2105,14 +2286,14 @@ class Zotero {
 
     console.log('Move item to collection');
     const ecoll = this.as_array(new_coll[0].key);
-    const res = await zotero.item({
+    const res = await this.item({
       key,
       addtocollection: ecoll,
     });
     output.push({ response2: res });
 
     console.log('0-link');
-    const link0 = await zotero.attach_link({
+    const link0 = await this.attach_link({
       group_id,
       key,
       url: `zotero://select/groups/${group_id}/collections/${new_coll[0].key}`,
@@ -2122,7 +2303,7 @@ class Zotero {
     output.push({ link: link0 });
 
     console.log('1-collections');
-    const refcol_res = await zotero.collections({
+    const refcol_res = await this.collections({
       group_id,
       key: ecoll,
       create_child: ['✅_References'],
@@ -2132,7 +2313,7 @@ class Zotero {
     console.log(`1-links: ${group_id}:${key}`);
     console.log('TEMPORARY=' + JSON.stringify(refcol_res, null, 2));
     const refcol = refcol_res[0].key;
-    const link1 = await zotero.attach_link({
+    const link1 = await this.attach_link({
       group_id,
       key,
       url: `zotero://select/groups/${group_id}/collections/${refcol}`,
@@ -2142,7 +2323,7 @@ class Zotero {
     output.push({ link: link1 });
 
     console.log('2-collection');
-    const refcol_citing = await zotero.collections({
+    const refcol_citing = await this.collections({
       group_id,
       key: ecoll,
       create_child: ['✅Citing articles'],
@@ -2150,7 +2331,7 @@ class Zotero {
     output.push({ collection: refcol_citing });
     const citingcol = refcol_citing[0].key;
     console.log('2-link');
-    const link2 = await zotero.attach_link({
+    const link2 = await this.attach_link({
       group_id,
       key,
       url: `zotero://select/groups/${group_id}/collections/${citingcol}`,
@@ -2160,7 +2341,7 @@ class Zotero {
     output.push({ link: link2 });
 
     console.log('3-collection');
-    const refcol_rem = await zotero.collections({
+    const refcol_rem = await this.collections({
       group_id,
       key: ecoll,
       create_child: ['✅Removed references'],
@@ -2168,7 +2349,7 @@ class Zotero {
     output.push({ collection: refcol_rem });
     const refremcol = refcol_rem[0].key;
     console.log('3-link');
-    const link3 = await zotero.attach_link({
+    const link3 = await this.attach_link({
       group_id,
       key,
       url: `zotero://select/groups/${group_id}/collections/${refremcol}`,
@@ -2189,7 +2370,7 @@ class Zotero {
     });
     output.push({ note });
 
-    const response3 = await zotero.item({ key });
+    const response3 = await this.item({ key });
     output.push({ response3 });
     // console.log("-->" + response2.collections)
     console.log('TEMPORARY=' + JSON.stringify(output, null, 2));
@@ -2231,7 +2412,7 @@ class Zotero {
     }
   */
 
-  // Update the DOI of the item provided.
+  // Get the DOI of the item provided.
   public async get_doi(args, subparsers?) {
     this.reconfigure(args);
     // We dont know what kind of item this is - gotta get the item to see
@@ -2249,6 +2430,14 @@ class Zotero {
     }
     args.fullresponse = false;
     const item = await this.item(args);
+    const doi = this.get_doi_from_item(item);
+    console.log(`DOI: ${doi}, ${typeof doi}`);
+    // ACTION: return values
+    // doi = 'doi->' + doi;
+    return doi;
+  }
+
+  public get_doi_from_item(item) {
     let doi = '';
     if ('doi' in item) {
       doi = item.doi;
@@ -2260,9 +2449,6 @@ class Zotero {
         }
       });
     }
-    console.log(`DOI: ${doi}, ${typeof doi}`);
-    // ACTION: return values
-    doi = 'doi->' + doi;
     return doi;
   }
 
@@ -2285,49 +2471,90 @@ class Zotero {
         action: 'store',
         help: 'The DOI for the item',
       });
+      argparser.add_argument('--zenodoRecordID', {
+        nargs: 1,
+        action: 'store',
+        help: 'The Zenodo record number for the item',
+      });
       return { status: 0, message: 'success' };
     }
     args.fullresponse = false;
+    args.key = this.as_value(args.key);
     const item = await this.item(args);
+    const existingDOI = this.get_doi_from_item(item)
     // const item = this.pruneData(response)
-    if (args.doi) {
+    // console.log("update_doi TEMPORARY aRGS ARGS =" + JSON.stringify(args, null, 2))
+    if ('doi' in args || 'zenodoRecordID' in args) {
+      // console.log("update_doi: Processing update_doi")
       // TODO: should scan item.extra and check for existing DOI
-      if (!item.doi)
+      /* if (!item.doi)
         console.log(
           'TODO: zotero-lib - should scan item.extra and check for existing DOI',
         );
-      const extra = item.extra + `\nDOI: ${args.doi}`;
-      const updateargs = {
-        key: args.key,
-        version: item.version,
-        json: item.doi ? { doi: args.doi } : { extra },
-        fullresponse: false,
-        show: true,
-      };
-      // ACTION: check arguments
-      // ACTION: run code
-      const update = await this.update_item(updateargs);
-      if (update.statusCode == 204) {
-        console.log('update successfull - getting record');
-        // const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        var today = new Date();
-        // const message = `Attached new DOI ${args.doi} on ${today.toLocaleDateString("en-US", options)}`
-        const message = `Attached new DOI ${args.doi
-          } on ${today.toLocaleDateString()}`;
-        await this.attachNoteToItem(args.key, {
-          content: message,
-          tags: ['_r:message'],
-        });
-        const zoteroRecord = await this.item({ key: args.key });
-        if (args.verbose)
-          console.log('Result=' + JSON.stringify(zoteroRecord, null, 2));
-        return zoteroRecord;
+        // This is solved below.
+        */
+      let json = {};
+      let update = false;
+      let extra2 = "";
+      if ('zenodoRecordID' in args) {
+        // console.log("update_doi: " + `ZenodoArchiveID: ${args.zenodoRecordID}`)
+        extra2 = `ZenodoArchiveID: ${args.zenodoRecordID}\n`;
+        update = true;
+      }
+      // console.log("update_doi: " + `${args.doi} != ${existingDOI}`)
+      if (args.doi != existingDOI) {
+        update = true;
+        if ('doi' in item) {
+          json["doi"] = args.doi
+        } else {
+          extra2 = `DOI: ${args.doi}\n` + extra2;
+        }
+      }
+      if (extra2 != "") {
+        update = true;
+        json["extra"] = extra2 + item.extra;
+      }
+      // const extra = `DOI: ${args.doi}\n` + item.extra;
+      if (update) {
+        // console.log("UPDATE WITH TEMPORARY=" + JSON.stringify(json, null, 2))
+        const updateargs = {
+          key: args.key,
+          version: item.version,
+          json: json,
+          fullresponse: false,
+          show: true,
+        };
+        // ACTION: check arguments
+        // ACTION: run code
+        const update = await this.update_item(updateargs);
+        // console.log("async update_doi - update TEMPORARY=" + JSON.stringify(update, null, 2))
+        // console.log(`async update_doi - update status: ${update.statusCode}`);
+        if (update.statusCode == 204) {
+          // console.log('async update_doi - update successfull - getting record');
+          // const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+          var today = new Date();
+          // const message = `Attached new DOI ${args.doi} on ${today.toLocaleDateString("en-US", options)}`
+          if (args.doi != existingDOI) {
+            const message = `Attached new DOI ${args.doi} on ${today.toLocaleDateString()}`;
+            await this.attachNoteToItem(args.key, {
+              content: message,
+              tags: ['_r:message'],
+            });
+          };
+          const zoteroRecord = await this.item({ key: args.key });
+          if (args.verbose)
+            console.log('Result=' + JSON.stringify(zoteroRecord, null, 2));
+          return zoteroRecord;
+        } else {
+          console.log('async update_doi - update failed');
+          console.log("async update_doi TEMPORARY=" + JSON.stringify(update, null, 2))
+          return this.message(1, 'async update_doi - update failed');
+        }
       } else {
-        console.log('update failed');
-        return this.message(1, 'update failed');
+        console.log("async update_doi. No updates required.")
       }
     } else {
-      return this.message(1, 'update failed - no doi provided');
+      return this.message(1, 'async update_doi - update failed - no doi provided');
     }
     // ACTION: return values
     // return 1
@@ -2498,7 +2725,7 @@ class Zotero {
     if (args.zenodo) {
       let xdoi = await this.get_doi(args);
       xdoi = 'x' + xdoi;
-      const mymatch = xdoi.match(/zenodo\.(\d+)/);
+      const mymatch = xdoi.match(/10.5281\/zenodo\.(\d+)/);
       const id = mymatch[1];
       // args.id = id
       args.id = id;
@@ -3489,6 +3716,17 @@ class Zotero {
     */
   }
 
+  public async getZenodoJson(item, args: any) {
+    const updateDoc = await formatAsZenodoJson(item, args);
+    // console.log("getZenodoJson updateDoc="+JSON.stringify(    updateDoc        ,null,2))
+     
+    if (args.zenodoWriteFile) {
+      await fs.writeFile("updateDoc.json", JSON.stringify(updateDoc), 'utf-8', function (err) {
+        if (err) console.log(err);
+      })
+    };
+    return updateDoc;
+  }
   /**
    *  Command Line Interface
    *
@@ -3531,8 +3769,16 @@ class Zotero {
         // await this[args.command.replace(/-/g, '_')]()
         if (args.verbose) console.log('ARGS=' + JSON.stringify(args, null, 2));
         let result = await this[args.func](args);
+        // This really just works for 'item'... should realy move those functions elsewhere
         if (args.xmp) {
           result = formatAsXMP(result);
+        }
+        if (args.crossref) {
+          result = await formatAsCrossRefXML(result, args);
+        }
+        if (args.zenodo) {
+          args.zenodoWriteFile = true;
+          result = await this.getZenodoJson(result, args)
         }
         if (args.verbose) {
           const myout = {
