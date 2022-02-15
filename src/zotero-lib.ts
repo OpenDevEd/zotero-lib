@@ -63,8 +63,8 @@ class Zotero {
   constructor(args = {}) {
     // Read config (which also sets the Zotero-API-Key value in the header)
     // TODO: readConfig may need to perform an async operation...
-    const message = this.configure(args, true);
-    logger.debug('configure response: %O', message);
+    const config = this.configure(args, true);
+    this.config = config;
 
     this.http = createHttpClient({
       headers: {
@@ -103,34 +103,35 @@ class Zotero {
       });
     }
 
-    this.config = this.canonicalConfig(this.config, args);
+    const result = this.canonicalConfig(this.config, args);
 
     if (args.verbose) {
-      console.log('config=' + JSON.stringify(this.config, null, 2));
+      console.log('config=' + JSON.stringify(result, null, 2));
     }
 
     // Check that one and only one is defined:
-    if (this.config.user_id === null && this.config.group_id === null) {
-      return this.message(
-        0,
+    if (!this.config.user_id && !this.config.group_id) {
+      throw new Error(
         'Both user/group are null. You must provide exactly one of --user-id or --group-id',
       );
     }
 
-    return this.config;
+    // Check that one and only one is defined:
+    if (this.config.user_id && this.config.group_id) {
+      throw new Error(
+        'Both user/group are specified. You must provide exactly one of --user-id or --group-id',
+      );
+    }
 
-    // TODO:
-    // if (this.config.user_id !== null && this.config.group_id !== null) return this.message(0,
-    // 'Both user/group are specified. You must provide exactly one of --user-id or --group-id')
+    if (args.indent === null) {
+      args.indent = 2;
+    }
 
-    // TODO: discuss - we'd not be doing this, constructor should not do async ops
-    // user_id==0 is generic; retrieve the real user id via the api_key
+    if (this.config.indent === null) {
+      this.config.indent = 2;
+    }
 
-    // using default=2 above prevents the overrides from being picked up
-    if (args.indent === null) args.indent = 2;
-    if (this.config.indent === null) this.config.indent = 2;
-
-    return this.message(0, 'success');
+    return result;
   }
 
   /**
