@@ -40,7 +40,6 @@ const md5 = require('md5-file');
 class Zotero {
   // The following config keys are expected/allowed,
   // with both "-" and "_". The corresponding variables have _
-
   config_keys = [
     'user-id',
     'group-id',
@@ -61,10 +60,8 @@ class Zotero {
   http: any;
 
   constructor(args = {}) {
-    // Read config (which also sets the Zotero-API-Key value in the header)
-    // TODO: readConfig may need to perform an async operation...
-    const config = this.configure(args, true);
-    this.config = config;
+    // Read config
+    this.config = this.configure(args, true);
 
     this.http = createHttpClient({
       headers: {
@@ -74,8 +71,6 @@ class Zotero {
       },
     });
   }
-
-  // zotero: any
 
   public configure(args, readConfigFile = false) {
     // pick up config: The function reads args and populates config
@@ -112,7 +107,7 @@ class Zotero {
     // Check that one and only one is defined:
     if (!this.config.user_id && !this.config.group_id) {
       throw new Error(
-        'Both user/group are null. You must provide exactly one of --user-id or --group-id',
+        'Both user/group are missing. You must provide exactly one of --user-id or --group-id',
       );
     }
 
