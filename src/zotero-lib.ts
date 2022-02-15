@@ -2286,7 +2286,7 @@ class Zotero {
       const argparser = subparsers.add_parser('get-doi', {
         help: 'Utility function: Get the DOI for the item.',
       });
-      argparser.set_defaults({ func: this.http.get_doi.name });
+      argparser.set_defaults({ func: this.get_doi.name });
       argparser.add_argument('--key', {
         nargs: 1,
         action: 'store',
@@ -2296,7 +2296,7 @@ class Zotero {
     }
     args.fullresponse = false;
     const item = await this.item(args);
-    const doi = this.http.get_doi_from_item(item);
+    const doi = this.get_doi_from_item(item);
     console.log(`DOI: ${doi}, ${typeof doi}`);
     // ACTION: return values
     // doi = 'doi->' + doi;
@@ -2347,7 +2347,7 @@ class Zotero {
     args.fullresponse = false;
     args.key = as_value(args.key);
     const item = await this.item(args);
-    const existingDOI = this.http.get_doi_from_item(item);
+    const existingDOI = this.get_doi_from_item(item);
     // const item = this.pruneData(response)
     // console.log("update_doi TEMPORARY aRGS ARGS =" + JSON.stringify(args, null, 2))
     if ('doi' in args || 'zenodoRecordID' in args) {
@@ -2595,7 +2595,7 @@ class Zotero {
     // console.log("TEMPORARY=" + JSON.stringify(args.tags, null, 2))
     var dataout = [];
     if (args.zenodo) {
-      let xdoi = await this.http.get_doi(args);
+      let xdoi = await this.get_doi(args);
       xdoi = 'x' + xdoi;
       const mymatch = xdoi.match(/10.5281\/zenodo\.(\d+)/);
       const id = mymatch[1];
@@ -2995,7 +2995,7 @@ class Zotero {
         help:
           'Text xml to json conversion ref-by-ref. Helpful for debugging the xml to json conversion.',
       });
-      argparser.set_defaults({ func: this.http.getbib.name });
+      argparser.set_defaults({ func: this.getbib.name });
       return { status: 0, message: 'success' };
     }
     // ACTION: check arguments
@@ -3539,7 +3539,7 @@ class Zotero {
    */
   public async commandlineinterface() {
     // --- main ---
-    var args = this.http.getArguments();
+    var args = this.getArguments();
     // const zotero = new Zotero()
     if (args.version) {
       this.http.getVersion();
@@ -3698,13 +3698,13 @@ class Zotero {
     // Utility functions
     this.field({ getInterface: true }, subparsers);
     this.update_url({ getInterface: true }, subparsers);
-    this.http.get_doi({ getInterface: true }, subparsers);
+    this.get_doi({ getInterface: true }, subparsers);
     this.update_doi({ getInterface: true }, subparsers);
     this.enclose_item_in_collection({ getInterface: true }, subparsers);
     this.attach_link({ getInterface: true }, subparsers);
     this.attach_note({ getInterface: true }, subparsers);
     this.KerkoCiteItemAlsoKnownAs({ getInterface: true }, subparsers);
-    this.http.getbib({ getInterface: true }, subparsers);
+    this.getbib({ getInterface: true }, subparsers);
 
     // Functions for get, post, put, patch, delete. (Delete query to API with uri.)
     this.__get({ getInterface: true }, subparsers);
