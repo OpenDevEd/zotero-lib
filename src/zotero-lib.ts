@@ -65,9 +65,14 @@ class Zotero {
     // TODO: readConfig may need to perform an async operation...
     const message = this.configure(args, true);
     logger.debug('configure response: %O', message);
-    // if (message['status'] === 0) {
-    // }
-    this.http = createHttpClient();
+
+    this.http = createHttpClient({
+      headers: {
+        'User-Agent': 'Zotero-CLI',
+        'Zotero-API-Version': '3',
+        'Zotero-API-Key': this.config['api_key'],
+      },
+    });
   }
 
   // zotero: any
@@ -100,17 +105,10 @@ class Zotero {
 
     this.config = this.canonicalConfig(this.config, args);
 
-    // We're done with reading the config.
-    // Now use the config:
-    if (this.config.api_key) {
-      // this.headers['Zotero-API-Key'] = this.config.api_key;
-    } else {
-      return this.message(1, 'No API key provided in args or config');
-    }
-
     if (args.verbose) {
       console.log('config=' + JSON.stringify(this.config, null, 2));
     }
+
     // Check that one and only one is defined:
     if (this.config.user_id === null && this.config.group_id === null) {
       return this.message(
@@ -118,6 +116,8 @@ class Zotero {
         'Both user/group are null. You must provide exactly one of --user-id or --group-id',
       );
     }
+
+    return this.config;
 
     // TODO:
     // if (this.config.user_id !== null && this.config.group_id !== null) return this.message(0,

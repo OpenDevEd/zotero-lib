@@ -3,20 +3,21 @@ import { as_array } from './utils';
 
 const axios = require('axios');
 
-const baseHttpHeaders = {
-  'User-Agent': 'Zotero-CLI',
-  'Zotero-API-Version': '3',
-  'Zotero-API-Key': '',
-};
-
 const base = 'https://api.zotero.org';
 
-export function createHttpClient() {
-  const client = new HttpClient();
+export function createHttpClient(options = {}) {
+  console.log('creating client with options: ', options);
+  const client = new HttpClient(options);
   return client;
 }
 
 export class HttpClient {
+  private headers: any;
+
+  constructor({ headers = {} }) {
+    this.headers = headers;
+  }
+
   async post(uri, data, headers = {}, config) {
     const prefix = config.user_id
       ? `/users/${config.user_id}`
@@ -30,7 +31,7 @@ export class HttpClient {
       method: 'POST',
       url: uri,
       headers: {
-        ...baseHttpHeaders,
+        ...this.headers,
         'Content-Type': 'application/json',
         ...headers,
       },
@@ -79,7 +80,7 @@ export class HttpClient {
 
     const requestConfig = {
       url: uri,
-      headers: { ...baseHttpHeaders },
+      headers: { ...this.headers },
       encoding: null,
       json: options.json,
       resolveWithFullResponse: options.resolveWithFullResponse,
@@ -158,7 +159,7 @@ export class HttpClient {
     const response = axios({
       method: 'PUT',
       url: uri,
-      headers: { ...baseHttpHeaders, 'Content-Type': 'application/json' },
+      headers: { ...this.headers, 'Content-Type': 'application/json' },
       data,
     })
       .then((response) => {
@@ -186,7 +187,7 @@ export class HttpClient {
       ? `/users/${config.user_id}`
       : `/groups/${config.group_id}`;
 
-    const headers = { ...baseHttpHeaders, 'Content-Type': 'application/json' };
+    const headers = { ...this.headers, 'Content-Type': 'application/json' };
     if (typeof version !== 'undefined') {
       headers['If-Unmodified-Since-Version'] = version;
     }
@@ -223,7 +224,7 @@ export class HttpClient {
       ? `/users/${config.user_id}`
       : `/groups/${config.group_id}`;
 
-    const headers = { ...baseHttpHeaders, 'Content-Type': 'application/json' };
+    const headers = { ...this.headers, 'Content-Type': 'application/json' };
     if (typeof version !== 'undefined') {
       headers['If-Unmodified-Since-Version'] = version;
     }
