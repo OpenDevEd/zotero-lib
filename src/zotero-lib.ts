@@ -72,47 +72,43 @@ class Zotero {
     });
   }
 
-  public configure(args, readConfigFile = false) {
+  public configure(args, shouldReadConfigFile = false) {
     // pick up config: The function reads args and populates config
 
+    let config = {};
+
     // STEP 1. Read config file
-    if (readConfigFile || args.config) {
-      const config: string = [
-        args.config,
-        'zotero-cli.toml',
-        `${os.homedir()}/.config/zotero-cli/zotero-cli.toml`,
-      ].find((cfg) => fs.existsSync(cfg));
-      this.config = config ? toml.parse(fs.readFileSync(config, 'utf-8')) : {};
+    if (shouldReadConfigFile || args.config) {
+      config = readConfigFile(args, config);
     }
 
     // STEP 2. Apply --config_json option
     if (args.config_json) {
-      console.log('Setting from config_json');
-      const configObject =
-        typeof args.config_json === 'string'
-          ? JSON.parse(args.config_json)
-          : args.config_json;
-      Object.keys(configObject).forEach((x) => {
-        console.log(`Setting: ${x}`);
-        this.config[x] = configObject[x];
-      });
+      let configObject = args.config_json;
+
+      if (typeof args.config_json === 'string') {
+        configObject = JSON.parse(args.config_json);
+      }
+
+      config = { ...config, ...configObject };
     }
 
-    const result = this.canonicalConfig(this.config, args);
+    const result = this.canonicalConfig(config, args);
 
     if (args.verbose) {
       console.log('config=' + JSON.stringify(result, null, 2));
     }
 
-    // Check that one and only one is defined:
-    if (!this.config.user_id && !this.config.group_id) {
+    // Check that not both are undefined:
+    if (!result.user_id && !result.group_id) {
+      console.log('result: ', result);
       throw new Error(
         'Both user/group are missing. You must provide exactly one of --user-id or --group-id',
       );
     }
 
     // Check that one and only one is defined:
-    if (this.config.user_id && this.config.group_id) {
+    if (result.user_id && result.group_id) {
       throw new Error(
         'Both user/group are specified. You must provide exactly one of --user-id or --group-id',
       );
@@ -122,8 +118,8 @@ class Zotero {
       args.indent = 2;
     }
 
-    if (this.config.indent === null) {
-      this.config.indent = 2;
+    if (result.indent === null) {
+      result.indent = 2;
     }
 
     return result;
@@ -3722,3 +3718,15 @@ class Zotero {
 }
 
 export = Zotero;
+function readConfigFile(args: any, config: any) {
+  const configPath: string = [
+    args.config,
+    'zotero-cli.toml',
+    `${os.homedir()}/.config/zotero-cli/zotero-cli.toml`,
+  ].find((cfg) => fs.existsSync(cfg));
+
+  if (configPath) {
+    config = toml.parse(fs.readFileSync(configPath, 'utf-8'));
+  }
+  return config;
+}
