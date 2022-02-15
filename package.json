@@ -23,7 +23,8 @@
     "publish:patch": "npm version patch; npm publish; git push --tags",
     "publish:minor": "npm version minor; npm publish; git push --tags",
     "publish:major": "npm version major; npm publish; git push --tags",
-    "release": "standard-version"
+    "release": "standard-version",
+    "docs": "typedoc"
   },
   "standard-version": {
     "skip": {
@@ -65,6 +66,7 @@
     "xml-js": "^1.6.11"
   },
   "devDependencies": {
+    "@types/argparse": "^2.0.10",
     "@typescript-eslint/eslint-plugin": "^4.22.1",
     "@typescript-eslint/parser": "^4.22.1",
     "eslint": "^7.26.0",
@@ -73,6 +75,7 @@
     "eslint-plugin-prettier": "^3.4.0",
     "prettier": "^2.2.1",
     "rimraf": "^3.0.2",
-    "ts-node": "^9.1.1"
+    "ts-node": "^9.1.1",
+    "typedoc": "^0.22.11"
   }
 }
