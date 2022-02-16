@@ -17,16 +17,17 @@ import {
   urlify,
 } from './utils';
 import decoration from './decoartions';
+import { readConfigFile } from './readConfigFile';
 
 require('dotenv').config();
 require('docstring');
 
-const os = require('os');
+const = require('os');
 const _ = require('lodash');
 const he = require('he');
 const convert = require('xml-js');
 
-const toml = require('@iarna/toml');
+const = require('@iarna/toml');
 const fs = require('fs');
 const path = require('path');
 const LinkHeader = require('http-link-header');
@@ -2376,15 +2377,4 @@ class Zotero {
 }
 
 export = Zotero;
-function readConfigFile(args: any, config: any) {
-  const configPath: string = [
-    args.config,
-    'zotero-cli.toml',
-    `${os.homedir()}/.config/zotero-cli/zotero-cli.toml`,
-  ].find((cfg) => fs.existsSync(cfg));
 
-  if (configPath) {
-    config = toml.parse(fs.readFileSync(configPath, 'utf-8'));
-  }
-  return config;
-}
