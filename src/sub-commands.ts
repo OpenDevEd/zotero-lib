@@ -7,7 +7,7 @@ customCmdHandlers.set('update', 'update_item');
 customCmdHandlers.set('enclose-item', 'enclose_item_in_collection');
 customCmdHandlers.set('get-doi', 'get_doi');
 customCmdHandlers.set('update-doi', 'update_doi');
-customCmdHandlers.set('template', 'template');
+customCmdHandlers.set('TEMPLATE', 'TEMPLATE');
 customCmdHandlers.set('attach-link', 'attach_link');
 customCmdHandlers.set('extra-append', 'extra_append');
 customCmdHandlers.set('update-url', 'update_url');
@@ -24,18 +24,6 @@ function getFuncName(subCmdName) {
 }
 
 const parsersMap = new Map();
-parsersMap.set('__get', function (subparsers, subCmdName) {
-  const argparser = subparsers.add_parser('__get', {
-    help: "Expose 'get'. Make a direct query to the API using 'GET uri'.",
-  });
-  argparser.set_defaults({ func: getFuncName(subCmdName) });
-  argparser.add_argument('--root', {
-    action: 'store_true',
-    help: 'TODO: document',
-  });
-  argparser.add_argument('uri', { nargs: '+', help: 'TODO: document' });
-  return { status: 0, message: 'success' };
-});
 
 parsersMap.set('items', function (subparsers, subCmdName) {
   // async items
@@ -397,8 +385,9 @@ parsersMap.set('update-doi', function (subparsers, subCmdName) {
   });
   return { status: 0, message: 'success' };
 });
-parsersMap.set('template', function (subparsers, subCmdName) {
-  const argparser = subparsers.add_parser('template', { help: 'HELPTEXT' });
+
+parsersMap.set('TEMPLATE', function (subparsers, subCmdName) {
+  const argparser = subparsers.add_parser('TEMPLATE', { help: 'HELPTEXT' });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--switch', {
     action: 'store_true',
@@ -410,6 +399,7 @@ parsersMap.set('template', function (subparsers, subCmdName) {
     help: 'HELPTEXT',
   });
 });
+
 parsersMap.set('attach-link', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('attach-link', {
     help: 'Utility function: attach a link to an item',
@@ -714,6 +704,20 @@ parsersMap.set('amendCollection', function (subparsers, subCmdName) {
   });
   return { status: 0, message: 'success' };
 });
+
+parsersMap.set('__get', function (subparsers, subCmdName) {
+  const argparser = subparsers.add_parser('__get', {
+    help: "Expose 'get'. Make a direct query to the API using 'GET uri'.",
+  });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
+  argparser.add_argument('--root', {
+    action: 'store_true',
+    help: 'TODO: document',
+  });
+  argparser.add_argument('uri', { nargs: '+', help: 'TODO: document' });
+  return { status: 0, message: 'success' };
+});
+
 parsersMap.set('__post', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('__post', {
     help:

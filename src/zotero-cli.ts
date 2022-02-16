@@ -9,15 +9,14 @@ import formatAsZenodoJson from './utils/formatAsZenodoJson';
 import logger from './logger';
 import { configAllParsers } from './sub-commands';
 const fs = require('fs');
+
 const zoteroLib = new Zotero({});
 
 /**
- * Command Line Interface
+ * Initialize Command Line Interface
  */
 async function commandLineInterface() {
-  // --- main ---
-  var args = getArguments();
-  // const zotero = new Zotero()
+  const args = getArguments();
   if (args.version) {
     getVersion();
     process.exit(0);

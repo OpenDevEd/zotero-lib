@@ -1837,7 +1837,7 @@ class Zotero {
     // return 1
   }
 
-  public async template(args) {
+  public async TEMPLATE(args) {
     this.reconfigure(args);
 
     // ACTION: return values
