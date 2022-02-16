@@ -66,11 +66,7 @@ zotero-lib --version
 
 This will print the version of cli you have installed
 
-### Item
-
-### Items
-
-### Create
+### create
 
 This allows you to create item(s). You can create items in two different ways either by providing file containg json or json items as string
 
@@ -88,7 +84,7 @@ zotero-lib create --files filepath.txt
 zotero-lib create --items '{"title": "zotero item 1", "itemType": "book"}' '{"title": "zotero item 2", "itemType": "book"}'
 ```
 
-### Update
+### update
 
 This sub-command can be used to update existing items
 
@@ -103,43 +99,67 @@ You can also specify option replace which completely replace existing item and o
 zotero-lib update --replace --key key-here --json '{"title": "zotero item 1 updat", "itemType": "book"}'
 ```
 
-### Collection
+### item
 
-### Collections
+This sub-command has various use cases
 
-### Publications
+To fetch item
 
-### Tags
+```bash
+zotero-lib item --key key-here
+```
 
-### Attachment
+To add files
 
-### Types
+```bash
+zotero-lib item --key key-here --addfiles test.json
+```
 
-### Groups
+### items
 
-### Fields
+This sub-command can be used to fetch items with various filters
 
-### Searches
+```bash
+zotero-lib items --filter '{"limit": 10}'
+```
 
-### Key
+### collection
 
-### Field
+### collections
 
-### Update-url
+### publications
 
-### Get-doi
+### tags
 
-### Update-doi
+### attachment
 
-### Enclose-item
+### types
 
-### Attach-link
+### groups
 
-### Attach-note
+### fields
 
-### Kciaka
+### searches
 
-### Bibliography
+### key
+
+### field
+
+### update-url
+
+### get-doi
+
+### update-doi
+
+### enclose-item
+
+### attach-link
+
+### attach-note
+
+### kciaka
+
+### bibliography
 
 ## Also see
 

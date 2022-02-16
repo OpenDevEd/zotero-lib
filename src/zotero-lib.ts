@@ -195,13 +195,6 @@ class Zotero {
     return this.config;
   }
 
-  private async reconfigure(args) {
-    // Changing this to a more limited reconfigure
-    const canonicalArgs = this.canonicalConfig({}, args);
-    const reconfiged = this.configure(canonicalArgs, false);
-    console.log('reconfigured: ', reconfiged);
-  }
-
   private message(stat = 0, msg = 'None', data = null) {
     return {
       status: stat,
@@ -286,11 +279,15 @@ class Zotero {
       }
 
       chunk = await this.http
-        .get(link[0].uri, {
-          fulluri: true,
-          resolveWithFullResponse: true,
-          params,
-        })
+        .get(
+          link[0].uri,
+          {
+            fulluri: true,
+            resolveWithFullResponse: true,
+            params,
+          },
+          this.config,
+        )
         .catch((error) => {
           console.log('Error in all: ' + error);
         });
@@ -306,8 +303,6 @@ class Zotero {
    * Make a direct query to the API using 'GET uri'.
    */
   public async __get(args) {
-    this.reconfigure(args);
-
     const out = [];
     for (const uri of args.uri) {
       const res = await this.http.get(
@@ -330,8 +325,6 @@ class Zotero {
    * 'POST uri [--data data]'.
    */
   public async __post(args) {
-    this.reconfigure(args);
-
     const res = await this.http.post(args.uri, args.data, {}, this.config);
     this.print(res);
     return res;
@@ -342,8 +335,6 @@ class Zotero {
    * 'PUT uri [--data data]'.
    */
   public async __put(args) {
-    this.reconfigure(args);
-
     const res = await this.http.put(args.uri, args.data, this.config);
     this.print(res);
     return res;
@@ -354,8 +345,6 @@ class Zotero {
    * 'PATCH uri [--data data]'.
    */
   public async __patch(args) {
-    this.reconfigure(args);
-
     const res = await this.http.patch(
       args.uri,
       args.data,
@@ -371,8 +360,6 @@ class Zotero {
    * 'DELETE uri'.
    */
   public async __delete(args) {
-    this.reconfigure(args);
-
     const out = [];
     for (const uri of args.uri) {
       // console.log(uri)
@@ -389,8 +376,6 @@ class Zotero {
    * (API: /keys )
    */
   public async key(args) {
-    this.reconfigure(args);
-
     if (!args.api_key) {
       args.api_key = this.config.api_key;
     }
@@ -583,8 +568,6 @@ class Zotero {
    * TODO: --create-child should go into 'collection'.
    */
   public async collections(args) {
-    this.reconfigure(args);
-
     if (args.key) {
       args.key = this.extractKeyAndSetGroup(as_value(args.key));
     }
@@ -672,8 +655,6 @@ class Zotero {
    * TODO: Add option "--output file.json" to pipe output to file.
    */
   async collection(args) {
-    this.reconfigure(args);
-
     if (args.key) {
       args.key = this.extractKeyAndSetGroup(args.key);
     } else {
@@ -749,7 +730,7 @@ class Zotero {
    * <userOrGroupPrefix>/items/top Top-level items in the library, excluding trashed items
    */
   async items(args) {
-    this.reconfigure(args);
+    //
     let items;
     if (typeof args.filter === 'string') {
       args.filter = JSON.parse(args.filter);
@@ -872,7 +853,7 @@ class Zotero {
    * <userOrGroupPrefix>/items/<itemKey>/children Child items under a specific item
    */
   public async item(args) {
-    this.reconfigure(args);
+    //
 
     const output = [];
 
@@ -950,26 +931,23 @@ class Zotero {
           attach.contentType = `application/${path.extname(filename).slice(1)}`;
           attach.parentItem = args.key;
           const stat = fs.statSync(filename);
-          const uploadItem = JSON.parse(
-            await this.http.post(
-              '/items',
-              JSON.stringify([attach]),
-              {},
-              this.config,
-            ),
+          const uploadItem = await this.http.post(
+            '/items',
+            JSON.stringify([attach]),
+            {},
+            this.config,
           );
-          const uploadAuth = JSON.parse(
-            await this.http.post(
-              `/items/${uploadItem.successful[0].key}/file?md5=${md5.sync(
-                filename,
-              )}&filename=${attach.filename}&filesize=${
-                fs.statSync(filename)['size']
-              }&mtime=${stat.mtimeMs}`,
-              '{}',
-              { 'If-None-Match': '*' },
-              this.config,
-            ),
+          const uploadAuth = await this.http.post(
+            `/items/${uploadItem.successful[0].key}/file?md5=${md5.sync(
+              filename,
+            )}&filename=${attach.filename}&filesize=${
+              fs.statSync(filename)['size']
+            }&mtime=${stat.mtimeMs}`,
+            '{}',
+            { 'If-None-Match': '*' },
+            this.config,
           );
+
           let request_post = null;
           if (uploadAuth.exists !== 1) {
             const uploadResponse = await this.http
@@ -1021,7 +999,6 @@ class Zotero {
         output.push({ addtocollection: addTo });
       }
 
-      console.log('args = ', { ...args });
       if (args.switchNames) {
         const { creators = [] } = item.data;
 
@@ -1201,8 +1178,6 @@ class Zotero {
    * Also see 'item', which has options for adding/saving file attachments.
    */
   async attachment(args) {
-    this.reconfigure(args);
-
     if (args.key) {
       args.key = this.extractKeyAndSetGroup(args.key);
       if (!args.key) {
@@ -1249,7 +1224,7 @@ class Zotero {
    * [multiple items](https://www.zotero.org/support/dev/web_api/v3/write_requests#creating_multiple_items)
    */
   public async create_item(args) {
-    // this.reconfigure(args);
+    //
 
     if (args.template) {
       const result = await this.http.get(
@@ -1369,7 +1344,7 @@ class Zotero {
    * [see api docs](https://www.zotero.org/support/dev/web_api/v3/write_requests#updating_an_existing_item)
    */
   public async update_item(args) {
-    // this.reconfigure(args);
+    //
 
     if (!args.replace) {
       args.replace = false;
@@ -1437,7 +1412,7 @@ class Zotero {
   // <userOrGroupPrefix>/items/trash Items in the trash
   /** Return a list of items in the trash. */
   // async trash(args) {
-  //   this.reconfigure(args);
+  //
   //   const items = await this.http.get('/items/trash', undefined, this.config);
   //   this.show(items);
   //   return items;
@@ -1453,8 +1428,6 @@ class Zotero {
    * <userOrGroupPrefix>/publications/items Items in My Publications
    */
   async publications(args) {
-    this.reconfigure(args);
-
     const items = await this.http.get(
       '/publications/items',
       undefined,
@@ -1469,8 +1442,6 @@ class Zotero {
    * (API: /itemTypes)
    */
   async types(args) {
-    this.reconfigure(args);
-
     const types = await this.http.get(
       '/itemTypes',
       {
@@ -1488,8 +1459,6 @@ class Zotero {
    * (API: /users/<user-id>/groups)
    */
   async groups(args) {
-    this.reconfigure(args);
-
     const groups = await this.http.get('/groups', undefined, this.config);
     this.show(groups);
     return groups;
@@ -1503,8 +1472,6 @@ class Zotero {
    * rather than this command.
    */
   async fields(args) {
-    this.reconfigure(args);
-
     if (args.type) {
       const result = {
         itemTypeFields: await this.http.get(
@@ -1551,8 +1518,6 @@ class Zotero {
    * https://www.zotero.org/support/dev/web_api/v3/basics
    */
   async searches(args) {
-    this.reconfigure(args);
-
     if (args.create) {
       let searchDef = [];
       try {
@@ -1582,8 +1547,6 @@ class Zotero {
    * and count tags. (API: /tags)
    */
   async tags(args) {
-    this.reconfigure(args);
-
     let rawTags = null;
     if (args.filter) {
       rawTags = await this.all(`/ tags / ${encodeURIComponent(args.filter)} `);
@@ -1610,8 +1573,6 @@ class Zotero {
    */
 
   public async enclose_item_in_collection(args) {
-    this.reconfigure(args);
-
     const output = [];
     if (!args.key) {
       return this.message(1, 'You must provide --key/args.key', args);
@@ -1763,7 +1724,6 @@ class Zotero {
    * @returns
    */
   public async get_doi(args) {
-    this.reconfigure(args);
     // We dont know what kind of item this is - gotta get the item to see
 
     args.fullresponse = false;
@@ -1794,8 +1754,6 @@ class Zotero {
    * Update the DOI of the item provided.
    */
   public async update_doi(args) {
-    this.reconfigure(args);
-
     args.fullresponse = false;
     args.key = as_value(args.key);
     // We dont know what kind of item this is - gotta get the item to see
@@ -1871,8 +1829,6 @@ class Zotero {
   }
 
   public async TEMPLATE(args) {
-    this.reconfigure(args);
-
     // ACTION: return values
     const data = {};
     return this.message(0, 'exist status', data);
@@ -1880,8 +1836,6 @@ class Zotero {
 
   // TODO: Implement
   public async attach_link(args) {
-    this.reconfigure(args);
-
     // TODO: There's a problem here... the following just offer docorations. We need to have inputs too...
 
     // TODO: Make this consistent
@@ -1970,7 +1924,6 @@ class Zotero {
   }
 
   public async field(args) {
-    this.reconfigure(args);
     // ACTION: define CLI interface
 
     if (!args.field) {
@@ -2019,15 +1972,11 @@ class Zotero {
 
   // TODO: Implement
   public async extra_append(args) {
-    this.reconfigure(args);
-
     const data = {};
     return this.message(0, 'exit status', data);
   }
 
   public async update_url(args) {
-    this.reconfigure(args);
-
     args.json = {
       url: args.value,
     };
@@ -2037,8 +1986,6 @@ class Zotero {
   }
 
   public async KerkoCiteItemAlsoKnownAs(args) {
-    this.reconfigure(args);
-
     args.fullresponse = false;
     let thisversion = '';
     let item;
@@ -2111,8 +2058,6 @@ class Zotero {
 
   // TODO: Implement
   public async getbib(args) {
-    this.reconfigure(args);
-
     let output;
     try {
       output = await this.getZoteroDataX(args);
@@ -2365,8 +2310,6 @@ class Zotero {
 
   // TODO: Implement
   public async attach_note(args) {
-    this.reconfigure(args);
-
     args.notetext = as_value(args.notetext);
     args.key = this.extractKeyAndSetGroup(as_value(args.key));
     // console.log(args.key)
@@ -2384,24 +2327,18 @@ class Zotero {
 
   // TODO: Implement
   public async getValue(args) {
-    this.reconfigure(args);
-
     const data = {};
     return this.message(0, 'exist status', data);
   }
 
   // TODO: Implement
   public async collectionName(args) {
-    this.reconfigure(args);
-
     const data = {};
     return this.message(0, 'exist status', data);
   }
 
   // TODO: Implement
   public async amendCollection(args) {
-    this.reconfigure(args);
-
     const data = {};
     return this.message(0, 'exit status', data);
   }

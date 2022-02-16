@@ -142,58 +142,14 @@ function parseArguments() {
     help: 'Show version',
   });
 
-  /*
-    The following code adds subparsers.
-    */
+  /**
+   * The following code adds subparsers.
+   */
   const subparsers = parser.add_subparsers({
     help: "Help for these commands is available via 'command --help'.",
   });
 
   configAllParsers(subparsers);
-  // zoteroLib.item({ getInterface: true }, subparsers);
-  // zoteroLib.items({ getInterface: true }, subparsers);
-  // zoteroLib.create_item({ getInterface: true }, subparsers);
-  // zoteroLib.update_item({ getInterface: true }, subparsers);
-  // zoteroLib.collection({ getInterface: true }, subparsers);
-  // zoteroLib.collections({ getInterface: true }, subparsers);
-  // zoteroLib.publications({ getInterface: true }, subparsers);
-  // zoteroLib.tags({ getInterface: true }, subparsers);
-
-  // zoteroLib.attachment({ getInterface: true }, subparsers);
-  // zoteroLib.types({ getInterface: true }, subparsers);
-  // zoteroLib.groups({ getInterface: true }, subparsers);
-  // zoteroLib.fields({ getInterface: true }, subparsers);
-
-  // zoteroLib.searches({ getInterface: true }, subparsers);
-  // zoteroLib.key({ getInterface: true }, subparsers);
-
-  // Utility functions
-  // zoteroLib.field({ getInterface: true }, subparsers);
-  // zoteroLib.update_url({ getInterface: true }, subparsers);
-  // zoteroLib.get_doi({ getInterface: true }, subparsers);
-  // zoteroLib.update_doi({ getInterface: true }, subparsers);
-  // zoteroLib.enclose_item_in_collection({ getInterface: true }, subparsers);
-  // zoteroLib.attach_link({ getInterface: true }, subparsers);
-  // zoteroLib.attach_note({ getInterface: true }, subparsers);
-  // zoteroLib.KerkoCiteItemAlsoKnownAs({ getInterface: true }, subparsers);
-  // zoteroLib.getbib({ getInterface: true }, subparsers);
-
-  // Functions for get, post, put, patch, delete. (Delete query to API with uri.)
-  // zoteroLib.__get({ getInterface: true }, subparsers);
-
-  // zoteroLib.__post({ getInterface: true }, subparsers);
-  // zoteroLib.__put({ getInterface: true }, subparsers);
-  // zoteroLib.__patch({ getInterface: true }, subparsers);
-  // zoteroLib.__delete({ getInterface: true }, subparsers);
-
-  // Other URLs
-  // https://www.zotero.org/support/dev/web_api/v3/basics
-  // /keys/<key>
-  // /users/<userID>/groups
-
-  //FIXME: this might be broken
-  // parser.set_defaults({ "func": new Zotero().run() });
-  // zotero.parser.parse_args();
 
   return parser.parse_args();
 }
