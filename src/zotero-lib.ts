@@ -22,12 +22,10 @@ import { readConfigFile } from './readConfigFile';
 require('dotenv').config();
 require('docstring');
 
-const = require('os');
 const _ = require('lodash');
 const he = require('he');
 const convert = require('xml-js');
 
-const = require('@iarna/toml');
 const fs = require('fs');
 const path = require('path');
 const LinkHeader = require('http-link-header');
@@ -2377,4 +2375,3 @@ class Zotero {
 }
 
 export = Zotero;
-
