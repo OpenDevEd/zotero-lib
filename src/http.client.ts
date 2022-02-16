@@ -6,7 +6,7 @@ const axios = require('axios');
 const base = 'https://api.zotero.org';
 
 export function createHttpClient(options = {}) {
-  console.log('creating client with options: ', options);
+  // console.log('creating client with options: ', options);
   const client = new HttpClient(options);
   return client;
 }
@@ -78,7 +78,8 @@ export class HttpClient {
     if (config.verbose) console.error('GET', uri);
     logger.info('get uri: %s', uri);
 
-    const requestConfig = {
+    const requestConfig: any = {
+      method: 'get',
       url: uri,
       headers: { ...this.headers },
       encoding: null,
@@ -86,36 +87,22 @@ export class HttpClient {
       resolveWithFullResponse: options.resolveWithFullResponse,
     };
 
-    const requestConfig2 = options.arraybuffer
-      ? {
-          ...requestConfig,
-          responseType: 'arraybuffer',
-        }
-      : requestConfig;
+    if (options.arraybuffer) {
+      requestConfig.responseType = 'arraybuffer';
+    }
 
-    const res = await axios(requestConfig2)
-      .then(
-        // (resp) => resp.data
-        /*
-        (response) => {
+    const res = await axios(requestConfig)
+      .then(function (response) {
+        const out = {
           body: response.data,
           status: response.status,
           statusText: response.statusText,
           headers: response.headers,
-          config: response.config
-          }  */
-        function (response) {
-          const out = {
-            body: response.data,
-            status: response.status,
-            statusText: response.statusText,
-            headers: response.headers,
-            config: response.config,
-          };
-          // console.log("response-TEMPORARY=" + JSON.stringify(out, null, 2))
-          return out;
-        },
-      )
+          config: response.config,
+        };
+        // console.log("response-TEMPORARY=" + JSON.stringify(out, null, 2))
+        return out;
+      })
       .catch((error) => {
         if (config.verbose) {
           console.log(
@@ -208,7 +195,7 @@ export class HttpClient {
           headers: response.headers,
           config: response.config,
         };
-        // console.log("TEMPOARY PAT=" + JSON.stringify(out, null, 2));
+        // console.log('TEMPOARY PAT=' + JSON.stringify(out, null, 2));
         return out;
       })
       .catch((error) => {
@@ -218,7 +205,7 @@ export class HttpClient {
     return res;
   }
 
-  // TODO: Add       resolveWithFullResponse: options.resolveWithFullResponse,
+  // TODO: Add resolveWithFullResponse: options.resolveWithFullResponse,
   async delete(uri, version?: number, config?: any) {
     const prefix = config.user_id
       ? `/users/${config.user_id}`
@@ -231,8 +218,6 @@ export class HttpClient {
 
     uri = `${base}${prefix}${uri}`;
     if (config.verbose) console.error('DELETE', uri);
-
-    //      console.log("TEMPORARY="+JSON.stringify(      uri      ,null,2))
 
     return axios({
       method: 'DELETE',

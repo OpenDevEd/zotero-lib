@@ -1,6 +1,8 @@
 # zotero-lib
 
-## Introduction: Tools for working with the APIs of Zotero and Zenodo (zotzen)
+## Introduction
+
+Tools for working with the APIs of Zotero and Zenodo (zotzen)
 
 This repository is part of a set of repositories, [see here](https://github.com/orgs/OpenDevEd/teams/zotzen-team/repositories). Currently, this set contains a number of libraries
 
@@ -14,30 +16,25 @@ And a web application
 
 - [zotzen-web](https://github.com/opendeved/zotzen-web)
 
-## zotero-lib 
+This code builds on earlier code for [zotero-cli](https://github.com/OpenDevEd/zotero-cli), which was developed by [@bjohas](https://github.com/bjohas), [@retorquere](https://github.com/retorquere) and [@a1diablo](https://github.com/a1diablo).
 
-Install this library with
+## Installation
+
+Install this library in a module with
 
 ```bash
 npm install zotero-lib
+yarn add zotero-lib
 ```
 
-or as CLI
+or as global CLI
 
 ```bash
-sudo npm install -g zotero-lib
+npm install -g zotero-lib
+yarn global add zotero-lib
 ```
 
-View entry on https://www.npmjs.com/package/zotero-lib
-
-## Used by
-
-This library is currently used by
-
-- [ZotZen Lib](https://github.com/OpenDevEd/zotzen-lib)
-- [ZotZen Web](https://github.com/OpenDevEd/zotzen-web)
-
-This code builds on earlier code for [zotero-cli](https://github.com/OpenDevEd/zotero-cli), which was developed by [@bjohas](https://github.com/bjohas), [@retorquere](https://github.com/retorquere) and [@a1diablo](https://github.com/a1diablo).
+View entry on [npm](https://www.npmjs.com/package/zotero-lib)
 
 ## Use of the library and the CLI
 
@@ -45,21 +42,9 @@ The directory tests/ contains a number of tests that illustrate the
 use of the npm library. The file tests/test_cli.sh has examples for
 use of the library from the command line.
 
-## Also see
-
-[zotero-api-client](https://github.com/tnajdek/zotero-api-client) (With hindsight we might have built on zotero-api-client - we might still rebuild our code to use zotero-api-client.)
-
-## CLI Documentation:
+## CLI Documentation
 
 The zotero-cli allows you to access zoter from cmd line, it allows you to automate redundant taskse easily
-
-## Installation
-
-`npm install -g zotero-lib`
-
-OR
-
-`yarn global add zotero-lib`
 
 ## Basic usage
 
@@ -105,6 +90,19 @@ zotero-lib create --items '{"title": "zotero item 1", "itemType": "book"}' '{"ti
 
 ### Update
 
+This sub-command can be used to update existing items
+
+```bash
+zotero-lib update --key key-here --json '{"title": "zotero item 1 updat", "itemType": "book"}'
+zotero-lib update --key key-here --file filepath.txt
+```
+
+You can also specify option replace which completely replace existing item and only keep provided information
+
+```bash
+zotero-lib update --replace --key key-here --json '{"title": "zotero item 1 updat", "itemType": "book"}'
+```
+
 ### Collection
 
 ### Collections
@@ -142,3 +140,7 @@ zotero-lib create --items '{"title": "zotero item 1", "itemType": "book"}' '{"ti
 ### Kciaka
 
 ### Bibliography
+
+## Also see
+
+[zotero-api-client](https://github.com/tnajdek/zotero-api-client) (With hindsight we might have built on zotero-api-client - we might still rebuild our code to use zotero-api-client.)

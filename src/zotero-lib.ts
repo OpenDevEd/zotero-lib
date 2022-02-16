@@ -76,7 +76,7 @@ class Zotero {
     // STEP 1. Read config file
     if (shouldReadConfigFile || args.config) {
       config = readConfigFile(args, config);
-      logger.info('reading config files: ', config);
+      // logger.info('reading config files: ', config);
     }
 
     // STEP 2. Apply --config_json option
@@ -91,7 +91,7 @@ class Zotero {
     }
 
     const result = this.canonicalConfig(config, args);
-    console.log('canonical config: ', result);
+    // console.log('canonical config: ', result);
 
     if (args.verbose) {
       console.log('config=' + JSON.stringify(result, null, 2));
@@ -149,8 +149,8 @@ class Zotero {
   private canonicalConfig(_config: any, args: any) {
     const config = { ..._config };
 
-    console.log('config', config);
-    console.log('args', args);
+    // console.log('config', config);
+    // console.log('args', args);
 
     this.config_keys.forEach((key) => {
       const key_zotero = 'zotero-' + key;
@@ -1243,6 +1243,10 @@ class Zotero {
    * Create a new item or items. (API: /items/new) You can retrieve
    * a template with the --template option.Use this option to create
    * both top-level items, as well as child items (including notes and links).
+   *
+   * see api docs for creating
+   * [single item](https://www.zotero.org/support/dev/web_api/v3/write_requests#_an_item) OR
+   * [multiple items](https://www.zotero.org/support/dev/web_api/v3/write_requests#creating_multiple_items)
    */
   public async create_item(args) {
     // this.reconfigure(args);
@@ -1358,11 +1362,14 @@ class Zotero {
   }
 
   /**
-   * Update/replace an item (--key KEY), either update (API: patch /items/KEY)
-   * or replacing (using --replace, API: put /items/KEY).
+   * Update/replace an item with given key (--key KEY),
+   * either update the item (API: patch /items/KEY)
+   * or replace (using --replace, API: put /items/KEY).
+   *
+   * [see api docs](https://www.zotero.org/support/dev/web_api/v3/write_requests#updating_an_existing_item)
    */
   public async update_item(args) {
-    this.reconfigure(args);
+    // this.reconfigure(args);
 
     if (!args.replace) {
       args.replace = false;
@@ -1374,7 +1381,7 @@ class Zotero {
     if (!args.file && !args.json) {
       return this.message(0, 'You must specify either file or json.', args);
     }
-    // console.log("2b")
+
     if (args.key) {
       args.key = this.extractKeyAndSetGroup(args.key);
     } else {
@@ -1384,9 +1391,8 @@ class Zotero {
         args,
       );
       console.log(msg);
-      // return msg
     }
-    // console.log("2c")
+
     let originalItemVersion = 0;
     if (args.version) {
       originalItemVersion = args.version;
@@ -1398,22 +1404,32 @@ class Zotero {
       );
       originalItemVersion = originalItem.version;
     }
-    let jsonstr = '';
+
+    let data = '';
     if (args.json) {
       args.json = as_value(args.json);
-      if (typeof args.json !== 'string') jsonstr = JSON.stringify(args.json);
-      else jsonstr = args.json;
-      // console.log("j=" + jsonstr)
+      if (typeof args.json !== 'string') {
+        data = JSON.stringify(args.json);
+      } else {
+        data = args.json;
+      }
     } else if (args.file) {
       args.file = as_value(args.file);
-      jsonstr = fs.readFileSync(args.file);
+      data = fs.readFileSync(args.file);
     }
 
-    const result = await this[args.replace ? 'put' : 'patch'](
-      `/items/${args.key}`,
-      jsonstr,
-      originalItemVersion,
-    );
+    let result;
+
+    if (args.replace) {
+      result = await this.http.put(`/items/${args.key}`, data, this.config);
+    } else {
+      result = await this.http.patch(
+        `/items/${args.key}`,
+        data,
+        originalItemVersion,
+        this.config,
+      );
+    }
 
     return result;
   }
