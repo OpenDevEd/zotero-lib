@@ -1,14 +1,15 @@
 #!/usr/bin/env node
 
-// import { parse } from '@iarna/toml';
-// import * as argparse from 'argparse';
-// var Zotero = require('../zotero-lib/bin/zotero-api-lib');
-// var Zotero = require('zotero-lib');
 import formatAsXMP from './utils/formatAsXMP';
 import formatAsCrossRefXML from './utils/formatAsCrossRefXML';
 import printJSON from './utils/printJSON';
 import Zotero from './zotero-lib';
 import { ArgumentParser } from 'argparse';
+import formatAsZenodoJson from './utils/formatAsZenodoJson';
+import logger from './logger';
+import { configAllParsers, configParserFor } from './sub-commands';
+const fs = require('fs');
+const zoteroLib = new Zotero({});
 
 /**
  *  Command Line Interface
@@ -41,7 +42,7 @@ async function commandLineInterface() {
     // using default=2 above prevents the overrides from being picked up
     if (args.indent === null) args.indent = 2;
 
-    if (args.verbose) this.showConfig();
+    if (args.verbose) zoteroLib.showConfig();
     // call the actual command
     if (!args.func) {
       console.log('No arguments provided. Use -h for help.');
@@ -51,7 +52,7 @@ async function commandLineInterface() {
       // await this['$' + args.command.replace(/-/g, '_')]()
       // await this[args.command.replace(/-/g, '_')]()
       if (args.verbose) console.log('ARGS=' + JSON.stringify(args, null, 2));
-      let result = await this[args.func](args);
+      let result = await zoteroLib[args.func](args);
       // This really just works for 'item'... should realy move those functions elsewhere
       if (args.xmp) {
         result = formatAsXMP(result);
@@ -61,15 +62,16 @@ async function commandLineInterface() {
       }
       if (args.zenodo) {
         args.zenodoWriteFile = true;
-        result = await this.getZenodoJson(result, args);
+        result = await getZenodoJson(result, args);
       }
       if (args.verbose) {
         const myout = {
           result,
-          output: this.output,
+          output: zoteroLib.output,
         };
         console.log(
-          '{Result, output}=' + JSON.stringify(myout, null, this.config.indent),
+          '{Result, output}=' +
+            JSON.stringify(myout, null, zoteroLib.config.indent),
         );
       }
 
@@ -77,14 +79,14 @@ async function commandLineInterface() {
         logger.info(`writing output to file ${args.out}`);
         fs.writeFileSync(
           args.out,
-          JSON.stringify(result, null, this.config.indent),
+          JSON.stringify(result, null, zoteroLib.config.indent),
         );
       } else {
         logger.info(`writing output to console`);
         console.log(printJSON(result));
       }
     } catch (ex) {
-      this.print('Command execution failed: ', ex);
+      zoteroLib.print('Command execution failed: ', ex);
       process.exit(1);
     }
   }
@@ -154,40 +156,42 @@ function getArguments() {
     help: "Help for these commands is available via 'command --help'.",
   });
 
-  this.item({ getInterface: true }, subparsers);
-  this.items({ getInterface: true }, subparsers);
-  this.create_item({ getInterface: true }, subparsers);
-  this.update_item({ getInterface: true }, subparsers);
-  this.collection({ getInterface: true }, subparsers);
-  this.collections({ getInterface: true }, subparsers);
-  this.publications({ getInterface: true }, subparsers);
-  this.tags({ getInterface: true }, subparsers);
+  configAllParsers(subparsers);
+  // zoteroLib.item({ getInterface: true }, subparsers);
+  // zoteroLib.items({ getInterface: true }, subparsers);
+  zoteroLib.create_item({ getInterface: true }, subparsers);
+  zoteroLib.update_item({ getInterface: true }, subparsers);
+  zoteroLib.collection({ getInterface: true }, subparsers);
+  zoteroLib.collections({ getInterface: true }, subparsers);
+  // zoteroLib.publications({ getInterface: true }, subparsers);
+  zoteroLib.tags({ getInterface: true }, subparsers);
 
-  this.attachment({ getInterface: true }, subparsers);
-  this.types({ getInterface: true }, subparsers);
-  this.groups({ getInterface: true }, subparsers);
-  this.fields({ getInterface: true }, subparsers);
+  zoteroLib.attachment({ getInterface: true }, subparsers);
+  zoteroLib.types({ getInterface: true }, subparsers);
+  zoteroLib.groups({ getInterface: true }, subparsers);
+  zoteroLib.fields({ getInterface: true }, subparsers);
 
-  this.searches({ getInterface: true }, subparsers);
-  this.key({ getInterface: true }, subparsers);
+  zoteroLib.searches({ getInterface: true }, subparsers);
+  zoteroLib.key({ getInterface: true }, subparsers);
 
   // Utility functions
-  this.field({ getInterface: true }, subparsers);
-  this.update_url({ getInterface: true }, subparsers);
-  this.get_doi({ getInterface: true }, subparsers);
-  this.update_doi({ getInterface: true }, subparsers);
-  this.enclose_item_in_collection({ getInterface: true }, subparsers);
-  this.attach_link({ getInterface: true }, subparsers);
-  this.attach_note({ getInterface: true }, subparsers);
-  this.KerkoCiteItemAlsoKnownAs({ getInterface: true }, subparsers);
-  this.getbib({ getInterface: true }, subparsers);
+  zoteroLib.field({ getInterface: true }, subparsers);
+  zoteroLib.update_url({ getInterface: true }, subparsers);
+  zoteroLib.get_doi({ getInterface: true }, subparsers);
+  zoteroLib.update_doi({ getInterface: true }, subparsers);
+  zoteroLib.enclose_item_in_collection({ getInterface: true }, subparsers);
+  zoteroLib.attach_link({ getInterface: true }, subparsers);
+  zoteroLib.attach_note({ getInterface: true }, subparsers);
+  zoteroLib.KerkoCiteItemAlsoKnownAs({ getInterface: true }, subparsers);
+  zoteroLib.getbib({ getInterface: true }, subparsers);
 
   // Functions for get, post, put, patch, delete. (Delete query to API with uri.)
-  this.__get({ getInterface: true }, subparsers);
-  this.__post({ getInterface: true }, subparsers);
-  this.__put({ getInterface: true }, subparsers);
-  this.__patch({ getInterface: true }, subparsers);
-  this.__delete({ getInterface: true }, subparsers);
+  // zoteroLib.__get({ getInterface: true }, subparsers);
+
+  zoteroLib.__post({ getInterface: true }, subparsers);
+  zoteroLib.__put({ getInterface: true }, subparsers);
+  zoteroLib.__patch({ getInterface: true }, subparsers);
+  zoteroLib.__delete({ getInterface: true }, subparsers);
 
   // Other URLs
   // https://www.zotero.org/support/dev/web_api/v3/basics
@@ -195,15 +199,31 @@ function getArguments() {
   // /users/<userID>/groups
 
   // parser.set_defaults({ "func": new Zotero().run() });
-  // this.parser.parse_args();
+  // zotero.parser.parse_args();
 
   return parser.parse_args();
+}
+
+async function getZenodoJson(item, args: any) {
+  const updateDoc = await formatAsZenodoJson(item, args);
+  // console.log("getZenodoJson updateDoc="+JSON.stringify(    updateDoc        ,null,2))
+
+  if (args.zenodoWriteFile) {
+    await fs.writeFile(
+      'updateDoc.json',
+      JSON.stringify(updateDoc),
+      'utf-8',
+      function (err) {
+        if (err) console.log(err);
+      },
+    );
+  }
+  return updateDoc;
 }
 
 async function main() {
   // console.log("Command-line: config")
   // const zotero = await new Zotero({});
-  const zotero = new Zotero({});
   // console.log("Command-line: start")
   // console.log("Command-line: done")
   await await commandLineInterface()
