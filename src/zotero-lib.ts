@@ -198,7 +198,8 @@ class Zotero {
   private async reconfigure(args) {
     // Changing this to a more limited reconfigure
     const canonicalArgs = this.canonicalConfig({}, args);
-    this.configure(canonicalArgs, false);
+    const reconfiged = this.configure(canonicalArgs, false);
+    console.log('reconfigured: ', reconfiged);
   }
 
   private message(stat = 0, msg = 'None', data = null) {
@@ -447,7 +448,11 @@ class Zotero {
 
   private show(v) {
     // TODO: Look at the type of v: if string, then print, if object, then stringify
-    // this.print(JSON.stringify(v, null, this.config.indent).replace(new RegExp(this.config.api_key, 'g'), '<API-KEY>'))
+    if (typeof v === 'string') {
+      this.print(v);
+      return;
+    }
+
     this.print(JSON.stringify(v, null, this.config.indent));
   }
 
@@ -1240,7 +1245,7 @@ class Zotero {
    * both top-level items, as well as child items (including notes and links).
    */
   public async create_item(args) {
-    this.reconfigure(args);
+    // this.reconfigure(args);
 
     if (args.template) {
       const result = await this.http.get(
@@ -1254,7 +1259,9 @@ class Zotero {
       this.show(result);
       // console.log("/"+result+"/")
       return result;
-    } else if (Array.isArray(args.files) && args.files.length > 0) {
+    }
+
+    if (Array.isArray(args.files) && args.files.length > 0) {
       if (!args.files.length)
         return this.message(
           0,
@@ -1311,24 +1318,34 @@ class Zotero {
       }
       // TODO: see how to use pruneData
       return res;
-    } else if ('items' in args && args.items.length > 0) {
-      const result = await this.http.post(
-        '/items',
-        JSON.stringify(args.items),
-        {},
-        this.config,
-      );
-      const res = result;
-      this.show(res);
-      // TODO: see how to use pruneData
-      return res;
-    } else if (args.item) {
-      const result = await this.http.post(
-        '/items',
-        '[' + JSON.stringify(args.item) + ']',
-        {},
-        this.config,
-      );
+    }
+
+    if ('items' in args) {
+      console.log('args.items = ', args.items);
+      let items = args.items;
+
+      if (Array.isArray(args.items) && args.items.length > 0) {
+        items = items.map((item) =>
+          typeof item === 'string' ? JSON.parse(item) : item,
+        );
+        items = JSON.stringify(items);
+      }
+
+      if (items.length > 0) {
+        const result = await this.http.post('/items', items, {}, this.config);
+        const res = result;
+        this.show(res);
+        return this.pruneData(res, args.fullresponse);
+      }
+      return { type: 'success', message: 'No items to create' };
+    }
+
+    if (args.item) {
+      let item =
+        typeof args.item === 'string' ? JSON.parse(args.item) : args.item;
+      let items = JSON.stringify([item]);
+
+      const result = await this.http.post('/items', items, {}, this.config);
       this.show(result);
       return this.pruneData(result, args.fullresponse);
     }

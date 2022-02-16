@@ -16,69 +16,72 @@ const zoteroLib = new Zotero({});
  * Initialize Command Line Interface
  */
 async function commandLineInterface() {
-  const args = getArguments();
+  const args = parseArguments();
+
   if (args.version) {
     getVersion();
     process.exit(0);
   }
+
   if (args.verbose) {
     console.log('zotero-cli starting...');
+    zoteroLib.showConfig();
   }
+
   if (args.dryrun) {
     console.log(
       `API command:\n Zotero.${args.func}(${JSON.stringify(args, null, 2)})`,
     );
-  } else {
-    // using default=2 above prevents the overrides from being picked up
-    if (args.indent === null) args.indent = 2;
+    return;
+  }
 
-    if (args.verbose) zoteroLib.showConfig();
-    // call the actual command
-    if (!args.func) {
-      console.log('No arguments provided. Use -h for help.');
-      process.exit(0);
-    }
-    try {
-      // await this['$' + args.command.replace(/-/g, '_')]()
-      // await this[args.command.replace(/-/g, '_')]()
-      if (args.verbose) console.log('ARGS=' + JSON.stringify(args, null, 2));
-      let result = await zoteroLib[args.func](args);
-      // This really just works for 'item'... should realy move those functions elsewhere
-      if (args.xmp) {
-        result = formatAsXMP(result);
-      }
-      if (args.crossref) {
-        result = await formatAsCrossRefXML(result, args);
-      }
-      if (args.zenodo) {
-        args.zenodoWriteFile = true;
-        result = await getZenodoJson(result, args);
-      }
-      if (args.verbose) {
-        const myout = {
-          result,
-          output: zoteroLib.output,
-        };
-        console.log(
-          '{Result, output}=' +
-            JSON.stringify(myout, null, zoteroLib.config.indent),
-        );
-      }
+  // using default=2 above prevents the overrides from being picked up
+  if (args.indent === null) args.indent = 2;
 
-      if (args.out) {
-        logger.info(`writing output to file ${args.out}`);
-        fs.writeFileSync(
-          args.out,
-          JSON.stringify(result, null, zoteroLib.config.indent),
-        );
-      } else {
-        logger.info(`writing output to console`);
-        console.log(printJSON(result));
-      }
-    } catch (ex) {
-      zoteroLib.print('Command execution failed: ', ex);
-      process.exit(1);
+  // call the actual command
+  if (!args.func) {
+    console.log('No arguments provided. Use -h for help.');
+    process.exit(0);
+  }
+
+  try {
+    if (args.verbose) console.log('ARGS=' + JSON.stringify(args, null, 2));
+    let result = await zoteroLib[args.func](args);
+    // This really just works for 'item'... should realy move those functions elsewhere
+    if (args.xmp) {
+      result = formatAsXMP(result);
     }
+    if (args.crossref) {
+      result = await formatAsCrossRefXML(result, args);
+    }
+    if (args.zenodo) {
+      args.zenodoWriteFile = true;
+      result = await getZenodoJson(result, args);
+    }
+    if (args.verbose) {
+      const myout = {
+        result,
+        output: zoteroLib.output,
+      };
+      console.log(
+        '{Result, output}=' +
+          JSON.stringify(myout, null, zoteroLib.config.indent),
+      );
+    }
+
+    if (args.out) {
+      logger.info(`writing output to file ${args.out}`);
+      fs.writeFileSync(
+        args.out,
+        JSON.stringify(result, null, zoteroLib.config.indent),
+      );
+    } else {
+      logger.info(`writing output to console`);
+      console.log(printJSON(result));
+    }
+  } catch (ex) {
+    zoteroLib.print('Command execution failed: ', ex);
+    process.exit(1);
   }
 }
 
@@ -89,7 +92,7 @@ function getVersion() {
   return pjson.version;
 }
 
-function getArguments() {
+function parseArguments() {
   const parser = new ArgumentParser({
     description: 'Zotero command line utility',
   });
@@ -188,6 +191,7 @@ function getArguments() {
   // /keys/<key>
   // /users/<userID>/groups
 
+  //FIXME: this might be broken
   // parser.set_defaults({ "func": new Zotero().run() });
   // zotero.parser.parse_args();
 

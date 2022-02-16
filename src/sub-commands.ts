@@ -1,6 +1,11 @@
 import decoration from './decoartions';
-import logger from './logger';
 
+/**
+ * This map contains custom cmd handlers for subparsers
+ * for most subparsers the cmd handler is same as its key in this map
+ * however for those which are different the mapping is provided below
+ * e.g. for __
+ */
 const customCmdHandlers = new Map();
 customCmdHandlers.set('create', 'create_item');
 customCmdHandlers.set('update', 'update_item');
@@ -66,7 +71,6 @@ parsersMap.set('items', function (subparsers, subCmdName) {
     help:
       'json-schema file for all itemtypes, or directory with schema files, one per itemtype.',
   });
-  return { status: 0, message: 'success' };
 });
 
 parsersMap.set('item', function (subparsers, subCmdName) {
@@ -174,7 +178,6 @@ parsersMap.set('item', function (subparsers, subCmdName) {
     help:
       'json-schema file for all itemtypes, or directory with schema files, one per itemtype.',
   });
-  return { status: 0, message: 'success' };
 });
 
 parsersMap.set('create', function (subparsers, subCmdName) {
@@ -196,7 +199,6 @@ parsersMap.set('create', function (subparsers, subCmdName) {
     nargs: '*',
     help: 'JSON string(s) for the item(s) to be created.',
   });
-  return { status: 0, message: 'success' };
 });
 
 parsersMap.set('update', function (subparsers, subCmdName) {
@@ -228,7 +230,6 @@ parsersMap.set('update', function (subparsers, subCmdName) {
     help:
       'You have to supply the version of the item via the --version argument or else the latest version will be used.',
   });
-  return { status: 0, message: 'success' };
 });
 
 //TODO: Discuss that trash is not implemented???
@@ -278,7 +279,6 @@ parsersMap.set('attachment', function (subparsers, subCmdName) {
     required: true,
     help: 'Filename to save attachment to.',
   });
-  return { status: 0, message: 'success' };
 });
 
 parsersMap.set('fields', function (subparsers, subCmdName) {
@@ -290,7 +290,6 @@ parsersMap.set('fields', function (subparsers, subCmdName) {
   argparser.add_argument('--type', {
     help: 'Display fields types for TYPE.',
   });
-  return { status: 0, message: 'success' };
 });
 
 parsersMap.set('searches', function (subparsers, subCmdName) {
@@ -303,7 +302,6 @@ parsersMap.set('searches', function (subparsers, subCmdName) {
     nargs: 1,
     help: 'Path of JSON file containing the definitions of saved searches.',
   });
-  return { status: 0, message: 'success' };
 });
 
 parsersMap.set('tags', function (subparsers, subCmdName) {
@@ -319,7 +317,6 @@ parsersMap.set('tags', function (subparsers, subCmdName) {
     action: 'store_true',
     help: 'TODO: document',
   });
-  return { status: 0, message: 'success' };
 });
 
 parsersMap.set('enclose-item', function (subparsers, subCmdName) {
@@ -383,7 +380,6 @@ parsersMap.set('update-doi', function (subparsers, subCmdName) {
     action: 'store',
     help: 'The Zenodo record number for the item',
   });
-  return { status: 0, message: 'success' };
 });
 
 parsersMap.set('TEMPLATE', function (subparsers, subCmdName) {
@@ -468,15 +464,6 @@ parsersMap.set('attach-link', function (subparsers, subCmdName) {
     help:
       "Optional 'decoration/default title prefix'. Without title, this is used anyway. But if you give a title, specify this option to have the prefix anyway.",
   });
-  // ... individually
-  // --zenodorecord
-  // --zenododeposit
-  // --doi
-  // --kerko-url
-  // --googledoc
-  // .... ok... no... the url would give this... but... e.g. with kerko-url, the url given should be postfixed with the item...
-  // with --zenodorecord... the zenodo-id should be obtained from the item if possible...
-  return { status: 0, message: 'success' };
 });
 parsersMap.set('field', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('field', {
@@ -504,7 +491,6 @@ parsersMap.set('field', function (subparsers, subCmdName) {
     help:
       'You have to supply the version of the item via the --version argument or else the latest version will be used.',
   });
-  return { status: 0, message: 'success' };
 });
 parsersMap.set('extra-append', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('extra-append', {
@@ -520,7 +506,6 @@ parsersMap.set('extra-append', function (subparsers, subCmdName) {
     action: 'store',
     help: 'HELPTEXT',
   });
-  return { status: 0, message: 'success' };
 });
 
 parsersMap.set('update-url', function (subparsers, subCmdName) {
@@ -544,7 +529,6 @@ parsersMap.set('update-url', function (subparsers, subCmdName) {
     help:
       'You have to supply the version of the item via the --version argument or else the latest version will be used.',
   });
-  return { status: 0, message: 'success' };
 });
 
 parsersMap.set('kciaka', function (subparsers, subCmdName) {
@@ -563,7 +547,6 @@ parsersMap.set('kciaka', function (subparsers, subCmdName) {
     help:
       'The value for the update (if not provided, the value of the field is shown).',
   });
-  return { status: 0, message: 'success' };
 });
 
 parsersMap.set('bibliography', function (subparsers, subCmdName) {
@@ -623,7 +606,6 @@ parsersMap.set('bibliography', function (subparsers, subCmdName) {
       'Text xml to json conversion ref-by-ref. Helpful for debugging the xml to json conversion.',
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
-  return { status: 0, message: 'success' };
 });
 parsersMap.set('attach-note', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('attach-note', {
@@ -655,7 +637,6 @@ parsersMap.set('attach-note', function (subparsers, subCmdName) {
     action: 'store',
     help: 'Tags to be attached to the note',
   });
-  return { status: 0, message: 'success' };
 });
 parsersMap.set('getValue', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('getValue', { help: 'HELPTEXT' });
@@ -669,7 +650,6 @@ parsersMap.set('getValue', function (subparsers, subCmdName) {
     action: 'store',
     help: 'HELPTEXT',
   });
-  return { status: 0, message: 'success' };
 });
 parsersMap.set('collectionName', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('collectionName', {
@@ -685,7 +665,6 @@ parsersMap.set('collectionName', function (subparsers, subCmdName) {
     action: 'store',
     help: 'HELPTEXT',
   });
-  return { status: 0, message: 'success' };
 });
 
 parsersMap.set('amendCollection', function (subparsers, subCmdName) {
@@ -702,7 +681,6 @@ parsersMap.set('amendCollection', function (subparsers, subCmdName) {
     action: 'store',
     help: 'HELPTEXT',
   });
-  return { status: 0, message: 'success' };
 });
 
 parsersMap.set('__get', function (subparsers, subCmdName) {
@@ -715,7 +693,6 @@ parsersMap.set('__get', function (subparsers, subCmdName) {
     help: 'TODO: document',
   });
   argparser.add_argument('uri', { nargs: '+', help: 'TODO: document' });
-  return { status: 0, message: 'success' };
 });
 
 parsersMap.set('__post', function (subparsers, subCmdName) {
@@ -729,7 +706,6 @@ parsersMap.set('__post', function (subparsers, subCmdName) {
     required: true,
     help: 'Escaped JSON string for post data',
   });
-  return { status: 0, message: 'success' };
 });
 
 parsersMap.set('__put', function (subparsers, subCmdName) {
@@ -743,7 +719,6 @@ parsersMap.set('__put', function (subparsers, subCmdName) {
     required: true,
     help: 'Escaped JSON string for post data',
   });
-  return { status: 0, message: 'success' };
 });
 
 parsersMap.set('__patch', function (subparsers, subCmdName) {
@@ -761,7 +736,6 @@ parsersMap.set('__patch', function (subparsers, subCmdName) {
     required: true,
     help: 'Version of Zotero record (obtained previously)',
   });
-  return { status: 0, message: 'success' };
 });
 
 parsersMap.set('__delete', function (subparsers, subCmdName) {
@@ -771,7 +745,6 @@ parsersMap.set('__delete', function (subparsers, subCmdName) {
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('uri', { nargs: '+', help: 'Request uri' });
-  return { status: 0, message: 'success' };
 });
 
 parsersMap.set('key', function (subparsers, subCmdName) {
@@ -792,7 +765,6 @@ parsersMap.set('key', function (subparsers, subCmdName) {
     action: 'store_true',
     help: 'Produce a simplified listing of groups',
   });
-  return { status: 0, message: 'success' };
 });
 
 parsersMap.set('collections', function (subparsers, subCmdName) {
@@ -815,7 +787,6 @@ parsersMap.set('collections', function (subparsers, subCmdName) {
     help:
       'Create child collections of key (or at the top level if no key is specified) with the names specified.',
   });
-  return { status: 0, message: 'success' };
 });
 
 parsersMap.set('collection', function (subparsers, subCmdName) {
@@ -847,12 +818,10 @@ parsersMap.set('collection', function (subparsers, subCmdName) {
     help:
       "Convenience method: Remove items from this collection. Note that removing items from collections with 'item --removefromcollection' may require fewer API queries. (Convenience method: patch item->data->collections.)",
   });
-  return { status: 0, message: 'success' };
 });
 
 export function configAllParsers(subparsers) {
   parsersMap.forEach((parser, key) => {
-    logger.info('configuring parser for: %s', key);
     parser(subparsers, key);
   });
 }
