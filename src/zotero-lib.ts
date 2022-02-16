@@ -481,7 +481,6 @@ class Zotero {
     },
   ) {
     const tags = this.objectifyTags(options.tags);
-    // const noteText = options.content.replace(/\n/g, "\\n").replace(/\"/g, '\\\"')
     const noteText = options.content.replace(/\n/g, '<br>');
     const json = {
       parentItem: PARENT,
@@ -701,18 +700,16 @@ class Zotero {
     }
 
     if (args.count && args.validate) {
-      const msg = this.message(0, '--count cannot be combined with --validate');
-      return msg;
+      return this.message(0, '--count cannot be combined with --validate');
     }
 
     if (args.collection) {
       args.collection = this.extractKeyAndSetGroup(args.collection);
       if (!args.collection) {
-        const msg = this.message(
+        return this.message(
           0,
           'Unable to extract group/key from the string provided.',
         );
-        return msg;
       }
     }
 
@@ -736,11 +733,10 @@ class Zotero {
       items = await this.all(`${collection}/items/top`, params);
     } else if (params.limit) {
       if (params.limit > 100) {
-        const msg = this.message(
+        return this.message(
           0,
           'You can only retrieve up to 100 items with with params.limit.',
         );
-        return msg;
       }
       // console.log("get-----")
       items = await this.http.get(
@@ -768,13 +764,17 @@ class Zotero {
         throw new Error(
           `You have provided a schema with --validate-with that does not exist: ${args.validate_with} does not exist`,
         );
-      else schema_path = args.validate_with;
+      else {
+        schema_path = args.validate_with;
+      }
     } else {
       if (!fs.existsSync(this.config.zotero_schema))
         throw new Error(
           `You have asked for validation, but '${this.config.zotero_schema}' does not exist`,
         );
-      else schema_path = this.config.zotero_schema;
+      else {
+        schema_path = this.config.zotero_schema;
+      }
     }
     const oneSchema = fs.lstatSync(schema_path).isFile();
 
@@ -822,15 +822,13 @@ class Zotero {
     const output = [];
 
     const my_key = this.extractKeyAndSetGroup(args.key);
-    //args.group_id = my_group_id;
     args.key = my_key;
     // TODO: Need to implement filter as a command line option --filter="{...}"
     if (!args.key && !(args.filter && args.filter.itemKey)) {
-      const msg = this.message(
+      return this.message(
         0,
         'Unable to extract group/key from the string provided.',
       );
-      return msg;
     }
 
     var item;
