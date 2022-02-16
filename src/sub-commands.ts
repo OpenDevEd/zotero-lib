@@ -248,7 +248,6 @@ parsersMap.set('update', function (subparsers, subCmdName) {
 //   return null;
 // });
 
-//TODO: add subcmdhandlers
 parsersMap.set('publications', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('publications', {
     help:
