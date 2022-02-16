@@ -376,9 +376,15 @@ class Zotero {
       // /users/<userID>/groups
       if (args.terse) {
         console.log(`Number of groups: ${res2.length}`);
-        const res3 = res2.sort((a, b) =>
-          a.data.name > b.data.name ? 1 : b.data.name > a.data.name ? -1 : 0,
-        );
+        const res3 = [...res2].sort((a, b) => {
+          if (a.data.name > b.data.name) {
+            return 1;
+          } else if (b.data.name > a.data.name) {
+            return -1;
+          }
+          return 0;
+        });
+
         res3.forEach((element) => {
           const data = element.data;
           console.log(`${data.id}\t${data.name} ${data.owner} ${data.type}`);
@@ -427,53 +433,39 @@ class Zotero {
         return this.extractKeyGroupVariable(mykey, n);
       });
       return key;
-    } else {
-      let out = '';
-      key = key.toString();
-      const res = key.match(
-        /^zotero\:\/\/select\/groups\/(library|\d+)\/(items|collections)\/([A-Z01-9]+)/,
-      );
-      if (res) {
-        // console.log("extractKeyGroupVariable -> res=" + JSON.stringify(res, null, 2))
-        if (res[2] === 'library') {
-          console.log(
-            'You cannot specify zotero-select links (zotero://...) to select user libraries.',
-          );
-          return null;
-        } else {
-          // console.log("Key: zotero://-key provided for "+res[2]+" Setting group-id.")
-          this.config.group_id = res[1];
-          out = res[n];
-          // console.log(`--> ${n}/${out}`)
-        }
-      } else {
-        // There wasn't a match. We might have a group, or a key.
-        // console.log("extractKeyGroupVariable: direct return")
-        if (key.match(/^([A-Z01-9]+)/)) {
-          if (n === 1) {
-            // Group requested
-            if (key.match(/^([01-9]+)/)) {
-              // This is slightly ropy - presumably a zotero item key could just be numbers?
-              out = key;
-            } else {
-              out = undefined;
-            }
-          } else if (n === 2) {
-            // items|collections requested - but we cannot tell
-            out = undefined;
-          } else if (n === 3) {
-            // item requested - this is ok, because we wouldn't expect a group to go in as sole argument
-            out = key;
-          } else {
-            out = undefined;
-          }
-        } else {
-          out = undefined;
+    }
+
+    let out = undefined;
+    key = key.toString();
+    const res = key.match(
+      /^zotero\:\/\/select\/groups\/(library|\d+)\/(items|collections)\/([A-Z01-9]+)/,
+    );
+
+    if (res) {
+      // console.log("extractKeyGroupVariable -> res=" + JSON.stringify(res, null, 2))
+      if (res[2] === 'library') {
+        console.log(
+          'You cannot specify zotero-select links (zotero://...) to select user libraries.',
+        );
+        return null;
+      }
+      // console.log("Key: zotero://-key provided for "+res[2]+" Setting group-id.")
+      this.config.group_id = res[1];
+      out = res[n];
+    }
+
+    if (!res) {
+      // There wasn't a match. We might have a group, or a key.
+      if (key.match(/^([A-Z01-9]+)/)) {
+        if ((n === 1 && key.match(/^([01-9]+)/)) || n === 3) {
+          // Group requested
+          // This is slightly ropy - presumably a zotero item key could just be numbers?
+          // item requested - this is ok, because we wouldn't expect a group to go in as sole argument
+          out = key;
         }
       }
-      // console.log("extractKeyGroupVariable:result=" + out)
-      return out;
     }
+    return out;
   }
 
   private extractKeyAndSetGroup(key) {
