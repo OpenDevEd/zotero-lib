@@ -76,7 +76,6 @@ class Zotero {
     // STEP 1. Read config file
     if (shouldReadConfigFile || args.config) {
       config = readConfigFile(args, config);
-      // logger.info('reading config files: ', config);
     }
 
     // STEP 2. Apply --config_json option
@@ -91,7 +90,6 @@ class Zotero {
     }
 
     const result = this.canonicalConfig(config, args);
-    // console.log('canonical config: ', result);
 
     if (args.verbose) {
       console.log('config=' + JSON.stringify(result, null, 2));
@@ -148,9 +146,6 @@ class Zotero {
    */
   private canonicalConfig(_config: any, args: any) {
     const config = { ..._config };
-
-    // console.log('config', config);
-    // console.log('args', args);
 
     this.config_keys.forEach((key) => {
       const key_zotero = 'zotero-' + key;
@@ -221,37 +216,15 @@ class Zotero {
   public print(...args: any[]) {
     if (!this.config.out) {
       console.log.apply(console, args);
-    } else {
-      this.output +=
-        args
-          .map((m) => {
-            const type = typeof m;
-
-            if (
-              type === 'string' ||
-              m instanceof String ||
-              type === 'number' ||
-              type === 'undefined' ||
-              type === 'boolean' ||
-              m === null
-            ) {
-              return m;
-            }
-
-            if (m instanceof Error) {
-              return `<Error: ${m.message || m.name}${
-                m.stack ? `\n${m.stack}` : ''
-              }>`;
-            }
-
-            if (m && type === 'object' && m.message) {
-              return `<Error: ${m.message}#\n${m.stack}>`;
-            }
-
-            return JSON.stringify(m, null, this.config.indent);
-          })
-          .join(' ') + '\n';
+      return;
     }
+
+    this.output +=
+      args
+        .map((m) => {
+          return formatMessage(m, this.config);
+        })
+        .join(' ') + '\n';
   }
 
   // Function to get more than 100 records, i.e. chunked retrieval.
@@ -360,15 +333,17 @@ class Zotero {
    * 'DELETE uri'.
    */
   public async __delete(args) {
-    const out = [];
+    const output = [];
     for (const uri of args.uri) {
-      // console.log(uri)
       const response = await this.http.get(uri, undefined, this.config);
-      // console.log(response)
-      out.push[await this.http.delete(uri, response.version, this.config)];
+      const deleteResponse = await this.http.delete(
+        uri,
+        response.version,
+        this.config,
+      );
+      output.push(deleteResponse);
     }
-    process.exit(1);
-    return out;
+    return output;
   }
 
   /**
@@ -658,20 +633,17 @@ class Zotero {
     if (args.key) {
       args.key = this.extractKeyAndSetGroup(args.key);
     } else {
-      const msg = this.message(
+      return this.message(
         0,
         'Unable to extract group/key from the string provided.',
       );
-      return msg;
     }
 
     if (args.tags && args.add) {
-      const msg = this.message(0, '--tags cannot be combined with --add');
-      return msg;
+      return this.message(0, '--tags cannot be combined with --add');
     }
     if (args.tags && args.remove) {
-      const msg = this.message(0, '--tags cannot be combined with --remove');
-      return msg;
+      return this.message(0, '--tags cannot be combined with --remove');
     }
 
     if (args.add) {
@@ -883,17 +855,17 @@ class Zotero {
         output.push({ children });
         await Promise.all(
           children
-            .filter((item) => item.data.itemType === 'attachment')
-            .map(async (item) => {
-              if (item.data.filename) {
-                console.log(`Downloading file ${item.data.filename}`);
+            .filter((i) => i.data.itemType === 'attachment')
+            .map(async (child) => {
+              if (child.data.filename) {
+                console.log(`Downloading file ${child.data.filename}`);
                 // TODO:
                 // ??? await this.attachment({key: item.key, save: item.data.filename})
                 // TODO: Is 'binary' correct?
                 fs.writeFileSync(
-                  item.data.filename,
+                  child.data.filename,
                   await this.http.get(
-                    `/items/${item.key}/file`,
+                    `/items/${child.key}/file`,
                     undefined,
                     this.config,
                   ),
@@ -901,7 +873,7 @@ class Zotero {
                 );
               } else {
                 console.log(
-                  `Not downloading file ${item.key}/${item.data.itemType}/${item.data.linkMode}/${item.data.title}`,
+                  `Not downloading file ${child.key}/${child.data.itemType}/${child.data.linkMode}/${child.data.title}`,
                 );
               }
             }),
@@ -2345,3 +2317,22 @@ class Zotero {
 }
 
 export = Zotero;
+
+function formatMessage(m, config) {
+  const type = typeof m;
+
+  const validTypes = ['string', 'number', 'undefined', 'boolean'];
+  if (validTypes.includes(type) || m instanceof String || m === null) {
+    return m;
+  }
+
+  if (m instanceof Error) {
+    return `<Error: ${m.message || m.name}\n ${m.stack || ''}>`;
+  }
+
+  if (m && type === 'object' && m.message) {
+    return `<Error: ${m.message}#\n${m.stack}>`;
+  }
+
+  return JSON.stringify(m, null, config.indent);
+}
