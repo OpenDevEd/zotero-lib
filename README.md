@@ -101,9 +101,9 @@ This allows you to create item(s). You can create items in two different ways by
 
 for example
 
-```
-zotero-lib create items --files filepath.txt
-zotero-lib create items --items '{"title": "zotero item"}'
+```bash
+zotero-lib create --files filepath.txt
+zotero-lib create --items '{"title": "zotero item 1", "itemType": "book"}' '{"title": "zotero item 2", "itemType": "book"}'
 ```
 
 ### Update
