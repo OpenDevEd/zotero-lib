@@ -1,15 +1,34 @@
 import decoration from './decoartions';
 import logger from './logger';
 
-const cmdHandlers = new Map();
-cmdHandlers.set('__get', '__get');
+const customCmdHandlers = new Map();
+customCmdHandlers.set('create', 'create_item');
+customCmdHandlers.set('update', 'update_item');
+customCmdHandlers.set('enclose-item', 'enclose_item_in_collection');
+customCmdHandlers.set('get-doi', 'get_doi');
+customCmdHandlers.set('update-doi', 'update_doi');
+customCmdHandlers.set('template', 'template');
+customCmdHandlers.set('attach-link', 'attach_link');
+customCmdHandlers.set('extra-append', 'extra_append');
+customCmdHandlers.set('update-url', 'update_url');
+customCmdHandlers.set('kciaka', 'KerkoCiteItemAlsoKnownAs');
+customCmdHandlers.set('bibliography', 'getbib');
+customCmdHandlers.set('attach-note', 'attach_note');
+
+function getFuncName(subCmdName) {
+  if (customCmdHandlers.has(subCmdName)) {
+    return customCmdHandlers.get(subCmdName);
+  }
+
+  return subCmdName;
+}
 
 const parsersMap = new Map();
 parsersMap.set('__get', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('__get', {
     help: "Expose 'get'. Make a direct query to the API using 'GET uri'.",
   });
-  argparser.set_defaults({ func: cmdHandlers.get(subCmdName) });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--root', {
     action: 'store_true',
     help: 'TODO: document',
@@ -24,7 +43,7 @@ parsersMap.set('items', function (subparsers, subCmdName) {
     help:
       'Retrieve items, retrieve items within collections, with filter is required. Count items. By default, all items are retrieved. With --top or limit (via --filter) the default number of items are retrieved. (API: /items, /items/top, /collections/COLLECTION/items/top)',
   });
-  argparser.set_defaults({ func: cmdHandlers.get(subCmdName) });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
   /* parser_items.add_argument('itemKeys', {
          nargs: "*",
          action: 'store_true',
@@ -68,7 +87,7 @@ parsersMap.set('item', function (subparsers, subCmdName) {
     help:
       'Modify items: Add/remove tags, attach/save files, add to collection/remove, get child items. (API: /items/KEY/ or /items/KEY/children)',
   });
-  argparser.set_defaults({ func: cmdHandlers.get(subCmdName) });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--key', {
     action: 'store',
     required: true,
@@ -170,13 +189,13 @@ parsersMap.set('item', function (subparsers, subCmdName) {
   return { status: 0, message: 'success' };
 });
 
-parsersMap.set('create_item', function (subparsers, subCmdName) {
+parsersMap.set('create', function (subparsers, subCmdName) {
   // async create item
   const argparser = subparsers.add_parser('create', {
     help:
       'Create a new item or items. (API: /items/new) You can retrieve a template with the --template option. Use this option to create both top-level items, as well as child items (including notes and links).',
   });
-  argparser.set_defaults({ func: this.create_item.name });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--template', {
     help:
       "Retrieve a template for the item you wish to create. You can retrieve the template types using the main argument 'types'.",
@@ -192,13 +211,13 @@ parsersMap.set('create_item', function (subparsers, subCmdName) {
   return { status: 0, message: 'success' };
 });
 
-parsersMap.set('update_item', function (subparsers, subCmdName) {
+parsersMap.set('update', function (subparsers, subCmdName) {
   // update item
   const argparser = subparsers.add_parser('update', {
     help:
       'Update/replace an item (--key KEY), either update (API: patch /items/KEY) or replacing (using --replace, API: put /items/KEY).',
   });
-  argparser.set_defaults({ func: this.update_item.name });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--key', {
     required: true,
     help:
@@ -229,15 +248,13 @@ parsersMap.set('update_item', function (subparsers, subCmdName) {
 //   return null;
 // });
 
-//TODO: check func name is correct
-//TODO: check key names are correct
 //TODO: add subcmdhandlers
 parsersMap.set('publications', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('publications', {
     help:
       'Return a list of items in publications (user library only). (API: /publications/items)',
   });
-  argparser.set_defaults({ func: this.publications.name });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
 });
 
 parsersMap.set('types', function (subparsers, subCmdName) {
@@ -245,16 +262,15 @@ parsersMap.set('types', function (subparsers, subCmdName) {
     help:
       'Retrieve a list of items types available in Zotero. (API: /itemTypes).',
   });
-  argparser.set_defaults({ func: this.types.name });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
 });
 
-parsersMap.set('group', function (subparsers, subCmdName) {
+parsersMap.set('groups', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('groups', {
     help:
       'Retrieve the Zotero groups data to which the current library_id and api_key has access to. (API: /users/<user-id>/groups)',
   });
-  argparser.set_defaults({ func: this.groups.name });
-  return this.message(0, 'success', args);
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
 });
 
 parsersMap.set('attachment', function (subparsers, subCmdName) {
@@ -263,7 +279,7 @@ parsersMap.set('attachment', function (subparsers, subCmdName) {
     help:
       "Save file attachments for the item specified with --key KEY (API: /items/KEY/file). Also see 'item', which has options for adding/saving file attachments. ",
   });
-  argparser.set_defaults({ func: this.attachment.name });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--key', {
     action: 'store',
     required: true,
@@ -283,7 +299,7 @@ parsersMap.set('fields', function (subparsers, subCmdName) {
     help:
       "Retrieve a template with the fields for --type TYPE (API: /itemTypeFields, /itemTypeCreatorTypes) or all item fields (API: /itemFields). Note that to retrieve a template, use 'create-item --template TYPE' rather than this command.",
   });
-  argparser.set_defaults({ func: this.fields.name });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--type', {
     help: 'Display fields types for TYPE.',
   });
@@ -295,7 +311,7 @@ parsersMap.set('searches', function (subparsers, subCmdName) {
     help:
       'Return a list of the saved searches of the library. Create new saved searches. (API: /searches)',
   });
-  argparser.set_defaults({ func: this.searches.name });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--create', {
     nargs: 1,
     help: 'Path of JSON file containing the definitions of saved searches.',
@@ -308,7 +324,7 @@ parsersMap.set('tags', function (subparsers, subCmdName) {
     help:
       'Return a list of tags in the library. Options to filter and count tags. (API: /tags)',
   });
-  argparser.set_defaults({ func: this.tags.name });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--filter', {
     help: 'Tags of all types matching a specific name.',
   });
@@ -324,7 +340,7 @@ parsersMap.set('enclose-item', function (subparsers, subCmdName) {
     help:
       'Utility function: Enlose the item in a collection and create further subcollections.',
   });
-  argparser.set_defaults({ func: this.enclose_item_in_collection.name });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--key', {
     nargs: 1,
     action: 'store',
@@ -347,26 +363,24 @@ parsersMap.set('enclose-item', function (subparsers, subCmdName) {
     help:
       "The title for the new collection (otherwise it's derived from the item title).",
   });
-  return { status: 0, message: 'success' };
 });
 
 parsersMap.set('get-doi', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('get-doi', {
     help: 'Utility function: Get the DOI for the item.',
   });
-  argparser.set_defaults({ func: this.get_doi.name });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--key', {
     nargs: 1,
     action: 'store',
     help: 'The Zotero item key for the item to be updated.',
   });
-  return { status: 0, message: 'success' };
 });
 parsersMap.set('update-doi', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('update-doi', {
     help: 'Utility function: Update the DOI for the item.',
   });
-  argparser.set_defaults({ func: this.update_doi.name });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--key', {
     nargs: 1,
     action: 'store',
@@ -385,8 +399,8 @@ parsersMap.set('update-doi', function (subparsers, subCmdName) {
   return { status: 0, message: 'success' };
 });
 parsersMap.set('template', function (subparsers, subCmdName) {
-  const argparser = subparsers.add_parser('TEMPLATE', { help: 'HELPTEXT' });
-  argparser.set_defaults({ func: this.TEMPLATE.name });
+  const argparser = subparsers.add_parser('template', { help: 'HELPTEXT' });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--switch', {
     action: 'store_true',
     help: 'HELPTEXT',
@@ -401,7 +415,7 @@ parsersMap.set('attach-link', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('attach-link', {
     help: 'Utility function: attach a link to an item',
   });
-  argparser.set_defaults({ func: this.attach_link.name });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--key', {
     nargs: 1,
     action: 'store',
@@ -479,7 +493,7 @@ parsersMap.set('field', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('field', {
     help: 'Utility function: Update a field for a specific item.',
   });
-  argparser.set_defaults({ func: this.field.name });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--key', {
     nargs: 1,
     action: 'store',
@@ -507,7 +521,7 @@ parsersMap.set('extra-append', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('extra-append', {
     help: 'HELPTEXT',
   });
-  argparser.set_defaults({ func: this.extra_append.name });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--switch', {
     action: 'store_true',
     help: 'HELPTEXT',
@@ -524,7 +538,7 @@ parsersMap.set('update-url', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('update-url', {
     help: 'Utility function: Update the url for a specific item.',
   });
-  argparser.set_defaults({ func: this.update_url.name });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--key', {
     nargs: 1,
     action: 'store',
@@ -548,7 +562,7 @@ parsersMap.set('kciaka', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('kciaka', {
     help: 'Utility function: View/merge - extra>Kerko.CiteItemAlsoKnownAs.',
   });
-  argparser.set_defaults({ func: this.KerkoCiteItemAlsoKnownAs.name });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--key', {
     nargs: 1,
     action: 'store',
@@ -619,14 +633,14 @@ parsersMap.set('bibliography', function (subparsers, subCmdName) {
     help:
       'Text xml to json conversion ref-by-ref. Helpful for debugging the xml to json conversion.',
   });
-  argparser.set_defaults({ func: this.getbib.name });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
   return { status: 0, message: 'success' };
 });
 parsersMap.set('attach-note', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('attach-note', {
     help: 'Utility function: Attach note to item',
   });
-  argparser.set_defaults({ func: this.attach_note.name });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--key', {
     action: 'store',
     nargs: 1,
@@ -656,7 +670,7 @@ parsersMap.set('attach-note', function (subparsers, subCmdName) {
 });
 parsersMap.set('getValue', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('getValue', { help: 'HELPTEXT' });
-  argparser.set_defaults({ func: this.getValue.name });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--switch', {
     action: 'store_true',
     help: 'HELPTEXT',
@@ -672,7 +686,7 @@ parsersMap.set('collectionName', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('collectionName', {
     help: 'HELPTEXT',
   });
-  argparser.set_defaults({ func: this.collectionName.name });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--switch', {
     action: 'store_true',
     help: 'HELPTEXT',
@@ -685,11 +699,11 @@ parsersMap.set('collectionName', function (subparsers, subCmdName) {
   return { status: 0, message: 'success' };
 });
 
-parsersMap.set('update_item', function (subparsers, subCmdName) {
+parsersMap.set('amendCollection', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('amendCollection', {
     help: 'HELPTEXT',
   });
-  argparser.set_defaults({ func: this.amendCollection.name });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--switch', {
     action: 'store_true',
     help: 'HELPTEXT',
@@ -706,7 +720,7 @@ parsersMap.set('__post', function (subparsers, subCmdName) {
     help:
       "Expose 'post'. Make a direct query to the API using 'POST uri [--data data]'.",
   });
-  argparser.set_defaults({ func: this.__post.name });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('uri', { nargs: 1, help: 'TODO: document' });
   argparser.add_argument('--data', {
     required: true,
@@ -720,7 +734,7 @@ parsersMap.set('__put', function (subparsers, subCmdName) {
     help:
       "Expose 'put'. Make a direct query to the API using 'PUT uri [--data data]'.",
   });
-  argparser.set_defaults({ func: this.__put.name });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('uri', { nargs: 1, help: 'TODO: document' });
   argparser.add_argument('--data', {
     required: true,
@@ -734,7 +748,7 @@ parsersMap.set('__patch', function (subparsers, subCmdName) {
     help:
       "Expose 'patch'. Make a direct query to the API using 'PATCH uri [--data data]'.",
   });
-  argparser.set_defaults({ func: this.__patch.name });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('uri', { nargs: 1, help: 'TODO: document' });
   argparser.add_argument('--data', {
     required: true,
@@ -747,12 +761,12 @@ parsersMap.set('__patch', function (subparsers, subCmdName) {
   return { status: 0, message: 'success' };
 });
 
-parsersMap.set('update_item', function (subparsers, subCmdName) {
+parsersMap.set('__delete', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('__delete', {
     help:
       "Expose 'delete'. Make a direct delete query to the API using 'DELETE uri'.",
   });
-  argparser.set_defaults({ func: this.__delete.name });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('uri', { nargs: '+', help: 'Request uri' });
   return { status: 0, message: 'success' };
 });
@@ -761,7 +775,7 @@ parsersMap.set('key', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('key', {
     help: 'Show details about an API key. (API: /keys )',
   });
-  argparser.set_defaults({ func: this.key.name });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--key', {
     nargs: 1,
     help:
@@ -779,22 +793,21 @@ parsersMap.set('key', function (subparsers, subCmdName) {
 });
 
 parsersMap.set('collections', function (subparsers, subCmdName) {
-  // async $collections
-  const parser_collections = subparsers.add_parser('collections', {
+  const argparser = subparsers.add_parser('collections', {
     help: 'Retrieve sub-collections and create new collections.',
   });
-  parser_collections.set_defaults({ func: 'collections' });
-  parser_collections.add_argument('--top', {
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
+  argparser.add_argument('--top', {
     action: 'store_true',
     help: 'Show only collection at top level.',
   });
-  parser_collections.add_argument('--key', {
+  argparser.add_argument('--key', {
     nargs: 1,
     required: true,
     help:
       'Show all the child collections of collection with key. You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
   });
-  parser_collections.add_argument('--create-child', {
+  argparser.add_argument('--create-child', {
     nargs: '*',
     help:
       'Create child collections of key (or at the top level if no key is specified) with the names specified.',
@@ -803,38 +816,36 @@ parsersMap.set('collections', function (subparsers, subCmdName) {
 });
 
 parsersMap.set('collection', function (subparsers, subCmdName) {
-  const parser_collection = subparsers.add_parser('collection', {
+  const argparser = subparsers.add_parser('collection', {
     help:
       "Retrieve collection information, display tags, add/remove items. (API: /collections/KEY or /collections/KEY/tags). (Note: Retrieve items is a collection: use 'items --collection KEY'.) ",
   });
-  parser_collection.set_defaults({ func: this.collection.name });
-  parser_collection.add_argument('--key', {
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
+  argparser.add_argument('--key', {
     nargs: 1,
     help:
       'The key of the collection (required). You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
   });
-  parser_collection.add_argument('--tags', {
+  argparser.add_argument('--tags', {
     action: 'store_true',
     help: 'Display tags present in the collection.',
   });
-  parser_collection.add_argument('itemkeys', {
+  argparser.add_argument('itemkeys', {
     nargs: '*',
     help: 'Item keys for items to be added or removed from this collection.',
   });
-  parser_collection.add_argument('--add', {
+  argparser.add_argument('--add', {
     nargs: '*',
     help:
       "Add items to this collection. Note that adding items to collections with 'item --addtocollection' may require fewer API queries. (Convenience method: patch item->data->collections.)",
   });
-  parser_collection.add_argument('--remove', {
+  argparser.add_argument('--remove', {
     nargs: '*',
     help:
       "Convenience method: Remove items from this collection. Note that removing items from collections with 'item --removefromcollection' may require fewer API queries. (Convenience method: patch item->data->collections.)",
   });
   return { status: 0, message: 'success' };
 });
-parsersMap.set('update_item', function (subparsers, subCmdName) {});
-parsersMap.set('update_item', function (subparsers, subCmdName) {});
 
 export function configAllParsers(subparsers) {
   parsersMap.forEach((parser, key) => {
