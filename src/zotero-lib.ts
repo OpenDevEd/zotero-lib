@@ -1579,12 +1579,9 @@ class Zotero {
       return this.message();
     }
     console.log('-->' + response.collections);
-    const child_name = args.title
-      ? args.title
-      : (response.reportNumber ? response.reportNumber + '. ' : '') +
-        response.title;
-    // const new_coll = zotero.create_collection(group, base_collection, $name)
-    // console.log("ch="+child_name)
+    const title = response.reportNumber ? response.reportNumber + '. ' : '';
+    const child_name = args.title ? args.title : title + response.title;
+
     output.push({ child_name });
 
     // Everything below here should be done as Promise.all
@@ -1763,10 +1760,9 @@ class Zotero {
           fullresponse: false,
           show: true,
         };
-        // ACTION: check arguments
-        // ACTION: run code
-        const update = await this.update_item(updateargs);
-        if (update.statusCode == 204) {
+
+        const updatedItem = await this.update_item(updateargs);
+        if (updatedItem.statusCode == 204) {
           var today = new Date();
           if (args.doi != existingDOI) {
             const message = `Attached new DOI ${
@@ -1784,7 +1780,7 @@ class Zotero {
         } else {
           console.log(
             'async update_doi - update failed',
-            JSON.stringify(update, null, 2),
+            JSON.stringify(updatedItem, null, 2),
           );
           return this.message(1, 'async update_doi - update failed');
         }
@@ -1815,8 +1811,7 @@ class Zotero {
     args.key = this.extractKeyAndSetGroup(args.key);
     //TODO: args parsing code
     args.title = as_value(args.title);
-    const tags = [];
-    if (args.tags) tags.push(args.tags);
+
     args.url = as_value(args.url);
     var dataout = [];
     if (args.zenodo) {
@@ -1880,14 +1875,13 @@ class Zotero {
     }
     if (args.update_url_field) {
       if (args.url || args.kerko_site_url) {
+        const kerkoUrl = as_value(args.kerko_site_url)
+          ? as_value(args.kerko_site_url) + as_value(args.key)
+          : '';
         //TODO: args parsing code
         const argx = {
           key: as_value(args.key),
-          value: as_value(args.url)
-            ? as_value(args.url)
-            : as_value(args.kerko_site_url)
-            ? as_value(args.kerko_site_url) + as_value(args.key)
-            : '',
+          value: as_value(args.url) ? as_value(args.url) : kerkoUrl,
         };
         const datau = await this.update_url(argx);
 
@@ -1918,7 +1912,6 @@ class Zotero {
       item = await this.item(args);
       thisversion = item.version;
     }
-    // const item = this.pruneData(response)
     const myobj = {};
     if (args.value) {
       myobj[args.field] = as_value(args.value);
@@ -1960,9 +1953,7 @@ class Zotero {
     args.json = {
       url: args.value,
     };
-    const update = await this.update_item(args);
-
-    return update;
+    return this.update_item(args);
   }
 
   public async KerkoCiteItemAlsoKnownAs(args) {
@@ -1997,8 +1988,6 @@ class Zotero {
       args.add = as_array(args.add);
       const knew =
         'KerkoCite.ItemAlsoKnownAs: ' + _.union(kcarr, args.add).join(' ');
-      // console.log(knew)
-      // console.log(extraarr[kciaka])
       if (knew != extraarr[kciaka]) {
         do_update = true;
         console.log('Update');
@@ -2057,8 +2046,8 @@ class Zotero {
   /* START FUcntionS FOR GETBIB */
   async getZoteroDataX(args) {
     //console.log("Hello")
-    var d = new Date();
-    var n = d.getTime();
+    let d = new Date();
+    let n = d.getTime();
     // TODO: We need to check the groups of requested data against the groups the API key has access to.
     let fullresponse;
     // We could allow responses that have arg.keys/group as well as groupkeys.
@@ -2083,8 +2072,8 @@ class Zotero {
                 /\((\d\d\d\d)\)/,
                 '($1' +
                   element.data.tags
-                    .filter((element) => element.tag.match(/_yl:/))
-                    .map((element) => element.tag)
+                    .filter((i) => i.tag.match(/_yl:/))
+                    .map((item) => item.tag)
                     .join(',')
                     .replace(/_yl\:/, '') +
                   ')',
@@ -2118,22 +2107,20 @@ class Zotero {
         return catchme(2, 'caught error in response', e, response);
       }
       if (args.test) {
-        var d = new Date();
-        var n = (d.getTime() - n) / 1000;
-        var output = [];
-        const sortresp = resp.sort();
+        let output = [];
+        const sortresp = [...resp].sort();
         for (const i in sortresp) {
           let lineresult = null;
-          const xml = sortresp[i];
+          const xmlStr = sortresp[i];
           try {
-            const payload = convert.xml2json(xml, {
+            const payload = convert.xml2json(xmlStr, {
               compact: false,
               spaces: 4,
             });
-            lineresult = { in: xml, error: {}, out: payload };
+            lineresult = { in: xmlStr, error: {}, out: payload };
           } catch (e) {
             lineresult = {
-              in: xml,
+              in: xmlStr,
               error: e,
               out: {},
             };
@@ -2142,10 +2129,9 @@ class Zotero {
         }
         return { status: 0, data: output };
       } else {
-        var xml = '<div>\n' + resp.sort().join('\n') + '\n</div>';
-        var d = new Date();
-        var n = (d.getTime() - n) / 1000;
-        var outputstr = '{}';
+        let xml = '<div>\n' + [...resp].sort().join('\n') + '\n</div>';
+        let innerN = (d.getTime() - n) / 1000;
+        let outputstr;
         if (args.json) {
           try {
             const payload = convert.xml2json(xml, {
@@ -2153,7 +2139,7 @@ class Zotero {
               spaces: 4,
             });
             outputstr =
-              `{\n"status": 0,\n"count": ${response.length},\n"duration": ${n},\n"data": ` +
+              `{\n"status": 0,\n"count": ${response.length},\n"duration": ${innerN},\n"data": ` +
               payload +
               '\n}';
           } catch (e) {
@@ -2165,20 +2151,19 @@ class Zotero {
         }
       }
     } else {
-      var d = new Date();
-      var n = (d.getTime() - n) / 1000;
+      let date = new Date();
+      let innerN = (date.getTime() - n) / 1000;
       return JSON.stringify(
         {
           status: 1,
           message: isomessage('error: no response'),
-          duration: n,
+          duration: innerN,
           data: fullresponse,
         },
         null,
         2,
       );
     }
-    // return xml
   }
 
   async makeZoteroQuery(arg) {
@@ -2280,10 +2265,8 @@ class Zotero {
         errors.push({ error: 'Failure to retrieve data', ...zargs });
       }
     }
-    // console.log("Multi query 3")
 
-    const output = { status: 0, message: 'Success', data: b, errors };
-    return output;
+    return { status: 0, message: 'Success', data: b, errors };
   }
 
   /* END Fucntions FOR GETBIB */
