@@ -20,7 +20,6 @@ import decoration from './decoartions';
 import { readConfigFile } from './readConfigFile';
 
 require('dotenv').config();
-require('docstring');
 
 const _ = require('lodash');
 const he = require('he');
