@@ -58,7 +58,6 @@
     "standard-version": "^9.3.1",
     "sugar": "^2.0.6",
     "ts-dotenv": "^0.8.3",
-    "tsconfig": "^7.0.0",
     "tslib": "^2.2.0",
     "winston": "^3.6.0",
     "xml-escape": "^1.1.0",
