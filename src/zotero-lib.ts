@@ -18,6 +18,7 @@ import {
 } from './utils';
 import decoration from './decoartions';
 import { readConfigFile } from './readConfigFile';
+import md5 from './utils/md5-file';
 
 require('dotenv').config();
 
@@ -30,7 +31,6 @@ const path = require('path');
 const LinkHeader = require('http-link-header');
 
 const ajv = new Ajv();
-const md5 = require('md5-file');
 
 class Zotero {
   // The following config keys are expected/allowed,
@@ -909,7 +909,7 @@ class Zotero {
             this.config,
           );
           const uploadAuth = await this.http.post(
-            `/items/${uploadItem.successful[0].key}/file?md5=${md5.sync(
+            `/items/${uploadItem.successful[0].key}/file?md5=${md5(
               filename,
             )}&filename=${attach.filename}&filesize=${
               fs.statSync(filename)['size']
