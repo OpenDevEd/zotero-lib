@@ -18,7 +18,7 @@ import {
 } from './utils';
 import decoration from './decoartions';
 import { readConfigFile } from './readConfigFile';
-import md5 from './utils/md5-file';
+import md5File from './utils/md5-file';
 
 require('dotenv').config();
 
@@ -909,7 +909,7 @@ class Zotero {
             this.config,
           );
           const uploadAuth = await this.http.post(
-            `/items/${uploadItem.successful[0].key}/file?md5=${md5(
+            `/items/${uploadItem.successful[0].key}/file?md5=${md5File(
               filename,
             )}&filename=${attach.filename}&filesize=${
               fs.statSync(filename)['size']
