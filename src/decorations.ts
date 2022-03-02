@@ -1,4 +1,4 @@
-const decoration = {
+const decorations = {
   kerko_url: {
     title: '👀View item in Evidence Library',
     tags: ['_r:kerko', '_r:zotzen'],
@@ -33,4 +33,4 @@ const decoration = {
   },
 };
 
-export default decoration;
+export default decorations;

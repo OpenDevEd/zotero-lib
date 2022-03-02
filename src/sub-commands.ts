@@ -1,4 +1,4 @@
-import decoration from './decoartions';
+import decorations from './decorations';
 
 /**
  * This map contains custom cmd handlers for subparsers
@@ -33,8 +33,7 @@ const parsersMap = new Map();
 parsersMap.set('items', function (subparsers, subCmdName) {
   // async items
   const argparser = subparsers.add_parser('items', {
-    help:
-      'Retrieve items, retrieve items within collections, with filter is required. Count items. By default, all items are retrieved. With --top or limit (via --filter) the default number of items are retrieved. (API: /items, /items/top, /collections/COLLECTION/items/top)',
+    help: 'Retrieve items, retrieve items within collections, with filter is required. Count items. By default, all items are retrieved. With --top or limit (via --filter) the default number of items are retrieved. (API: /items, /items/top, /collections/COLLECTION/items/top)',
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
   /* parser_items.add_argument('itemKeys', {
@@ -49,42 +48,35 @@ parsersMap.set('items', function (subparsers, subCmdName) {
   // argparser.add_argument('--all', { action: 'store_true', help: 'obsolete' })
   argparser.add_argument('--filter', {
     type: subparsers.json,
-    help:
-      'Provide a filter as described in the Zotero API documentation under read requests / parameters. For example: \'{"format": "json,bib", "limit": 100, "start": 100}\'.',
+    help: 'Provide a filter as described in the Zotero API documentation under read requests / parameters. For example: \'{"format": "json,bib", "limit": 100, "start": 100}\'.',
   });
   argparser.add_argument('--collection', {
-    help:
-      'Retrive list of items for collection. You can provide the collection key as a zotero-select link (zotero://...) to also set the group-id.',
+    help: 'Retrive list of items for collection. You can provide the collection key as a zotero-select link (zotero://...) to also set the group-id.',
   });
   argparser.add_argument('--top', {
     action: 'store_true',
-    help:
-      'Retrieve top-level items in the library/collection (excluding child items / attachments, excluding trashed items).',
+    help: 'Retrieve top-level items in the library/collection (excluding child items / attachments, excluding trashed items).',
   });
   argparser.add_argument('--validate', {
     action: 'store_true',
-    help:
-      'Validate the record against a schema. If your config contains zotero-schema, then that file is used. Otherwise supply one with --validate-with',
+    help: 'Validate the record against a schema. If your config contains zotero-schema, then that file is used. Otherwise supply one with --validate-with',
   });
   argparser.add_argument('--validate-with', {
     type: subparsers.path,
-    help:
-      'json-schema file for all itemtypes, or directory with schema files, one per itemtype.',
+    help: 'json-schema file for all itemtypes, or directory with schema files, one per itemtype.',
   });
 });
 
 parsersMap.set('item', function (subparsers, subCmdName) {
   // async item
   const argparser = subparsers.add_parser('item', {
-    help:
-      'Modify items: Add/remove tags, attach/save files, add to collection/remove, get child items. (API: /items/KEY/ or /items/KEY/children)',
+    help: 'Modify items: Add/remove tags, attach/save files, add to collection/remove, get child items. (API: /items/KEY/ or /items/KEY/children)',
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--key', {
     action: 'store',
     required: true,
-    help:
-      'The key of the item. You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
+    help: 'The key of the item. You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
   });
   argparser.add_argument('--xmp', {
     action: 'store_true',
@@ -96,8 +88,7 @@ parsersMap.set('item', function (subparsers, subCmdName) {
   });
   argparser.add_argument('--crossref-user', {
     action: 'store',
-    help:
-      'Supply a json file with user data for crossref: {depositor_name: "user@domain:role", email_address: "user@domain", password: ...}. If --crossref is specified without --crossref-user, default settings in your configuration directory are checked: ~/.config/zotero-cli/crossref-user.json',
+    help: 'Supply a json file with user data for crossref: {depositor_name: "user@domain:role", email_address: "user@domain", password: ...}. If --crossref is specified without --crossref-user, default settings in your configuration directory are checked: ~/.config/zotero-cli/crossref-user.json',
   });
   // doi_batch_id: "optional", timestamp: "optional"
   argparser.add_argument('--crossref-submit', {
@@ -118,13 +109,11 @@ parsersMap.set('item', function (subparsers, subCmdName) {
       */
   argparser.add_argument('--author-data', {
     action: 'store',
-    help:
-      'Supply a json file with authors database, enabling extra author information to be added for crossref. If --crossref or --zenodo are specified without --author-data, default settings in your configuration director are checked: ~/.config/zotero-cli/author-data.json',
+    help: 'Supply a json file with authors database, enabling extra author information to be added for crossref. If --crossref or --zenodo are specified without --author-data, default settings in your configuration director are checked: ~/.config/zotero-cli/author-data.json',
   });
   argparser.add_argument('--switch-names', {
     action: 'store_true',
-    help:
-      'Switch firstName with lastName and vice versa in creators, ignoring name only creators',
+    help: 'Switch firstName with lastName and vice versa in creators, ignoring name only creators',
     dest: 'switchNames',
   });
   argparser.add_argument('--organise-extra', {
@@ -138,8 +127,7 @@ parsersMap.set('item', function (subparsers, subCmdName) {
   });
   argparser.add_argument('--filter', {
     type: subparsers.json,
-    help:
-      'Provide a filter as described in the Zotero API documentation under read requests / parameters. To retrieve multiple items you have use "itemkey"; for example: \'{"format": "json,bib", "itemkey": "A,B,C"}\'. See https://www.zotero.org/support/dev/web_api/v3/basics#search_syntax.',
+    help: 'Provide a filter as described in the Zotero API documentation under read requests / parameters. To retrieve multiple items you have use "itemkey"; for example: \'{"format": "json,bib", "itemkey": "A,B,C"}\'. See https://www.zotero.org/support/dev/web_api/v3/basics#search_syntax.',
   });
   argparser.add_argument('--addfiles', {
     nargs: '*',
@@ -151,13 +139,11 @@ parsersMap.set('item', function (subparsers, subCmdName) {
   });
   argparser.add_argument('--addtocollection', {
     nargs: '*',
-    help:
-      'Add item to collections. (Convenience method: patch item->data->collections.)',
+    help: 'Add item to collections. (Convenience method: patch item->data->collections.)',
   });
   argparser.add_argument('--removefromcollection', {
     nargs: '*',
-    help:
-      'Remove item from collections. (Convenience method: patch item->data->collections.)',
+    help: 'Remove item from collections. (Convenience method: patch item->data->collections.)',
   });
   argparser.add_argument('--addtags', {
     nargs: '*',
@@ -165,31 +151,26 @@ parsersMap.set('item', function (subparsers, subCmdName) {
   });
   argparser.add_argument('--removetags', {
     nargs: '*',
-    help:
-      'Remove tags from item. (Convenience method: patch item->data->tags.)',
+    help: 'Remove tags from item. (Convenience method: patch item->data->tags.)',
   });
   argparser.add_argument('--validate', {
     action: 'store_true',
-    help:
-      'Validate the record against a schema. If your config contains zotero-schema, then that file is used. Otherwise supply one with --validate-with',
+    help: 'Validate the record against a schema. If your config contains zotero-schema, then that file is used. Otherwise supply one with --validate-with',
   });
   argparser.add_argument('--validate-with', {
     type: subparsers.path,
-    help:
-      'json-schema file for all itemtypes, or directory with schema files, one per itemtype.',
+    help: 'json-schema file for all itemtypes, or directory with schema files, one per itemtype.',
   });
 });
 
 parsersMap.set('create', function (subparsers, subCmdName) {
   // async create item
   const argparser = subparsers.add_parser('create', {
-    help:
-      'Create a new item or items. (API: /items/new) You can retrieve a template with the --template option. Use this option to create both top-level items, as well as child items (including notes and links).',
+    help: 'Create a new item or items. (API: /items/new) You can retrieve a template with the --template option. Use this option to create both top-level items, as well as child items (including notes and links).',
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--template', {
-    help:
-      "Retrieve a template for the item you wish to create. You can retrieve the template types using the main argument 'types'.",
+    help: "Retrieve a template for the item you wish to create. You can retrieve the template types using the main argument 'types'.",
   });
   argparser.add_argument('--files', {
     nargs: '*',
@@ -204,14 +185,12 @@ parsersMap.set('create', function (subparsers, subCmdName) {
 parsersMap.set('update', function (subparsers, subCmdName) {
   // update item
   const argparser = subparsers.add_parser('update', {
-    help:
-      'Update/replace an item (--key KEY), either update (API: patch /items/KEY) or replacing (using --replace, API: put /items/KEY).',
+    help: 'Update/replace an item (--key KEY), either update (API: patch /items/KEY) or replacing (using --replace, API: put /items/KEY).',
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--key', {
     required: true,
-    help:
-      'The key of the item. You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
+    help: 'The key of the item. You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
   });
   argparser.add_argument('--replace', {
     action: 'store_true',
@@ -227,8 +206,7 @@ parsersMap.set('update', function (subparsers, subCmdName) {
   });
   argparser.add_argument('--version', {
     nargs: 1,
-    help:
-      'You have to supply the version of the item via the --version argument or else the latest version will be used.',
+    help: 'You have to supply the version of the item via the --version argument or else the latest version will be used.',
   });
 });
 
@@ -239,24 +217,21 @@ parsersMap.set('update', function (subparsers, subCmdName) {
 
 parsersMap.set('publications', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('publications', {
-    help:
-      'Return a list of items in publications (user library only). (API: /publications/items)',
+    help: 'Return a list of items in publications (user library only). (API: /publications/items)',
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
 });
 
 parsersMap.set('types', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('types', {
-    help:
-      'Retrieve a list of items types available in Zotero. (API: /itemTypes).',
+    help: 'Retrieve a list of items types available in Zotero. (API: /itemTypes).',
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
 });
 
 parsersMap.set('groups', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('groups', {
-    help:
-      'Retrieve the Zotero groups data to which the current library_id and api_key has access to. (API: /users/<user-id>/groups)',
+    help: 'Retrieve the Zotero groups data to which the current library_id and api_key has access to. (API: /users/<user-id>/groups)',
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
 });
@@ -264,15 +239,13 @@ parsersMap.set('groups', function (subparsers, subCmdName) {
 parsersMap.set('attachment', function (subparsers, subCmdName) {
   // async attachement
   const argparser = subparsers.add_parser('attachment', {
-    help:
-      "Save file attachments for the item specified with --key KEY (API: /items/KEY/file). Also see 'item', which has options for adding/saving file attachments. ",
+    help: "Save file attachments for the item specified with --key KEY (API: /items/KEY/file). Also see 'item', which has options for adding/saving file attachments. ",
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--key', {
     action: 'store',
     required: true,
-    help:
-      'The key of the item. You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
+    help: 'The key of the item. You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
   });
   argparser.add_argument('--save', {
     action: 'store',
@@ -283,8 +256,7 @@ parsersMap.set('attachment', function (subparsers, subCmdName) {
 
 parsersMap.set('fields', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('fields', {
-    help:
-      "Retrieve a template with the fields for --type TYPE (API: /itemTypeFields, /itemTypeCreatorTypes) or all item fields (API: /itemFields). Note that to retrieve a template, use 'create-item --template TYPE' rather than this command.",
+    help: "Retrieve a template with the fields for --type TYPE (API: /itemTypeFields, /itemTypeCreatorTypes) or all item fields (API: /itemFields). Note that to retrieve a template, use 'create-item --template TYPE' rather than this command.",
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--type', {
@@ -294,8 +266,7 @@ parsersMap.set('fields', function (subparsers, subCmdName) {
 
 parsersMap.set('searches', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('searches', {
-    help:
-      'Return a list of the saved searches of the library. Create new saved searches. (API: /searches)',
+    help: 'Return a list of the saved searches of the library. Create new saved searches. (API: /searches)',
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--create', {
@@ -306,8 +277,7 @@ parsersMap.set('searches', function (subparsers, subCmdName) {
 
 parsersMap.set('tags', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('tags', {
-    help:
-      'Return a list of tags in the library. Options to filter and count tags. (API: /tags)',
+    help: 'Return a list of tags in the library. Options to filter and count tags. (API: /tags)',
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--filter', {
@@ -321,8 +291,7 @@ parsersMap.set('tags', function (subparsers, subCmdName) {
 
 parsersMap.set('enclose-item', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('enclose-item', {
-    help:
-      'Utility function: Enlose the item in a collection and create further subcollections.',
+    help: 'Utility function: Enlose the item in a collection and create further subcollections.',
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--key', {
@@ -333,8 +302,7 @@ parsersMap.set('enclose-item', function (subparsers, subCmdName) {
   argparser.add_argument('--collection', {
     nargs: 1,
     action: 'store',
-    help:
-      'The Zotero collection key in which the new collection is created. (Otherwise created at top level.)',
+    help: 'The Zotero collection key in which the new collection is created. (Otherwise created at top level.)',
   });
   argparser.add_argument('--group-id', {
     nargs: 1,
@@ -344,8 +312,7 @@ parsersMap.set('enclose-item', function (subparsers, subCmdName) {
   argparser.add_argument('--title', {
     nargs: 1,
     action: 'store',
-    help:
-      "The title for the new collection (otherwise it's derived from the item title).",
+    help: "The title for the new collection (otherwise it's derived from the item title).",
   });
 });
 
@@ -409,19 +376,16 @@ parsersMap.set('attach-link', function (subparsers, subCmdName) {
   argparser.add_argument('--url', {
     nargs: 1,
     action: 'store',
-    help:
-      'Provide a URL here and/or use the specific URL options below. If you use both --url and on of the options below, both will be added.',
+    help: 'Provide a URL here and/or use the specific URL options below. If you use both --url and on of the options below, both will be added.',
   });
   argparser.add_argument('--update-url-field', {
     action: 'store_true',
-    help:
-      'Update/overwrite the url field of the item. The url used is --url (if set) or --kerko-link-key.',
+    help: 'Update/overwrite the url field of the item. The url used is --url (if set) or --kerko-link-key.',
   });
   argparser.add_argument('--title', {
     nargs: 1,
     action: 'store',
-    help:
-      'Optional. The options for specific URLs below can supply default titles.',
+    help: 'Optional. The options for specific URLs below can supply default titles.',
   });
   argparser.add_argument('--tags', {
     nargs: '*',
@@ -430,7 +394,7 @@ parsersMap.set('attach-link', function (subparsers, subCmdName) {
   });
   // TODO: There's a problem here... the following just offer docorations. We need to have inputs too...
   // This should probably just be the title used if there is no title, or --decorate is given.
-  Object.keys(decoration).forEach((option) => {
+  Object.keys(decorations).forEach((option) => {
     const extra_text =
       option === 'kerko_site_url'
         ? ' The item key will be added automatically.'
@@ -441,9 +405,9 @@ parsersMap.set('attach-link', function (subparsers, subCmdName) {
       nargs: 1,
       action: 'store',
       help: `Provide a specific URL for '${option}'.${extra_text} The prefix '${
-        decoration[option].title
+        decorations[option].title
       }' will be added to a title (if provided) and the following tags are added: ${JSON.stringify(
-        decoration[option].tags,
+        decorations[option].tags,
       )}`,
     });
   });
@@ -451,18 +415,15 @@ parsersMap.set('attach-link', function (subparsers, subCmdName) {
   argparser.add_argument('--id', {
     nargs: 1,
     action: 'store',
-    help:
-      'Provide a Zenodo id to add links for Zenodo record, deposit and doi.',
+    help: 'Provide a Zenodo id to add links for Zenodo record, deposit and doi.',
   });
   argparser.add_argument('--zenodo', {
     action: 'store_true',
-    help:
-      'Determine Zenodo id from Zotero item and then add links for Zenodo record, deposit and doi.',
+    help: 'Determine Zenodo id from Zotero item and then add links for Zenodo record, deposit and doi.',
   });
   argparser.add_argument('--decorate', {
     action: 'store_true',
-    help:
-      "Optional 'decoration/default title prefix'. Without title, this is used anyway. But if you give a title, specify this option to have the prefix anyway.",
+    help: "Optional 'decoration/default title prefix'. Without title, this is used anyway. But if you give a title, specify this option to have the prefix anyway.",
   });
 });
 parsersMap.set('field', function (subparsers, subCmdName) {
@@ -483,13 +444,11 @@ parsersMap.set('field', function (subparsers, subCmdName) {
   argparser.add_argument('--value', {
     nargs: 1,
     action: 'store',
-    help:
-      'The value for the update (if not provided, the value of the field is shown).',
+    help: 'The value for the update (if not provided, the value of the field is shown).',
   });
   argparser.add_argument('--version', {
     nargs: 1,
-    help:
-      'You have to supply the version of the item via the --version argument or else the latest version will be used.',
+    help: 'You have to supply the version of the item via the --version argument or else the latest version will be used.',
   });
 });
 parsersMap.set('extra-append', function (subparsers, subCmdName) {
@@ -521,13 +480,11 @@ parsersMap.set('update-url', function (subparsers, subCmdName) {
   argparser.add_argument('--value', {
     nargs: 1,
     action: 'store',
-    help:
-      'The value for the update (if not provided, the value of the field is shown).',
+    help: 'The value for the update (if not provided, the value of the field is shown).',
   });
   argparser.add_argument('--version', {
     nargs: 1,
-    help:
-      'You have to supply the version of the item via the --version argument or else the latest version will be used.',
+    help: 'You have to supply the version of the item via the --version argument or else the latest version will be used.',
   });
 });
 
@@ -544,8 +501,7 @@ parsersMap.set('kciaka', function (subparsers, subCmdName) {
   argparser.add_argument('--add', {
     nargs: '*',
     action: 'store',
-    help:
-      'The value for the update (if not provided, the value of the field is shown).',
+    help: 'The value for the update (if not provided, the value of the field is shown).',
   });
 });
 
@@ -556,14 +512,12 @@ parsersMap.set('bibliography', function (subparsers, subCmdName) {
   argparser.add_argument('--key', {
     nargs: 1,
     action: 'store',
-    help:
-      'A Zotero item key for the item for which the bib is obtained. Can be provided in zotero://select format.',
+    help: 'A Zotero item key for the item for which the bib is obtained. Can be provided in zotero://select format.',
   });
   argparser.add_argument('--keys', {
     nargs: 1,
     action: 'store',
-    help:
-      'A Zotero item key for the item for which the bib is obtained. Can be provided as list ABC,DEF,...',
+    help: 'A Zotero item key for the item for which the bib is obtained. Can be provided as list ABC,DEF,...',
   });
   argparser.add_argument('--group', {
     nargs: 1,
@@ -573,18 +527,15 @@ parsersMap.set('bibliography', function (subparsers, subCmdName) {
   argparser.add_argument('--groupkeys', {
     nargs: 1,
     action: 'store',
-    help:
-      'The Zotero item key for the item for which the bib is obtained. Unlike other functions, this is a string of the format 1234567:ABCDEFGH,1234567:ABCDEFGH,...',
+    help: 'The Zotero item key for the item for which the bib is obtained. Unlike other functions, this is a string of the format 1234567:ABCDEFGH,1234567:ABCDEFGH,...',
   });
   argparser.add_argument('--xml', {
     action: 'store_true',
-    help:
-      'The default is for this function to return xml/html (wrapped in json). Use this switch to only return the xml.',
+    help: 'The default is for this function to return xml/html (wrapped in json). Use this switch to only return the xml.',
   });
   argparser.add_argument('--json', {
     action: 'store_true',
-    help:
-      'The default is for this function to return xml/html (wrapped in json). Use this switch to convert the xml to json.',
+    help: 'The default is for this function to return xml/html (wrapped in json). Use this switch to convert the xml to json.',
   });
   argparser.add_argument('--zgroup', {
     nargs: 1,
@@ -602,8 +553,7 @@ parsersMap.set('bibliography', function (subparsers, subCmdName) {
   });
   argparser.add_argument('--test', {
     action: 'store_true',
-    help:
-      'Text xml to json conversion ref-by-ref. Helpful for debugging the xml to json conversion.',
+    help: 'Text xml to json conversion ref-by-ref. Helpful for debugging the xml to json conversion.',
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
 });
@@ -697,8 +647,7 @@ parsersMap.set('__get', function (subparsers, subCmdName) {
 
 parsersMap.set('__post', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('__post', {
-    help:
-      "Expose 'post'. Make a direct query to the API using 'POST uri [--data data]'.",
+    help: "Expose 'post'. Make a direct query to the API using 'POST uri [--data data]'.",
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('uri', { nargs: 1, help: 'TODO: document' });
@@ -710,8 +659,7 @@ parsersMap.set('__post', function (subparsers, subCmdName) {
 
 parsersMap.set('__put', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('__put', {
-    help:
-      "Expose 'put'. Make a direct query to the API using 'PUT uri [--data data]'.",
+    help: "Expose 'put'. Make a direct query to the API using 'PUT uri [--data data]'.",
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('uri', { nargs: 1, help: 'TODO: document' });
@@ -723,8 +671,7 @@ parsersMap.set('__put', function (subparsers, subCmdName) {
 
 parsersMap.set('__patch', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('__patch', {
-    help:
-      "Expose 'patch'. Make a direct query to the API using 'PATCH uri [--data data]'.",
+    help: "Expose 'patch'. Make a direct query to the API using 'PATCH uri [--data data]'.",
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('uri', { nargs: 1, help: 'TODO: document' });
@@ -740,8 +687,7 @@ parsersMap.set('__patch', function (subparsers, subCmdName) {
 
 parsersMap.set('__delete', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('__delete', {
-    help:
-      "Expose 'delete'. Make a direct delete query to the API using 'DELETE uri'.",
+    help: "Expose 'delete'. Make a direct delete query to the API using 'DELETE uri'.",
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('uri', { nargs: '+', help: 'Request uri' });
@@ -754,8 +700,7 @@ parsersMap.set('key', function (subparsers, subCmdName) {
   argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--key', {
     nargs: 1,
-    help:
-      'Provide the API key. Otherwise the API key given in the config is used. API: /keys',
+    help: 'Provide the API key. Otherwise the API key given in the config is used. API: /keys',
   });
   argparser.add_argument('--groups', {
     action: 'store_true',
@@ -779,26 +724,22 @@ parsersMap.set('collections', function (subparsers, subCmdName) {
   argparser.add_argument('--key', {
     nargs: 1,
     required: true,
-    help:
-      'Show all the child collections of collection with key. You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
+    help: 'Show all the child collections of collection with key. You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
   });
   argparser.add_argument('--create-child', {
     nargs: '*',
-    help:
-      'Create child collections of key (or at the top level if no key is specified) with the names specified.',
+    help: 'Create child collections of key (or at the top level if no key is specified) with the names specified.',
   });
 });
 
 parsersMap.set('collection', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser('collection', {
-    help:
-      "Retrieve collection information, display tags, add/remove items. (API: /collections/KEY or /collections/KEY/tags). (Note: Retrieve items is a collection: use 'items --collection KEY'.) ",
+    help: "Retrieve collection information, display tags, add/remove items. (API: /collections/KEY or /collections/KEY/tags). (Note: Retrieve items is a collection: use 'items --collection KEY'.) ",
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--key', {
     nargs: 1,
-    help:
-      'The key of the collection (required). You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
+    help: 'The key of the collection (required). You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
   });
   argparser.add_argument('--tags', {
     action: 'store_true',
@@ -810,13 +751,11 @@ parsersMap.set('collection', function (subparsers, subCmdName) {
   });
   argparser.add_argument('--add', {
     nargs: '*',
-    help:
-      "Add items to this collection. Note that adding items to collections with 'item --addtocollection' may require fewer API queries. (Convenience method: patch item->data->collections.)",
+    help: "Add items to this collection. Note that adding items to collections with 'item --addtocollection' may require fewer API queries. (Convenience method: patch item->data->collections.)",
   });
   argparser.add_argument('--remove', {
     nargs: '*',
-    help:
-      "Convenience method: Remove items from this collection. Note that removing items from collections with 'item --removefromcollection' may require fewer API queries. (Convenience method: patch item->data->collections.)",
+    help: "Convenience method: Remove items from this collection. Note that removing items from collections with 'item --removefromcollection' may require fewer API queries. (Convenience method: patch item->data->collections.)",
   });
 });
 

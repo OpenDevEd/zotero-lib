@@ -16,7 +16,7 @@ import {
   isomessage,
   urlify,
 } from './utils';
-import decoration from './decoartions';
+import decorations from './decorations';
 import { readConfigFile } from './readConfigFile';
 import md5File from './utils/md5-file';
 
@@ -1840,13 +1840,13 @@ class Zotero {
       dataout.push({ id_out: data1 });
     }
     // add links on keys in decoration
-    const arr = Object.keys(decoration);
+    const arr = Object.keys(decorations);
     for (const i in arr) {
       const option = arr[i];
       if (args[option]) {
         console.log(`Link: ${option} => ${args[option]}`);
-        let title = as_value(decoration[option].title);
-        let tags = decoration[option].tags;
+        let title = as_value(decorations[option].title);
+        let tags = decorations[option].tags;
         title = args.title ? title + ' ' + args.title : title;
         tags = args.tags ? tags.push(args.tags) : tags;
         const addkey = option === 'kerko_site_url' ? as_value(args.key) : '';
