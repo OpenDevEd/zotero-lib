@@ -24,12 +24,12 @@ async function commandLineInterface() {
   }
 
   if (args.verbose) {
-    console.log('zotero-cli starting...');
+    logger.info('zotero-cli starting...');
     zoteroLib.showConfig();
   }
 
   if (args.dryrun) {
-    console.log(
+    logger.info(
       `API command:\n Zotero.${args.func}(${JSON.stringify(args, null, 2)})`,
     );
     return;
@@ -40,12 +40,12 @@ async function commandLineInterface() {
 
   // call the actual command
   if (!args.func) {
-    console.log('No arguments provided. Use -h for help.');
+    logger.info('No arguments provided. Use -h for help.');
     process.exit(0);
   }
 
   try {
-    if (args.verbose) console.log('ARGS=' + JSON.stringify(args, null, 2));
+    if (args.verbose) logger.info('ARGS=' + JSON.stringify(args, null, 2));
     let result = await zoteroLib[args.func](args);
     // This really just works for 'item'... should realy move those functions elsewhere
     if (args.xmp) {
@@ -63,7 +63,7 @@ async function commandLineInterface() {
         result,
         output: zoteroLib.output,
       };
-      console.log(
+      logger.info(
         '{Result, output}=' +
           JSON.stringify(myout, null, zoteroLib.config.indent),
       );
@@ -77,7 +77,7 @@ async function commandLineInterface() {
       );
     } else {
       logger.info(`writing output to console`);
-      console.log(printJSON(result));
+      logger.info(printJSON(result));
     }
   } catch (ex) {
     zoteroLib.print('Command execution failed: ', ex);
@@ -88,7 +88,7 @@ async function commandLineInterface() {
 // local functions
 function getVersion() {
   const pjson = require('../package.json');
-  if (pjson.version) console.log(`zenodo-lib version=${pjson.version}`);
+  if (pjson.version) logger.info(`zenodo-lib version=${pjson.version}`);
   return pjson.version;
 }
 
@@ -101,8 +101,7 @@ function parseArguments() {
   });
   parser.add_argument('--config', {
     type: 'str',
-    help:
-      'Configuration file (toml format). Note that ./zotero-cli.toml and ~/.config/zotero-cli/zotero-cli.toml is picked up automatically.',
+    help: 'Configuration file (toml format). Note that ./zotero-cli.toml and ~/.config/zotero-cli/zotero-cli.toml is picked up automatically.',
   });
   parser.add_argument('--config-json', {
     type: 'str',
@@ -156,7 +155,7 @@ function parseArguments() {
 
 async function getZenodoJson(item, args: any) {
   const updateDoc = await formatAsZenodoJson(item, args);
-  // console.log("getZenodoJson updateDoc="+JSON.stringify(    updateDoc        ,null,2))
+  // logger.info("getZenodoJson updateDoc="+JSON.stringify(    updateDoc        ,null,2))
 
   if (args.zenodoWriteFile) {
     await fs.writeFile(
@@ -164,7 +163,7 @@ async function getZenodoJson(item, args: any) {
       JSON.stringify(updateDoc),
       'utf-8',
       function (err) {
-        if (err) console.log(err);
+        if (err) logger.info(err);
       },
     );
   }

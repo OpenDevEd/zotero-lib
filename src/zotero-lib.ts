@@ -93,12 +93,12 @@ class Zotero {
     const result = this.canonicalConfig(config, args);
 
     if (args.verbose) {
-      console.log('config=' + JSON.stringify(result, null, 2));
+      logger.info('config=' + JSON.stringify(result, null, 2));
     }
 
     // Check that not both are undefined:
     if (!result.user_id && !result.group_id) {
-      console.log('result: ', result);
+      logger.info('result: ', result);
       throw new Error(
         'Both user/group are missing. You must provide exactly one of --user-id or --group-id',
       );
@@ -188,7 +188,7 @@ class Zotero {
   }
 
   public showConfig() {
-    console.log('showConfig=' + JSON.stringify(this.config, null, 2));
+    logger.info('showConfig=' + JSON.stringify(this.config, null, 2));
     return this.config;
   }
 
@@ -201,7 +201,7 @@ class Zotero {
   }
 
   private finalActions(output) {
-    // console.log("args="+JSON.stringify(args))
+    // logger.info("args="+JSON.stringify(args))
     // TODO: Look at the type of output: if string, then print, if object, then stringify
     if (this.config.out) {
       fs.writeFileSync(
@@ -217,7 +217,7 @@ class Zotero {
   // see if we can make it private again
   public print(...args: any[]) {
     if (!this.config.out) {
-      console.log.apply(console, args);
+      logger.info.apply(console, args);
       return;
     }
 
@@ -241,7 +241,7 @@ class Zotero {
         this.config,
       )
       .catch((error) => {
-        console.log('Error in all: ' + error);
+        logger.info('Error in all: ' + error);
       });
 
     let data = chunk.body;
@@ -264,7 +264,7 @@ class Zotero {
           this.config,
         )
         .catch((error) => {
-          console.log('Error in all: ' + error);
+          logger.info('Error in all: ' + error);
         });
       data = data.concat(chunk.body);
       link =
@@ -377,7 +377,7 @@ class Zotero {
       );
       // /users/<userID>/groups
       if (args.terse) {
-        console.log(`Number of groups: ${res2.length}`);
+        logger.info(`Number of groups: ${res2.length}`);
         const res3 = [...res2].sort((a, b) => {
           if (a.data.name > b.data.name) {
             return 1;
@@ -389,13 +389,13 @@ class Zotero {
 
         res3.forEach((element) => {
           const data = element.data;
-          console.log(`${data.id}\t${data.name} ${data.owner} ${data.type}`);
+          logger.info(`${data.id}\t${data.name} ${data.owner} ${data.type}`);
         });
       } else {
         this.show(res2);
       }
       if (res2.length > 100) {
-        console.log(`Warning - only first 100 retrieved. ${res2.length}`);
+        logger.info(`Warning - only first 100 retrieved. ${res2.length}`);
       }
     }
     return { key: res, groups: res2 };
@@ -444,14 +444,14 @@ class Zotero {
     );
 
     if (res) {
-      // console.log("extractKeyGroupVariable -> res=" + JSON.stringify(res, null, 2))
+      // logger.info("extractKeyGroupVariable -> res=" + JSON.stringify(res, null, 2))
       if (res[2] === 'library') {
-        console.log(
+        logger.info(
           'You cannot specify zotero-select links (zotero://...) to select user libraries.',
         );
         return null;
       }
-      // console.log("Key: zotero://-key provided for "+res[2]+" Setting group-id.")
+      // logger.info("Key: zotero://-key provided for "+res[2]+" Setting group-id.")
       this.config.group_id = res[1];
       out = res[n];
     }
@@ -472,7 +472,7 @@ class Zotero {
 
   // TODO: args parsing code
   private extractKeyAndSetGroup(key) {
-    // console.log("extractKeyAndSetGroup")
+    // logger.info("extractKeyAndSetGroup")
     return this.extractKeyGroupVariable(key, 3);
   }
 
@@ -507,7 +507,7 @@ class Zotero {
     },
   ) {
     const tags = this.objectifyTags(options.tags);
-    console.log('Linktitle=' + options.title);
+    logger.info('Linktitle=' + options.title);
     const json = {
       parentItem: PARENT,
       itemType: 'attachment',
@@ -554,7 +554,7 @@ class Zotero {
     if (args.create_child) {
       let response;
       if (args.key) {
-        console.log('args.key=>args.create_child');
+        logger.info('args.key=>args.create_child');
         response = await this.http.post(
           '/collections',
           JSON.stringify(
@@ -566,7 +566,7 @@ class Zotero {
           this.config,
         );
       } else {
-        console.log('(top)=>args.create_child');
+        logger.info('(top)=>args.create_child');
         response = await this.http.post(
           '/collections',
           JSON.stringify(
@@ -579,20 +579,20 @@ class Zotero {
         );
       }
       const resp = response;
-      console.log('response=' + JSON.stringify(resp, null, 2));
+      logger.info('response=' + JSON.stringify(resp, null, 2));
       if (resp.successful) {
         this.print('Collections created: ', resp.successful);
-        console.log('collection....done');
+        logger.info('collection....done');
         return resp.successful;
       } else {
-        console.log('collection....failed');
-        console.log('response=' + JSON.stringify(resp, null, 2));
+        logger.info('collection....failed');
+        logger.info('response=' + JSON.stringify(resp, null, 2));
         return resp;
       }
       // TODO: In all functions where data is returned, add '.successful' - Zotero always wraps in that.
       // This leaves an array.
     } else {
-      console.log('get...');
+      logger.info('get...');
       // test for args.top: Not required.
       // If create_child==false:
       let collections = null;
@@ -604,7 +604,7 @@ class Zotero {
       this.show(collections);
       this.finalActions(collections);
       if (args.terse) {
-        console.log('test');
+        logger.info('test');
         collections = collections.map((element) =>
           Object({ key: element.data.key, name: element.data.name }),
         );
@@ -752,14 +752,14 @@ class Zotero {
           'You can only retrieve up to 100 items with with params.limit.',
         );
       }
-      // console.log("get-----")
+      // logger.info("get-----")
       items = await this.http.get(
         `${collection}/items`,
         { params },
         this.config,
       );
     } else {
-      // console.log("all-----")
+      // logger.info("all-----")
       items = await this.all(`${collection}/items`, params);
     }
 
@@ -815,7 +815,7 @@ class Zotero {
       if (!validate(item)) {
         this.show(validate.errors);
       } else {
-        console.log(`item ok! ${item.key}`);
+        logger.info(`item ok! ${item.key}`);
       }
     }
   }
@@ -861,7 +861,7 @@ class Zotero {
             .filter((i) => i.data.itemType === 'attachment')
             .map(async (child) => {
               if (child.data.filename) {
-                console.log(`Downloading file ${child.data.filename}`);
+                logger.info(`Downloading file ${child.data.filename}`);
                 // TODO:
                 // ??? await this.attachment({key: item.key, save: item.data.filename})
                 // TODO: Is 'binary' correct?
@@ -875,7 +875,7 @@ class Zotero {
                   'binary',
                 );
               } else {
-                console.log(
+                logger.info(
                   `Not downloading file ${child.key}/${child.data.itemType}/${child.data.linkMode}/${child.data.title}`,
                 );
               }
@@ -884,14 +884,14 @@ class Zotero {
       }
 
       if (args.addfiles) {
-        console.log('Adding files...');
+        logger.info('Adding files...');
         const attachmentTemplate = await this.http.get(
           '/items/new?itemType=attachment&linkMode=imported_file',
           { userOrGroupPrefix: false },
           this.config,
         );
         for (const filename of args.addfiles) {
-          if (args.debug) console.log('Adding file: ' + filename);
+          if (args.debug) logger.info('Adding file: ' + filename);
           if (!fs.existsSync(filename)) {
             return this.message(0, `Ignoring non-existing file: ${filename}.`);
           }
@@ -934,7 +934,7 @@ class Zotero {
               )
               .then((res) => res.data);
             if (args.verbose) {
-              console.log('uploadResponse=');
+              logger.info('uploadResponse=');
               this.show(uploadResponse);
             }
             request_post = await this.http.post(
@@ -1080,7 +1080,7 @@ class Zotero {
     const params = args.filter || {};
     let result;
     if (args.children) {
-      console.log('children');
+      logger.info('children');
       result = await this.http.get(
         `/items/${args.key}/children`,
         { params },
@@ -1119,7 +1119,7 @@ class Zotero {
     this.output = JSON.stringify(output);
 
     if (args.show)
-      console.log('item -> resul=' + JSON.stringify(result, null, 2));
+      logger.info('item -> resul=' + JSON.stringify(result, null, 2));
 
     const finalactions = this.finalActions(result);
     return args.fullresponse
@@ -1132,7 +1132,7 @@ class Zotero {
         }
       : result;
     // TODO: What if this fails? Zotero will return, e.g.   "message": "404 - {\"type\":\"Buffer\",\"data\":[78,111,116,32,102,111,117,110,100]}",
-    // console.log(Buffer.from(obj.data).toString())
+    // logger.info(Buffer.from(obj.data).toString())
     // Need to return a proper message.
   }
 
@@ -1200,7 +1200,7 @@ class Zotero {
         this.config,
       );
       this.show(result);
-      // console.log("/"+result+"/")
+      // logger.info("/"+result+"/")
       return result;
     }
 
@@ -1240,9 +1240,9 @@ class Zotero {
               : itemsflat.length + 1;
           // Safety check - should always be true:
           if (itemsflat.slice(start, end).length) {
-            console.error(`Uploading objects ${start} to ${end}-1`);
-            console.log(`Uploading objects ${start} to ${end}-1`);
-            console.log(`${itemsflat.slice(start, end).length}`);
+            logger.error(`Uploading objects ${start} to ${end}-1`);
+            logger.info(`Uploading objects ${start} to ${end}-1`);
+            logger.info(`${itemsflat.slice(start, end).length}`);
             const result = await this.http.post(
               '/items',
               JSON.stringify(itemsflat.slice(start, end)),
@@ -1251,9 +1251,9 @@ class Zotero {
             );
             res.push(result);
           } else {
-            console.error(`NOT Uploading objects ${start} to ${end}-1`);
-            console.log(`NOT Uploading objects ${start} to ${end}-1`);
-            console.log(`${itemsflat.slice(start, end).length}`);
+            logger.error(`NOT Uploading objects ${start} to ${end}-1`);
+            logger.info(`NOT Uploading objects ${start} to ${end}-1`);
+            logger.info(`${itemsflat.slice(start, end).length}`);
           }
         }
       }
@@ -1262,7 +1262,7 @@ class Zotero {
     }
 
     if ('items' in args) {
-      console.log('args.items = ', args.items);
+      logger.info('args.items = ', args.items);
       let items = args.items;
 
       if (Array.isArray(args.items) && args.items.length > 0) {
@@ -1326,7 +1326,7 @@ class Zotero {
         'Unable to extract group/key from the string provided. Arguments attached.',
         args,
       );
-      console.log(msg);
+      logger.info(msg);
     }
 
     let originalItemVersion = 0;
@@ -1487,7 +1487,7 @@ class Zotero {
       try {
         searchDef = JSON.parse(fs.readFileSync(args.create[0], 'utf8'));
       } catch (ex) {
-        console.log('Invalid search definition: ', ex);
+        logger.info('Invalid search definition: ', ex);
       }
 
       searchDef = as_array(searchDef);
@@ -1560,24 +1560,24 @@ class Zotero {
 
     //TODO: args parsing code
     if (!group_id) {
-      console.log(
+      logger.info(
         'ERROR ERROR ERROR - no group id in zotero->enclose_item_in_collection',
       );
     } else {
-      console.log(
+      logger.info(
         `zotero -> enclose_item_in_collection: group_id ${group_id} `,
       );
     }
 
     const response = await this.item({ key: key, group_id: group_id });
-    // console.log("response = " + JSON.stringify(response, null, 2))
+    // logger.info("response = " + JSON.stringify(response, null, 2))
     // TODO: Have automated test to see whether successful.
     output.push({ response1: response });
     if (!response) {
-      console.log('1 - item not found - item does not exist');
+      logger.info('1 - item not found - item does not exist');
       return this.message();
     }
-    console.log('-->' + response.collections);
+    logger.info('-->' + response.collections);
     const title = response.reportNumber ? response.reportNumber + '. ' : '';
     const child_name = args.title ? args.title : title + response.title;
 
@@ -1585,7 +1585,7 @@ class Zotero {
 
     // Everything below here should be done as Promise.all
     // This causes the problem.
-    console.log('collections -- base', base_collection);
+    logger.info('collections -- base', base_collection);
     const new_coll = await this.collections({
       group_id: group_id,
       key: as_value(base_collection),
@@ -1594,7 +1594,7 @@ class Zotero {
 
     output.push({ collection: new_coll });
 
-    console.log('Move item to collection');
+    logger.info('Move item to collection');
     const ecoll = as_array(new_coll[0].key);
     const res = await this.item({
       key,
@@ -1602,7 +1602,7 @@ class Zotero {
     });
     output.push({ response2: res });
 
-    console.log('0-link');
+    logger.info('0-link');
     const link0 = await this.attach_link({
       group_id,
       key,
@@ -1612,7 +1612,7 @@ class Zotero {
     });
     output.push({ link: link0 });
 
-    console.log('1-collections');
+    logger.info('1-collections');
     const refcol_res = await this.collections({
       group_id,
       key: ecoll,
@@ -1620,7 +1620,7 @@ class Zotero {
     });
     output.push({ collection: refcol_res });
 
-    console.log(`1-links: ${group_id}:${key}`);
+    logger.info(`1-links: ${group_id}:${key}`);
 
     const refcol = refcol_res[0].key;
     const link1 = await this.attach_link({
@@ -1632,7 +1632,7 @@ class Zotero {
     });
     output.push({ link: link1 });
 
-    console.log('2-collection');
+    logger.info('2-collection');
     const refcol_citing = await this.collections({
       group_id,
       key: ecoll,
@@ -1640,7 +1640,7 @@ class Zotero {
     });
     output.push({ collection: refcol_citing });
     const citingcol = refcol_citing[0].key;
-    console.log('2-link');
+    logger.info('2-link');
     const link2 = await this.attach_link({
       group_id,
       key,
@@ -1650,7 +1650,7 @@ class Zotero {
     });
     output.push({ link: link2 });
 
-    console.log('3-collection');
+    logger.info('3-collection');
     const refcol_rem = await this.collections({
       group_id,
       key: ecoll,
@@ -1658,7 +1658,7 @@ class Zotero {
     });
     output.push({ collection: refcol_rem });
     const refremcol = refcol_rem[0].key;
-    console.log('3-link');
+    logger.info('3-link');
     const link3 = await this.attach_link({
       group_id,
       key,
@@ -1698,7 +1698,7 @@ class Zotero {
     args.fullresponse = false;
     const item = await this.item(args);
     const doi = this.get_doi_from_item(item);
-    console.log(`DOI: ${doi}, ${typeof doi}`);
+    logger.info(`DOI: ${doi}, ${typeof doi}`);
     return doi;
   }
 
@@ -1733,11 +1733,11 @@ class Zotero {
       let update = false;
       let extra2 = '';
       if ('zenodoRecordID' in args) {
-        // console.log("update_doi: " + `ZenodoArchiveID: ${args.zenodoRecordID}`)
+        // logger.info("update_doi: " + `ZenodoArchiveID: ${args.zenodoRecordID}`)
         extra2 = `ZenodoArchiveID: ${args.zenodoRecordID}\n`;
         update = true;
       }
-      // console.log("update_doi: " + `${args.doi} != ${existingDOI}`)
+      // logger.info("update_doi: " + `${args.doi} != ${existingDOI}`)
       if (args.doi != existingDOI) {
         update = true;
         if ('doi' in item) {
@@ -1774,17 +1774,17 @@ class Zotero {
           }
           const zoteroRecord = await this.item({ key: args.key });
           if (args.verbose)
-            console.log('Result=' + JSON.stringify(zoteroRecord, null, 2));
+            logger.info('Result=' + JSON.stringify(zoteroRecord, null, 2));
           return zoteroRecord;
         } else {
-          console.log(
+          logger.info(
             'async update_doi - update failed',
             JSON.stringify(updatedItem, null, 2),
           );
           return this.message(1, 'async update_doi - update failed');
         }
       } else {
-        console.log('async update_doi. No updates required.');
+        logger.info('async update_doi. No updates required.');
       }
     } else {
       return this.message(
@@ -1820,7 +1820,7 @@ class Zotero {
       const id = mymatch[1];
       // args.id = id
       args.id = id;
-      console.log(`${id}, ${xdoi}, ${typeof xdoi}`);
+      logger.info(`${id}, ${xdoi}, ${typeof xdoi}`);
     }
     // add links based on args.id
     if (args.id) {
@@ -1844,7 +1844,7 @@ class Zotero {
     for (const i in arr) {
       const option = arr[i];
       if (args[option]) {
-        console.log(`Link: ${option} => ${args[option]}`);
+        logger.info(`Link: ${option} => ${args[option]}`);
         let title = as_value(decorations[option].title);
         let tags = decorations[option].tags;
         title = args.title ? title + ' ' + args.title : title;
@@ -1886,7 +1886,7 @@ class Zotero {
 
         dataout.push({ url_field: datau });
       } else {
-        console.log(
+        logger.info(
           'You have to set url or kerko_url_key for update-url-field to work',
         );
       }
@@ -1898,7 +1898,7 @@ class Zotero {
   public async field(args) {
     //TODO: args parsing code
     if (!args.field) {
-      console.log('args.field is required.');
+      logger.info('args.field is required.');
       process.exit(1);
     }
     args.fullresponse = false;
@@ -1923,17 +1923,17 @@ class Zotero {
       };
       const update = await this.update_item(updateargs);
       if (update.statusCode == 204) {
-        console.log('update successfull - getting record');
+        logger.info('update successfull - getting record');
         const zoteroRecord = await this.item({ key: args.key });
         if (args.verbose)
-          console.log('Result=' + JSON.stringify(zoteroRecord, null, 2));
+          logger.info('Result=' + JSON.stringify(zoteroRecord, null, 2));
         return zoteroRecord;
       } else {
-        console.log('update failed');
+        logger.info('update failed');
         return this.message(1, 'update failed');
       }
     } else {
-      console.log(item[args.field]);
+      logger.info(item[args.field]);
       process.exit(1);
     }
     // ACTION: return values
@@ -1970,9 +1970,9 @@ class Zotero {
     let i = -1;
     for (const value of extraarr) {
       i++;
-      console.log(value);
+      logger.info(value);
       if (value.match(/^KerkoCite\.ItemAlsoKnownAs\: /)) {
-        // console.log(i)
+        // logger.info(i)
         kciaka = i;
       }
     }
@@ -1980,7 +1980,7 @@ class Zotero {
       return this.message(0, 'item has no ItemAlsoKnownAs', { item });
     }
 
-    console.log(extraarr[kciaka]);
+    logger.info(extraarr[kciaka]);
     let do_update = false;
     if (args.add) {
       var kcarr = extraarr[kciaka].split(/\s+/).slice(1);
@@ -1989,13 +1989,13 @@ class Zotero {
         'KerkoCite.ItemAlsoKnownAs: ' + _.union(kcarr, args.add).join(' ');
       if (knew != extraarr[kciaka]) {
         do_update = true;
-        console.log('Update');
+        logger.info('Update');
         extraarr[kciaka] = knew;
         extra = extraarr.sort().join('\n');
       }
     }
     if (do_update) {
-      console.log('\n----\n' + extra + '\n----\n');
+      logger.info('\n----\n' + extra + '\n----\n');
       const myobj = {};
       myobj['extra'] = extra;
       const updateargs = {
@@ -2008,12 +2008,12 @@ class Zotero {
       const update = await this.update_item(updateargs);
       let zoteroRecord;
       if (update.statusCode == 204) {
-        console.log('update successfull - getting record');
+        logger.info('update successfull - getting record');
         zoteroRecord = await this.item({ key: args.key });
         if (args.verbose)
-          console.log('Result=' + JSON.stringify(zoteroRecord, null, 2));
+          logger.info('Result=' + JSON.stringify(zoteroRecord, null, 2));
       } else {
-        console.log('update failed');
+        logger.info('update failed');
         return this.message(1, 'update failed', { update });
       }
       return this.message(0, 'exit status', {
@@ -2035,7 +2035,7 @@ class Zotero {
     }
 
     if (args.xml) {
-      console.log(output.data);
+      logger.info(output.data);
       return output;
     } else {
       return { status: 0, message: 'success', data: output };
@@ -2044,17 +2044,17 @@ class Zotero {
 
   /* START FUcntionS FOR GETBIB */
   async getZoteroDataX(args) {
-    //console.log("Hello")
+    //logger.info("Hello")
     let d = new Date();
     let n = d.getTime();
     // TODO: We need to check the groups of requested data against the groups the API key has access to.
     let fullresponse;
     // We could allow responses that have arg.keys/group as well as groupkeys.
     if (args.keys || args.key) {
-      console.log('Response based on group and key(s)');
+      logger.info('Response based on group and key(s)');
       fullresponse = await this.makeZoteroQuery(args);
     } else if (args.groupkeys) {
-      console.log('Response based on groupkeys');
+      logger.info('Response based on groupkeys');
       fullresponse = await this.makeMultiQuery(args);
     } else {
       fullresponse = { data: [], message: 'not implemented' };
@@ -2167,18 +2167,18 @@ class Zotero {
 
   async makeZoteroQuery(arg) {
     var response = [];
-    console.log('hello');
+    logger.info('hello');
     // The limit is 25 results at a time - so need to check that arg.keys is not too long.
     let allkeys = [];
     if (arg.key) {
       allkeys.push(arg.key);
     }
-    console.log('hello');
+    logger.info('hello');
     if (arg.keys) {
       const arr = as_value(arg.keys).split(',');
       allkeys.push(arr);
     }
-    console.log(`allkeys ${allkeys}`);
+    logger.info(`allkeys ${allkeys}`);
     const keyarray = [];
     var temp = [];
     for (const index in allkeys) {
@@ -2192,7 +2192,7 @@ class Zotero {
       keyarray.push(temp);
     }
     for (const index in keyarray) {
-      // console.log("keyarray=" + JSON.stringify(keyarray[index], null, 2))
+      // logger.info("keyarray=" + JSON.stringify(keyarray[index], null, 2))
       const resp = await this.item({
         group_id: arg.group,
         key: '',
@@ -2204,7 +2204,7 @@ class Zotero {
           itemKey: keyarray[index].join(','),
         },
       });
-      // console.log("resp=" + JSON.stringify(resp, null, 2))
+      // logger.info("resp=" + JSON.stringify(resp, null, 2))
 
       if (Array.isArray(resp)) {
         response.push(...resp);
@@ -2219,14 +2219,14 @@ class Zotero {
   }
 
   async makeMultiQuery(args) {
-    // console.log("Multi query 1")
+    // logger.info("Multi query 1")
     let mykeys;
     try {
       //TODO: args parsing code
       args.groupkeys = as_value(args.groupkeys);
       mykeys = args.groupkeys.split(',');
     } catch (e) {
-      console.log(e);
+      logger.info(e);
       process.exit(1);
     }
     var a = {};
@@ -2240,9 +2240,9 @@ class Zotero {
         }
       });
     } catch (e) {
-      console.log(e);
+      logger.info(e);
     }
-    // console.log("Multi query 2")
+    // logger.info("Multi query 2")
     var b = [];
     var errors = [];
     var zotgroup;
@@ -2260,7 +2260,7 @@ class Zotero {
           b.push(response.data);
         }
       } else {
-        console.log('ERROR');
+        logger.info('ERROR');
         errors.push({ error: 'Failure to retrieve data', ...zargs });
       }
     }
@@ -2275,7 +2275,7 @@ class Zotero {
     //TODO: args parsing code
     args.notetext = as_value(args.notetext);
     args.key = this.extractKeyAndSetGroup(as_value(args.key));
-    // console.log(args.key)
+    // logger.info(args.key)
     // process.exit(1)
     // TODO: Read from --file
     // ACTION: run code
