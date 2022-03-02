@@ -6,9 +6,7 @@ const axios = require('axios');
 const base = 'https://api.zotero.org';
 
 export function createHttpClient(options = {}) {
-  // console.log('creating client with options: ', options);
-  const client = new HttpClient(options);
-  return client;
+  return new HttpClient(options);
 }
 
 export class HttpClient {
@@ -18,7 +16,7 @@ export class HttpClient {
     this.headers = headers;
   }
 
-  async post(uri, data, headers = {}, config) {
+  async post(uri, data, headers = {}, config: any = {}) {
     const prefix = config.user_id
       ? `/users/${config.user_id}`
       : `/groups/${config.group_id}`;
@@ -49,7 +47,7 @@ export class HttpClient {
       json?: boolean;
       arraybuffer?: boolean;
     } = {},
-    config,
+    config: any = {},
   ) {
     if (typeof options.userOrGroupPrefix === 'undefined')
       options.userOrGroupPrefix = true;
@@ -93,15 +91,13 @@ export class HttpClient {
 
     const res = await axios(requestConfig)
       .then(function (response) {
-        const out = {
+        return {
           body: response.data,
           status: response.status,
           statusText: response.statusText,
           headers: response.headers,
           config: response.config,
         };
-        // console.log("response-TEMPORARY=" + JSON.stringify(out, null, 2))
-        return out;
       })
       .catch((error) => {
         if (config.verbose) {
@@ -119,8 +115,6 @@ export class HttpClient {
           url: uri,
           json: options.json,
         };
-        // console.log("DEBUG", (new Error().stack));
-        // console.log(shortError)
         console.log(
           'Error in zotero.get = ' + JSON.stringify(shortError, null, 2),
         );
@@ -143,28 +137,25 @@ export class HttpClient {
     uri = `${base}${prefix}${uri}`;
     if (config.verbose) console.error('PUT', uri);
 
-    const response = axios({
+    return axios({
       method: 'PUT',
       url: uri,
       headers: { ...this.headers, 'Content-Type': 'application/json' },
       data,
     })
-      .then((response) => {
-        const out = {
-          body: response.data,
-          status: response.status,
-          statusText: response.statusText,
-          headers: response.headers,
-          config: response.config,
+      .then((res) => {
+        return {
+          body: res.data,
+          status: res.status,
+          statusText: res.statusText,
+          headers: res.headers,
+          config: res.config,
         };
-        // console.log("TEMPOARY PAT=" + JSON.stringify(out, null, 2));
-        return out;
       })
       .catch((error) => {
         console.log('PUT ERROR=' + JSON.stringify(error, null, 2));
         return error;
       });
-    return response;
   }
 
   // patch does not return any data.
@@ -180,7 +171,7 @@ export class HttpClient {
     }
     uri = `${base}${prefix}${uri}`;
     if (config.verbose) console.error('PATCH', uri);
-    const res = await axios({
+    return axios({
       method: 'PATCH',
       url: uri,
       headers,
@@ -188,21 +179,18 @@ export class HttpClient {
       resolveWithFullResponse: true,
     })
       .then((response) => {
-        const out = {
+        return {
           body: response.data,
           statusCode: response.status,
           statusText: response.statusText,
           headers: response.headers,
           config: response.config,
         };
-        // console.log('TEMPOARY PAT=' + JSON.stringify(out, null, 2));
-        return out;
       })
       .catch((error) => {
         console.log('PAT ERROR=' + JSON.stringify(error, null, 2));
         return error;
       });
-    return res;
   }
 
   // TODO: Add resolveWithFullResponse: options.resolveWithFullResponse,
