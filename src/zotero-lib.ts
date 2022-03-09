@@ -862,8 +862,6 @@ class Zotero {
             .map(async (child) => {
               if (child.data.filename) {
                 logger.info(`Downloading file ${child.data.filename}`);
-                // TODO:
-                // ??? await this.attachment({key: item.key, save: item.data.filename})
                 // TODO: Is 'binary' correct?
                 fs.writeFileSync(
                   child.data.filename,
@@ -874,6 +872,14 @@ class Zotero {
                   ),
                   'binary',
                 );
+
+                // checking md5
+                const downloadedFilesMD5 = md5File(child.data.filename);
+                console.log('downloaded file data: ', child);
+                console.log('downloaded file md5: ', downloadedFilesMD5);
+                if (child.data.md5 !== downloadedFilesMD5) {
+                  throw new Error("The md5 doesn't match for downloaded file");
+                }
               } else {
                 logger.info(
                   `Not downloading file ${child.key}/${child.data.itemType}/${child.data.linkMode}/${child.data.title}`,
