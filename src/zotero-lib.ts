@@ -217,7 +217,7 @@ class Zotero {
   // see if we can make it private again
   public print(...args: any[]) {
     if (!this.config.out) {
-      logger.info.apply(console, args);
+      logger.info(args);
       return;
     }
 
@@ -862,8 +862,6 @@ class Zotero {
             .map(async (child) => {
               if (child.data.filename) {
                 logger.info(`Downloading file ${child.data.filename}`);
-                // TODO:
-                // ??? await this.attachment({key: item.key, save: item.data.filename})
                 // TODO: Is 'binary' correct?
                 fs.writeFileSync(
                   child.data.filename,
@@ -874,6 +872,12 @@ class Zotero {
                   ),
                   'binary',
                 );
+
+                // checking md5, if it doesn't match we throw an error
+                const downloadedFilesMD5 = md5File(child.data.filename);
+                if (child.data.md5 !== downloadedFilesMD5) {
+                  throw new Error("The md5 doesn't match for downloaded file");
+                }
               } else {
                 logger.info(
                   `Not downloading file ${child.key}/${child.data.itemType}/${child.data.linkMode}/${child.data.title}`,
@@ -883,35 +887,46 @@ class Zotero {
         );
       }
 
+      //TODO: extract UploadItem class
       if (args.addfiles) {
         logger.info('Adding files...');
+
+        // get attachment template
         const attachmentTemplate = await this.http.get(
           '/items/new?itemType=attachment&linkMode=imported_file',
           { userOrGroupPrefix: false },
           this.config,
         );
+
+        // try to upload each file
         for (const filename of args.addfiles) {
           if (args.debug) logger.info('Adding file: ' + filename);
           if (!fs.existsSync(filename)) {
             return this.message(0, `Ignoring non-existing file: ${filename}.`);
           }
 
-          const attach = attachmentTemplate;
-          attach.title = path.basename(filename);
-          attach.filename = path.basename(filename);
-          attach.contentType = `application/${path.extname(filename).slice(1)}`;
-          attach.parentItem = args.key;
+          // create an upload file using attachment template
+          const attachmentFileData = { ...attachmentTemplate };
+          attachmentFileData.title = path.basename(filename);
+          attachmentFileData.filename = path.basename(filename);
+          attachmentFileData.contentType = `application/${path
+            .extname(filename)
+            .slice(1)}`;
+          attachmentFileData.parentItem = args.key;
+
           const stat = fs.statSync(filename);
+
+          // upload file using attachment template
           const uploadItem = await this.http.post(
             '/items',
-            JSON.stringify([attach]),
+            JSON.stringify([attachmentFileData]),
             {},
             this.config,
           );
-          const uploadAuth = await this.http.post(
+          const uploadAuthorization = await this.http.post(
             `/items/${uploadItem.successful[0].key}/file?md5=${md5File(
               filename,
-            )}&filename=${attach.filename}&filesize=${
+            )}&filename=${attachmentFileData.filename}&filesize=${
               fs.statSync(filename)['size']
             }&mtime=${stat.mtimeMs}`,
             '{}',
@@ -920,16 +935,16 @@ class Zotero {
           );
 
           let request_post = null;
-          if (uploadAuth.exists !== 1) {
+          if (uploadAuthorization.exists !== 1) {
             const uploadResponse = await this.http
               .post(
-                uploadAuth.url,
+                uploadAuthorization.url,
                 Buffer.concat([
-                  Buffer.from(uploadAuth.prefix),
+                  Buffer.from(uploadAuthorization.prefix),
                   fs.readFileSync(filename),
-                  Buffer.from(uploadAuth.suffix),
+                  Buffer.from(uploadAuthorization.suffix),
                 ]),
-                { 'Content-Type': uploadAuth.contentType },
+                { 'Content-Type': uploadAuthorization.contentType },
                 this.config,
               )
               .then((res) => res.data);
@@ -938,7 +953,7 @@ class Zotero {
               this.show(uploadResponse);
             }
             request_post = await this.http.post(
-              `/items/${uploadItem.successful[0].key}/file?upload=${uploadAuth.uploadKey}`,
+              `/items/${uploadItem.successful[0].key}/file?upload=${uploadAuthorization.uploadKey}`,
               '{}',
               {
                 'Content-Type': 'application/x-www-form-urlencoded',

@@ -15,9 +15,8 @@ const zoteroLib = new Zotero({});
 /**
  * Initialize Command Line Interface
  */
-async function commandLineInterface() {
+async function main() {
   const args = parseArguments();
-
   if (args.version) {
     getVersion();
     process.exit(0);
@@ -79,8 +78,8 @@ async function commandLineInterface() {
       logger.info(`writing output to console`);
       logger.info(printJSON(result));
     }
-  } catch (ex) {
-    zoteroLib.print('Command execution failed: ', ex);
+  } catch (error) {
+    zoteroLib.print('Command execution failed: ', error);
     process.exit(1);
   }
 }
@@ -101,7 +100,8 @@ function parseArguments() {
   });
   parser.add_argument('--config', {
     type: 'str',
-    help: 'Configuration file (toml format). Note that ./zotero-cli.toml and ~/.config/zotero-cli/zotero-cli.toml is picked up automatically.',
+    help:
+      'Configuration file (toml format). Note that ./zotero-cli.toml and ~/.config/zotero-cli/zotero-cli.toml is picked up automatically.',
   });
   parser.add_argument('--config-json', {
     type: 'str',
@@ -170,13 +170,9 @@ async function getZenodoJson(item, args: any) {
   return updateDoc;
 }
 
-async function main() {
-  await commandLineInterface()
-    .then()
-    .catch((err) => {
-      console.error('error:', err);
-      process.exit(1);
-    });
-}
-
-main();
+main()
+  .then()
+  .catch((err) => {
+    console.error('error:', err);
+    process.exit(1);
+  });
