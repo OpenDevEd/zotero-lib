@@ -320,7 +320,7 @@ subParsersMap.set('tags', function (subparsers, subCmdName) {
 });
 
 subParsersMap.set('enclose-item', function (subparsers, subCmdName) {
-  const argparser = subparsers.add_parser(subCmdNameitem', {
+  const argparser = subparsers.add_parser(subCmdName, {
     help:
       'Utility function: Enlose the item in a collection and create further subcollections.',
   });
@@ -350,7 +350,7 @@ subParsersMap.set('enclose-item', function (subparsers, subCmdName) {
 });
 
 subParsersMap.set('get-doi', function (subparsers, subCmdName) {
-  const argparser = subparsers.add_parser(subCmdNamedoi', {
+  const argparser = subparsers.add_parser(subCmdName, {
     help: 'Utility function: Get the DOI for the item.',
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
@@ -361,7 +361,7 @@ subParsersMap.set('get-doi', function (subparsers, subCmdName) {
   });
 });
 subParsersMap.set('update-doi', function (subparsers, subCmdName) {
-  const argparser = subparsers.add_parser(subCmdNamedoi', {
+  const argparser = subparsers.add_parser(subCmdName, {
     help: 'Utility function: Update the DOI for the item.',
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
@@ -397,7 +397,7 @@ subParsersMap.set('TEMPLATE', function (subparsers, subCmdName) {
 });
 
 subParsersMap.set('attach-link', function (subparsers, subCmdName) {
-  const argparser = subparsers.add_parser(subCmdNamelink', {
+  const argparser = subparsers.add_parser(subCmdName, {
     help: 'Utility function: attach a link to an item',
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
@@ -493,7 +493,7 @@ subParsersMap.set('field', function (subparsers, subCmdName) {
   });
 });
 subParsersMap.set('extra-append', function (subparsers, subCmdName) {
-  const argparser = subparsers.add_parser(subCmdNameappend', {
+  const argparser = subparsers.add_parser(subCmdName, {
     help: 'HELPTEXT',
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
@@ -509,7 +509,7 @@ subParsersMap.set('extra-append', function (subparsers, subCmdName) {
 });
 
 subParsersMap.set('update-url', function (subparsers, subCmdName) {
-  const argparser = subparsers.add_parser(subCmdNameurl', {
+  const argparser = subparsers.add_parser(subCmdName, {
     help: 'Utility function: Update the url for a specific item.',
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
@@ -608,7 +608,7 @@ subParsersMap.set('bibliography', function (subparsers, subCmdName) {
   argparser.set_defaults({ func: getFuncName(subCmdName) });
 });
 subParsersMap.set('attach-note', function (subparsers, subCmdName) {
-  const argparser = subparsers.add_parser(subCmdNamenote', {
+  const argparser = subparsers.add_parser(subCmdName, {
     help: 'Utility function: Attach note to item',
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
@@ -639,7 +639,7 @@ subParsersMap.set('attach-note', function (subparsers, subCmdName) {
   });
 });
 subParsersMap.set('getValue', function (subparsers, subCmdName) {
-  const argparser = subparsers.add_parser(subCmdNamealue', { help: 'HELPTEXT' });
+  const argparser = subparsers.add_parser(subCmdName, { help: 'HELPTEXT' });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--switch', {
     action: 'store_true',
@@ -652,7 +652,7 @@ subParsersMap.set('getValue', function (subparsers, subCmdName) {
   });
 });
 subParsersMap.set('collectionName', function (subparsers, subCmdName) {
-  const argparser = subparsers.add_parser(subCmdNameame', {
+  const argparser = subparsers.add_parser(subCmdName, {
     help: 'HELPTEXT',
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
@@ -668,7 +668,7 @@ subParsersMap.set('collectionName', function (subparsers, subCmdName) {
 });
 
 subParsersMap.set('amendCollection', function (subparsers, subCmdName) {
-  const argparser = subparsers.add_parser(subCmdNameollection', {
+  const argparser = subparsers.add_parser(subCmdName, {
     help: 'HELPTEXT',
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
