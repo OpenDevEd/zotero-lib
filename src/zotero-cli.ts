@@ -147,9 +147,9 @@ function parseArguments() {
   const subparsers = parser.add_subparsers({
     help: "Help for these commands is available via 'command --help'.",
   });
-
   configAllParsers(subparsers);
 
+  // parse and return args
   return parser.parse_args();
 }
 

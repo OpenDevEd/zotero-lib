@@ -19,6 +19,7 @@ import {
 import decorations from './decorations';
 import { readConfigFile } from './readConfigFile';
 import md5File from './utils/md5-file';
+import { validConfigKeys } from './config';
 
 require('dotenv').config();
 
@@ -35,19 +36,8 @@ const ajv = new Ajv();
 class Zotero {
   // The following config keys are expected/allowed,
   // with both "-" and "_". The corresponding variables have _
-  config_keys = [
-    'user-id',
-    'group-id',
-    'library-type',
-    'api-key',
-    'indent',
-    'verbose',
-    'debug',
-    'config',
-    'config-json',
-    'zotero-schema',
-  ];
 
+  //TODO: we should have types for config, please see config.ts [wip]
   config: any;
 
   output: string = '';
@@ -149,7 +139,7 @@ class Zotero {
   private canonicalConfig(_config: any, args: any) {
     const config = { ..._config };
 
-    this.config_keys.forEach((key) => {
+    validConfigKeys.forEach((key) => {
       const key_zotero = 'zotero-' + key;
       const key_underscore = key.replace(/-/g, '_');
       const key_zotero_underscore = key_zotero.replace(/-/g, '_');
