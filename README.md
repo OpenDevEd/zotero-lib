@@ -166,7 +166,8 @@ zotero-lib items --filter '{"limit": 10}'
 [zotero-api-client](https://github.com/tnajdek/zotero-api-client) (With hindsight we might have built on zotero-api-client - we might still rebuild our code to use zotero-api-client.)
 
 ## Tests
-This lib includes some e2e tests which can be used to test many important aspects of the lib. These test however written as plain node.js scripts rather than using a dedicated testing framework i.e. jest or mocha. You are encourage to run these tests to make sure the library works as expected. You can also improve these existing tests by improving them. Ideally we want all tests to be run using jest testing framework. 
+
+This lib includes some e2e tests which can be used to test many important aspects of the lib. These test however written as plain node.js scripts rather than using a dedicated testing framework i.e. jest or mocha. You are encourage to run these tests to make sure the library works as expected. You can also improve these existing tests by improving them. Ideally we want all tests to be run using jest testing framework.
 
 To run these tests please follow these instructions
 
@@ -178,7 +179,7 @@ Make sure you have
 
 After that you can goto `tests` folder
 
-````
+````sh
 cd tests/
 node start_here_test_key_and_item.js
 ````
