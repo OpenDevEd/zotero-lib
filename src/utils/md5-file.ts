@@ -8,7 +8,7 @@ const crypto = require('crypto');
  */
 export default function md5File(filename = '') {
   if (fs.existsSync(filename)) {
-    return md5(fs.readFileSync(filename, 'utf-8'));
+    return md5(fs.readFileSync(filename));
   }
 }
 

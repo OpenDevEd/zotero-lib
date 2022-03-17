@@ -79,6 +79,7 @@ async function main() {
       logger.info(printJSON(result));
     }
   } catch (error) {
+    console.log(error);
     zoteroLib.print('Command execution failed: ', error);
     process.exit(1);
   }
