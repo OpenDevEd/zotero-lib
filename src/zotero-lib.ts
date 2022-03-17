@@ -1742,7 +1742,7 @@ class Zotero {
     args.key = as_value(args.key);
     // We dont know what kind of item this is - gotta get the item to see
     const item = await this.item(args);
-    const existingDOI = this.get_doi_from_item(item);
+    const existingDOI = this.get_doi_from_item(item) || '';
     if ('doi' in args || 'zenodoRecordID' in args) {
       let json = {};
       let update = false;
@@ -1753,7 +1753,9 @@ class Zotero {
         update = true;
       }
       // logger.info("update_doi: " + `${args.doi} != ${existingDOI}`)
-      if (args.doi != existingDOI) {
+      //TODO: args parsing code
+      args.doi = args.doi || '';
+      if (args.doi !== existingDOI) {
         update = true;
         if ('doi' in item) {
           json['doi'] = args.doi;
