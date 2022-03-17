@@ -19,11 +19,13 @@ async function main() {
     // Specify group and key via 'key' and write to output file
     const response = await zotero.key({});
   }
-  const apikey = process.env.API_KEY || '';
 
+  // You must provide a valid key using env or as a string
+  const apikey = process.env.API_KEY || '';
   if (apikey === '') {
     throw new Error('To run this test please specify your apikey');
   }
+
   api_key_in_new: {
     console.log('api_key in new');
     const zotero = new Zotero({ api_key: apikey });
