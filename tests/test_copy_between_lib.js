@@ -6,12 +6,19 @@ https://forums.zotero.org/discussion/87694/searching-for-an-item-via-api-results
 */
 const Zotero = require('../build/zotero-lib');
 
+const arg = arg;
+
+if (!arg) {
+  throw new Error(
+    "You haven't suppplied required argument i.e. zotero item url",
+  );
+}
+
 async function main() {
   let targetgroup, targetcollections, sourcegroup, sourcekey;
-  if (process.argv[2].match(/^zotero/)) {
-    //  const src = process.argv[2].split("/")[4]
-    targetgroup = process.argv[2].split('/')[4];
-    targetcollections = [process.argv[2].split('/')[6]];
+  if (arg.match(/^zotero/)) {
+    targetgroup = arg.split('/')[4];
+    targetcollections = [arg.split('/')[6]];
     console.log(`
     targetgroup = ${targetgroup}
     targetcollections = ${targetcollections}
@@ -23,23 +30,23 @@ async function main() {
       sourcekey = ${sourcekey}
       `);
       if (x.match(/ref\.opendeved\.net/)) {
-        sourcegroup = x.split("/")[5]
-        sourcekey = x.split("/")[7]
+        sourcegroup = x.split('/')[5];
+        sourcekey = x.split('/')[7];
       } else if (x.match(/^\d+\:[\w\d]+$/)) {
-        sourcegroup = x.split(":")[0]
-        sourcekey = x.split(":")[1]
+        sourcegroup = x.split(':')[0];
+        sourcekey = x.split(':')[1];
       } else {
         sourcegroup = x.split('/')[4];
         sourcekey = x.split('/')[6];
       }
       if (sourcegroup != targetgroup) {
-	copy_item(sourcegroup, sourcekey, targetgroup, targetcollections);
+        copy_item(sourcegroup, sourcekey, targetgroup, targetcollections);
       } else {
-	console.log("Not duplicating in the same library.");
-      };
+        console.log('Not duplicating in the same library.');
+      }
     });
   } else {
-    targetgroup = process.argv[2];
+    targetgroup = arg;
     targetcollections = [process.argv[3]];
     sourcegroup = process.argv[4];
     sourcekey = process.argv[5];
@@ -52,11 +59,11 @@ async function main() {
     // process.exit(1)
     // process.exit(1)
     /*
-      console.log(process.argv[2])
+      console.log(arg)
       const targetgroup = "2405685" 
       // const targetcollections = ["C5U3ZBQP"]
       const targetcollections = ["8NAIANHI"]
-      const [sourcegroup, sourcekey] = ["2339240", process.argv[2]]
+      const [sourcegroup, sourcekey] = ["2339240", arg]
       */
     //check_existence(sourcegroup, sourcekey, targetgroup)
     copy_item(sourcegroup, sourcekey, targetgroup, targetcollections);
