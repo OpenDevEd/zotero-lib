@@ -54,6 +54,7 @@
     "http-link-header": "^1.0.3",
     "lodash": "^4.17.21",
     "node-libcurl": "^2.3.3",
+    "sqlite3": "^5.0.2",
     "standard-version": "^9.3.1",
     "sugar": "^2.0.6",
     "ts-dotenv": "^0.8.3",
