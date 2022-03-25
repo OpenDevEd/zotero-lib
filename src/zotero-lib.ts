@@ -19,6 +19,8 @@ import {
 import decorations from './decorations';
 import { readConfigFile } from './readConfigFile';
 import md5File from './utils/md5-file';
+import { fetchCurrentKey, fetchGroups } from './local-db/api';
+import { getAllGroups } from './local-db/db';
 
 require('dotenv').config();
 
@@ -57,7 +59,6 @@ class Zotero {
   constructor(args = {}) {
     // Read config
     this.config = this.configure(args, true);
-
     this.http = createHttpClient({
       headers: {
         'User-Agent': 'Zotero-CLI',
@@ -1730,6 +1731,42 @@ class Zotero {
       });
     }
     return doi;
+  }
+
+  public async manageLocalDB(args) {
+    console.log('args: ', { ...args }, this.config);
+
+    if (args.import_json) {
+      console.log('importing json from file: ', args.import_json);
+    } else {
+      console.log('skipping importing json');
+    }
+
+    if (args.sync) {
+      console.log('syncing local db with online library');
+
+      // perform key check i.e. do we have valid key and we'll also get userId as a bonus
+      const keyCheck = await fetchCurrentKey(this.config);
+      //TODO: here we can perform extra check that the key is still valid and has access to groups
+      const { userID } = keyCheck;
+
+      args.user_id = userID;
+
+      // fetch groups version and check which are changed
+      const onlineGroups = await fetchGroups({ ...args, ...this.config });
+      console.log('groups: ', onlineGroups);
+
+      const offlineGroups = getAllGroups({ ...args, ...this.config });
+      console.log('groups: ', offlineGroups);
+    } else {
+      console.log('skipping syncing with online library');
+    }
+
+    if (args.export_json) {
+      console.log('importing json from file: ', args.export_json);
+    } else {
+      console.log('skipping exporting json');
+    }
   }
 
   /**

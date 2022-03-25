@@ -45,6 +45,9 @@ async function main() {
 
   try {
     if (args.verbose) logger.info('ARGS=' + JSON.stringify(args, null, 2));
+    if (!(args.func in zoteroLib)) {
+      throw new Error(`No cmd handler defined for ${args.func}`);
+    }
     let result = await zoteroLib[args.func](args);
     // This really just works for 'item'... should realy move those functions elsewhere
     if (args.xmp) {

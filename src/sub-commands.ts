@@ -19,6 +19,7 @@ customCmdHandlers.set('update-url', 'update_url');
 customCmdHandlers.set('kciaka', 'KerkoCiteItemAlsoKnownAs');
 customCmdHandlers.set('bibliography', 'getbib');
 customCmdHandlers.set('attach-note', 'attach_note');
+customCmdHandlers.set('db', 'manageLocalDB');
 
 function getFuncName(subCmdName) {
   if (customCmdHandlers.has(subCmdName)) {
@@ -817,6 +818,32 @@ subParsersMap.set('collection', function (subparsers, subCmdName) {
     nargs: '*',
     help:
       "Convenience method: Remove items from this collection. Note that removing items from collections with 'item --removefromcollection' may require fewer API queries. (Convenience method: patch item->data->collections.)",
+  });
+});
+
+subParsersMap.set('db', function (subparsers, subCmdName) {
+  const argparser = subparsers.add_parser(subCmdName, {
+    help: "Manage locally synced version of your library'.) ",
+  });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
+  argparser.add_argument('database', {
+    action: 'store',
+    help: 'Name of database to use for local syncing',
+  });
+  argparser.add_argument('--sync', {
+    action: 'store_true',
+    help: 'Display tags present in the collection.',
+  });
+
+  argparser.add_argument('--import-json', {
+    nargs: '*',
+    help:
+      'import updated record(s) as json in given file to local db. Note: this will not automatically sync updates online, use --sync to sync local db updates with online library',
+  });
+  argparser.add_argument('--export-json', {
+    nargs: '*',
+    help:
+      'export records from local db to given file as json, note: the records in local db may not have latest changes as online library, pass --sync to make sure that local db is synced before exporting.',
   });
 });
 
