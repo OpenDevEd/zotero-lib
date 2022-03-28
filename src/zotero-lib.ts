@@ -19,8 +19,14 @@ import {
 import decorations from './decorations';
 import { readConfigFile } from './readConfigFile';
 import md5File from './utils/md5-file';
-import { fetchCurrentKey, fetchGroups } from './local-db/api';
+import {
+  fetchCurrentKey,
+  fetchGroups,
+  fetchItemsByIds,
+  getChangedItemsForGroup,
+} from './local-db/api';
 import { getAllGroups } from './local-db/db';
+import printJSON from './utils/printJSON';
 
 require('dotenv').config();
 
@@ -1754,10 +1760,90 @@ class Zotero {
 
       // fetch groups version and check which are changed
       const onlineGroups = await fetchGroups({ ...args, ...this.config });
-      console.log('groups: ', onlineGroups);
+      console.log('online groups: ', onlineGroups);
 
-      const offlineGroups = getAllGroups({ ...args, ...this.config });
-      console.log('groups: ', offlineGroups);
+      const offlineGroups = await getAllGroups({ ...args, ...this.config });
+      console.log('offline groups: ', offlineGroups);
+
+      const offlineLastSyncedVersions = offlineGroups.reduce(
+        (a, c) => ({ ...a, [c.id]: c.lastSyncVersion }),
+        {},
+      );
+
+      function getChangedGroups(online, local) {
+        const localGroupsMap = local.reduce(
+          (a, c) => ({ ...a, [c.id]: c.version }),
+          {},
+        );
+
+        let res = [];
+
+        for (let group in online) {
+          if (online[group] !== localGroupsMap[group]) {
+            res.push(group);
+          }
+        }
+
+        return res;
+      }
+
+      const changedGroups = getChangedGroups(onlineGroups, offlineGroups);
+
+      if (changedGroups.length === 0) {
+        console.log('found no changed group, so not fetch group data');
+      }
+      console.log('changed  groups: ', changedGroups);
+
+      //TODO: fetch changed group and update their data locally
+
+      //TODO: push local changes
+
+      // get remote changes
+      const changedItemsForGroups = await Promise.all(
+        changedGroups.map((group) =>
+          getChangedItemsForGroup({
+            ...args,
+            ...this.config,
+            group,
+            version: offlineLastSyncedVersions[group],
+          }),
+        ),
+      );
+
+      console.log('changed items for groups: ', changedItemsForGroups);
+      // convert id: version map to array of ids, chuncked by 50 items max
+      const chunckedItemsByGroup = changedItemsForGroups.map((item, index) => ({
+        group: changedGroups[index],
+        itemIds: _.chunk(Object.keys(item), 50),
+      }));
+
+      console.log('chuncked items by group: ', printJSON(chunckedItemsByGroup));
+
+      const onlineSyncedVersions = {};
+      // for each group fetch all items with given ids, in batch of 50
+      const allFetchedItems = await Promise.all(
+        chunckedItemsByGroup.map(({ group, itemIds }) =>
+          Promise.all(
+            itemIds.map((chunk) =>
+              fetchItemsByIds({
+                ...args,
+                ...this.config,
+                itemIds: chunk,
+                group,
+              }).then((res) => {
+                onlineSyncedVersions[group] =
+                  res.headers['last-modified-version'];
+                return res.data;
+              }),
+            ),
+          ),
+        ),
+      );
+
+      if (allFetchedItems.length) {
+        console.log('onlineSyncedVersions: ', onlineSyncedVersions);
+        console.log('allfetchedItems: ', printJSON(allFetchedItems));
+      }
     } else {
       console.log('skipping syncing with online library');
     }

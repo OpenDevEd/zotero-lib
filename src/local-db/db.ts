@@ -24,9 +24,23 @@ export function createDBConnection(dbName) {
   }
   return new sqlite3.Database(dbName);
 }
+interface ZoteroGroup {
+  id: number;
+  lastSyncVersion: number;
+}
 
-export function getAllGroups({ database }) {
+export function getAllGroups({ database }): Promise<Array<ZoteroGroup>> {
   const db = createDBConnection(database);
+  const sql = 'SELECT * FROM groups';
 
-  db.close();
+  return new Promise((resolve, reject) => {
+    db.all(sql, (err, rows) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(rows);
+      }
+      db.close();
+    });
+  });
 }
