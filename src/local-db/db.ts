@@ -57,7 +57,6 @@ export function getAllGroups({ database }): Promise<Array<ZoteroGroup>> {
 
 export async function saveGroup(groupData) {
   const { database, group } = groupData;
-  console.log('saving', groupData);
   return new Promise((res, rej) => {
     const db = createDBConnection(database);
     db.get(
@@ -82,7 +81,6 @@ export async function saveGroup(groupData) {
 
 export async function createGroup(groupData) {
   const { database, group } = groupData;
-  console.log('saving', groupData);
   return new Promise((res, rej) => {
     const db = createDBConnection(database);
     db.run(
@@ -107,7 +105,6 @@ export async function createGroup(groupData) {
 
 export async function updateGroup(groupData) {
   const { database, group } = groupData;
-  console.log('saving', groupData);
   return new Promise((res, rej) => {
     const db = createDBConnection(database);
     db.run(

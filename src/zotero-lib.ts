@@ -1820,7 +1820,7 @@ class Zotero {
             ...args,
             ...this.config,
             group,
-            version: offlineItemsVersion[group],
+            version: offlineItemsVersion[group] || 0,
           }),
         ),
       );
