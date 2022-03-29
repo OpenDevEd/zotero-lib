@@ -167,18 +167,27 @@ zotero-lib items --filter '{"limit": 10}'
 
 ## Syncing
 
-Note: this documentation is under progress and not yet finished
 
-sync given db file with online version
-zotero-cli --group-id xxxx db backup.db --sync
-zotero-cli --group-id xxxx db backup.db --export-json
-zotero-cli --group-id xxxx db backup.db --import-json
-zotero-cli --group-id xxxx db backup.db --sync --export-json --import-json
+sync given db file `backup.db` with online version
 
---import-json=<file-name.json> takes a given file and apply its changes to localdb
---sync reconcile localdb with online library
---import-json=<file-name.json> export localdb as json with given file-name
+````bash
+zotero-cli db backup.db --sync
+````
 
-these options are optional and can be combined as required, however they will always execute in above order
+export give db file `backup.db` as json file `./backup.json`
 
-zotero-cli --group-id xxxx db backup.db --import-json
+````bash
+zotero-cli db backup.db --export-json="./backup.json"
+````
+
+we can combine previous two steps in one cmd
+
+````bash
+zotero-cli db backup.db --sync --export-json
+````
+
+`--sync` make local db synced with online library  
+`--export-json=<file-name.json>` export localdb as json with `given file-name.json`
+
+these options are optional and can be combined as required, however they will always execute in above order, i.e. first database will be synced locally then data from localdb will be exported as json
+

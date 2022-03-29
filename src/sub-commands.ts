@@ -832,14 +832,9 @@ subParsersMap.set('db', function (subparsers, subCmdName) {
   });
   argparser.add_argument('--sync', {
     action: 'store_true',
-    help: 'Display tags present in the collection.',
+    help: 'Sync online library in local database',
   });
 
-  // argparser.add_argument('--import-json', {
-  //   action: 'store',
-  //   help:
-  //     'import updated record(s) as json in given file to local db. Note: this will not automatically sync updates online, use --sync to sync local db updates with online library',
-  // });
   argparser.add_argument('--export-json', {
     action: 'store',
     help:
