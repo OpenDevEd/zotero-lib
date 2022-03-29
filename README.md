@@ -161,33 +161,40 @@ zotero-lib items --filter '{"limit": 10}'
 
 ### bibliography
 
-## Also see
+### Local Database Syncing
 
-[zotero-api-client](https://github.com/tnajdek/zotero-api-client) (With hindsight we might have built on zotero-api-client - we might still rebuild our code to use zotero-api-client.)
+You can use this cli to locally backup your onlnie zotero library. The `db` cmd allows you to sync online library in local sqlite database. On first run all online records are synced into local database. On subsequent runs only those records are fetched, which were modifed since last sync.
 
-## Syncing
+The underlying database is SQLite. You dont need to install any server or anything it will work out of box as SQLite comes bundled with this cli. 
 
+To use this cmd you need to provide your db name along with one or more options. The options which you can specify are detailed below.
 
-sync given db file `backup.db` with online version
+`--sync` make local db synced with online library  
+`--export-json=<file-name.json>` export localdb as json with given `file-name.json`
+
+These options are optional and can be combined as required. If both options are specified then database will be synced locally first then data from local db will be exported as json.
+
+#### Examples
+
+To sync given db file `backup.db` with online version
 
 ````bash
 zotero-cli db backup.db --sync
 ````
 
-export give db file `backup.db` as json file `./backup.json`
+To export give db file `backup.db` as json file `./backup.json`
 
 ````bash
 zotero-cli db backup.db --export-json="./backup.json"
 ````
 
-we can combine previous two steps in one cmd
+You can combine previous two steps in one cmd
 
 ````bash
-zotero-cli db backup.db --sync --export-json
+zotero-cli db backup.db --sync --export-json="./backup.json"
 ````
 
-`--sync` make local db synced with online library  
-`--export-json=<file-name.json>` export localdb as json with `given file-name.json`
 
-these options are optional and can be combined as required, however they will always execute in above order, i.e. first database will be synced locally then data from localdb will be exported as json
+## Also see
 
+[zotero-api-client](https://github.com/tnajdek/zotero-api-client) (With hindsight we might have built on zotero-api-client - we might still rebuild our code to use zotero-api-client.)
