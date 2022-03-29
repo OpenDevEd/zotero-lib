@@ -163,7 +163,7 @@ zotero-lib items --filter '{"limit": 10}'
 
 ### Local Database Syncing
 
-You can use this cli to locally backup your onlnie zotero library. The `db` cmd allows you to sync online library in local sqlite database. On first run all online records are synced into local database. On subsequent runs only those records are fetched, which were modifed since last sync.
+You can use this cli to locally backup your online zotero library. The `db` cmd allows you to sync online library in local sqlite database. On first run all online records are synced into local database. On subsequent runs only those records are fetched, which were modifed since last sync.
 
 The underlying database is SQLite. You dont need to install any server or anything it will work out of box as SQLite comes bundled with this cli. 
 
