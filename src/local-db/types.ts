@@ -7,6 +7,7 @@ export interface RequestArgs {
 export interface ZoteroGroup {
   id: number;
   version: number;
+  itemsVersion: number;
   data: string;
   createdAt: string;
   updatedAt: string;

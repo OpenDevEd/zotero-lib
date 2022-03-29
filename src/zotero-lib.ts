@@ -1766,8 +1766,8 @@ class Zotero {
       const offlineGroups = await getAllGroups({ ...args, ...this.config });
       console.log('offline groups: ', offlineGroups);
 
-      const offlineSyncedVersionsForGroups = offlineGroups.reduce(
-        (a, c) => ({ ...a, [c.id]: c.version }),
+      const offlineItemsVersion = offlineGroups.reduce(
+        (a, c) => ({ ...a, [c.id]: c.itemsVersion }),
         {},
       );
 
@@ -1792,26 +1792,23 @@ class Zotero {
 
       if (changedGroups.length === 0) {
         console.log('found no changed group, so not fetch group data');
-      }
-      /*
-        online groups:  { '2259720': 27, '4641034': 2 }
-        offline groups:  []
-        changed  groups:  [ '2259720', '4641034' ]
-      */
-      console.log('changed  groups: ', changedGroups);
-      let allChangedGroupsData = await Promise.all(
-        changedGroups.map((changedGroup) =>
-          fetchGroupData({ ...args, ...this.config, group_id: changedGroup }),
-        ),
-      );
-      console.log('allChangedGroupsData: ', printJSON(allChangedGroupsData));
+      } else {
+        console.log('changed group count: ', changedGroups.length);
+        console.log('changed  groups: ', changedGroups);
+        let allChangedGroupsData = await Promise.all(
+          changedGroups.map((changedGroup) =>
+            fetchGroupData({ ...args, ...this.config, group_id: changedGroup }),
+          ),
+        );
+        // console.log('allChangedGroupsData: ', printJSON(allChangedGroupsData));
 
-      const savedChangedGroups = await Promise.all(
-        allChangedGroupsData.map((groupData) =>
-          saveGroup({ database: args.database, group: groupData }),
-        ),
-      );
-      console.log('savedChangedGroups: ', printJSON(savedChangedGroups));
+        const savedChangedGroups = await Promise.all(
+          allChangedGroupsData.map((groupData) =>
+            saveGroup({ database: args.database, group: groupData }),
+          ),
+        );
+        console.log('savedChangedGroups: ', printJSON(savedChangedGroups));
+      }
 
       const changedGroupsArray = Object.keys(onlineGroups);
       //TODO: push local changes
@@ -1823,49 +1820,60 @@ class Zotero {
             ...args,
             ...this.config,
             group,
-            version: offlineSyncedVersionsForGroups[group],
+            version: offlineItemsVersion[group],
           }),
         ),
       );
 
-      // console.log('changed items for groups: ', changedItemsForGroups);
-      console.log(
-        'Total items to by synced: ',
-        changedItemsForGroups.reduce((a, c) => a + Object.keys(c).length, 0),
+      const totalToBeSynced = changedItemsForGroups.reduce(
+        (a, c) => a + Object.keys(c).length,
+        0,
       );
-      // convert id: version map to array of ids, chuncked by 50 items max
-      const chunckedItemsByGroup = changedItemsForGroups.map((item, index) => ({
-        group: changedGroupsArray[index],
-        itemIds: _.chunk(Object.keys(item), 50),
-      }));
+      // console.log('changed items for groups: ', changedItemsForGroups);
+      console.log('Total items to be synced: ', totalToBeSynced);
+      if (totalToBeSynced > 0) {
+        // convert id: version map to array of ids, chuncked by 50 items max
+        const chunckedItemsByGroup = changedItemsForGroups.map(
+          (item, index) => ({
+            group: changedGroupsArray[index],
+            itemIds: _.chunk(Object.keys(item), 50),
+          }),
+        );
 
-      console.log('chuncked items by group: ', printJSON(chunckedItemsByGroup));
+        // console.log('chuncked items by group: ', printJSON(chunckedItemsByGroup));
 
-      const itemsLastModifiedVersion = {};
-      // for each group fetch all items with given ids, in batch of 50
-      const allFetchedItems = await Promise.all(
-        chunckedItemsByGroup.flatMap(({ group, itemIds }) =>
-          Promise.all(
-            itemIds.map((chunk) =>
-              fetchItemsByIds({
-                ...args,
-                ...this.config,
-                itemIds: chunk,
-                group,
-              }).then((res) => {
-                itemsLastModifiedVersion[group] =
-                  res.headers['last-modified-version'];
-                return res.data;
-              }),
+        const itemsLastModifiedVersion = {};
+        // for each group fetch all items with given ids, in batch of 50
+        const allFetchedItems = await Promise.all(
+          chunckedItemsByGroup.flatMap(({ group, itemIds }) =>
+            Promise.all(
+              itemIds.map((chunk) =>
+                fetchItemsByIds({
+                  ...args,
+                  ...this.config,
+                  itemIds: chunk,
+                  group,
+                }).then((res) => {
+                  itemsLastModifiedVersion[group] =
+                    res.headers['last-modified-version'];
+                  return res.data;
+                }),
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      if (allFetchedItems.length) {
-        console.log('itemsVersion: ', itemsLastModifiedVersion);
-        console.log('allfetchedItems: ', printJSON(allFetchedItems));
-        await saveZoteroItems({ allFetchedItems, database: args.database });
+        if (allFetchedItems.length) {
+          console.log('itemsVersion: ', itemsLastModifiedVersion);
+          // console.log('allfetchedItems: ', printJSON(allFetchedItems));
+          saveZoteroItems({
+            allFetchedItems,
+            database: args.database,
+            lastModifiedVersion: itemsLastModifiedVersion,
+          });
+        }
+      } else {
+        console.log('Everything already synced!!! Hurray!!!');
       }
     } else {
       console.log('skipping syncing with online library');
