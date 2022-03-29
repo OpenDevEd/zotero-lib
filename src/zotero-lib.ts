@@ -1761,10 +1761,10 @@ class Zotero {
 
       // fetch groups version and check which are changed
       const onlineGroups = await fetchGroups({ ...args, ...this.config });
-      console.log('online groups: ', onlineGroups);
+      // console.log('online groups: ', onlineGroups);
 
       const offlineGroups = await getAllGroups({ ...args, ...this.config });
-      console.log('offline groups: ', offlineGroups);
+      // console.log('offline groups: ', offlineGroups);
 
       const offlineItemsVersion = offlineGroups.reduce(
         (a, c) => ({ ...a, [c.id]: c.itemsVersion }),

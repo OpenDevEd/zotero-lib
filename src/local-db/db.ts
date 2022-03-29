@@ -141,7 +141,7 @@ export function saveZoteroItems({
   // write one big query to insert and update all items at once
   const db = createDBConnection(database);
   const syncStart = Date.now();
-  console.log('db save start: ', syncStart);
+  // console.log('db save start: ', syncStart);
   db.all('SELECT id from items', (err, rows) => {
     const existingItemIdsMap = rows.reduce((a, c) => ({ ...a, [c.id]: c }), {});
     const insertSql = `INSERT into items (id,version,data,createdAt,updatedAt) VALUES ($id, $version, $data, datetime('now'), datetime('now'))`;
@@ -184,6 +184,8 @@ export function saveZoteroItems({
       db.run('COMMIT');
     });
     db.close();
+    const syncEnd = Date.now();
+    console.log('Time taken: ', syncEnd - syncStart);
   });
 }
 
