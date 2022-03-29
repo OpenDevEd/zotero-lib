@@ -1892,7 +1892,6 @@ class Zotero {
       if (!fileName.endsWith('.json')) {
         fileName += '.json';
       }
-      console.log(allItems.slice(4));
       const fileData = JSON.stringify(
         allItems.map((item) => JSON.parse(item.data)),
         null,
