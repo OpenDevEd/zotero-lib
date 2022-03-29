@@ -42,9 +42,7 @@ export async function fetchGroupData(
   const headers = { Authorization: `Bearer ${api_key}` };
 
   const requestURL = getZoteroURL(`groups/${group_id}`);
-  console.log('requestURL', requestURL);
   return axios.get(requestURL, { headers }).then((res) => {
-    console.log('fetchGrupData: ', res.data);
     return res.data;
   });
 }

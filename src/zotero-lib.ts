@@ -27,7 +27,7 @@ import {
   getChangedItemsForGroup,
 } from './local-db/api';
 import { getAllGroups, saveGroup, saveZoteroItems } from './local-db/db';
-import printJSON from './utils/printJSON';
+// import printJSON from './utils/printJSON';
 
 require('dotenv').config();
 
@@ -1741,13 +1741,13 @@ class Zotero {
   }
 
   public async manageLocalDB(args) {
-    console.log('args: ', { ...args }, this.config);
+    // console.log('args: ', { ...args }, this.config);
 
-    if (args.import_json) {
-      console.log('importing json from file: ', args.import_json);
-    } else {
-      console.log('skipping importing json');
-    }
+    // if (args.import_json) {
+    //   console.log('importing json from file: ', args.import_json);
+    // } else {
+    //   console.log('skipping importing json');
+    // }
 
     if (args.sync) {
       console.log('syncing local db with online library');
@@ -1802,12 +1802,12 @@ class Zotero {
         );
         // console.log('allChangedGroupsData: ', printJSON(allChangedGroupsData));
 
-        const savedChangedGroups = await Promise.all(
+        await Promise.all(
           allChangedGroupsData.map((groupData) =>
             saveGroup({ database: args.database, group: groupData }),
           ),
         );
-        console.log('savedChangedGroups: ', printJSON(savedChangedGroups));
+        // console.log('savedChangedGroups: ', printJSON(savedChangedGroups));
       }
 
       const changedGroupsArray = Object.keys(onlineGroups);
@@ -1879,11 +1879,11 @@ class Zotero {
       console.log('skipping syncing with online library');
     }
 
-    if (args.export_json) {
-      console.log('importing json from file: ', args.export_json);
-    } else {
-      console.log('skipping exporting json');
-    }
+    // if (args.export_json) {
+    //   console.log('importing json from file: ', args.export_json);
+    // } else {
+    //   console.log('skipping exporting json');
+    // }
   }
 
   /**

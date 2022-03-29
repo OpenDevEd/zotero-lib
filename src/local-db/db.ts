@@ -154,14 +154,14 @@ export function saveZoteroItems({
         groupItems.forEach((groupItemsChunk) =>
           groupItemsChunk.forEach((item) => {
             if (item.key in existingItemIdsMap) {
-              console.log('updating: ', item.key);
+              // console.log('updating: ', item.key);
               updateStmt.run({
                 $id: item.key,
                 $version: item.version,
                 $data: JSON.stringify(item),
               });
             } else {
-              console.log('creating: ', item.key);
+              // console.log('creating: ', item.key);
               createStmt.run({
                 $id: item.key,
                 $version: item.version,
@@ -182,7 +182,7 @@ export function saveZoteroItems({
     });
     db.close();
     const syncEnd = Date.now();
-    console.log('Time taken: ', syncEnd - syncStart);
+    console.log(`Time taken: ${syncEnd - syncStart}ms`);
   });
 }
 
