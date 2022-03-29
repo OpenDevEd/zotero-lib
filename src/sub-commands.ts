@@ -835,13 +835,13 @@ subParsersMap.set('db', function (subparsers, subCmdName) {
     help: 'Display tags present in the collection.',
   });
 
-  argparser.add_argument('--import-json', {
-    nargs: '*',
-    help:
-      'import updated record(s) as json in given file to local db. Note: this will not automatically sync updates online, use --sync to sync local db updates with online library',
-  });
+  // argparser.add_argument('--import-json', {
+  //   action: 'store',
+  //   help:
+  //     'import updated record(s) as json in given file to local db. Note: this will not automatically sync updates online, use --sync to sync local db updates with online library',
+  // });
   argparser.add_argument('--export-json', {
-    nargs: '*',
+    action: 'store',
     help:
       'export records from local db to given file as json, note: the records in local db may not have latest changes as online library, pass --sync to make sure that local db is synced before exporting.',
   });

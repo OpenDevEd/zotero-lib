@@ -26,7 +26,13 @@ import {
   fetchItemsByIds,
   getChangedItemsForGroup,
 } from './local-db/api';
-import { getAllGroups, saveGroup, saveZoteroItems } from './local-db/db';
+import {
+  fetchAllItems,
+  getAllGroups,
+  saveGroup,
+  saveZoteroItems,
+} from './local-db/db';
+import saveToFile from './local-db/saveToFile';
 // import printJSON from './utils/printJSON';
 
 require('dotenv').config();
@@ -1741,7 +1747,7 @@ class Zotero {
   }
 
   public async manageLocalDB(args) {
-    // console.log('args: ', { ...args }, this.config);
+    console.log('args: ', { ...args }, this.config);
 
     // if (args.import_json) {
     //   console.log('importing json from file: ', args.import_json);
@@ -1879,11 +1885,19 @@ class Zotero {
       console.log('skipping syncing with online library');
     }
 
-    // if (args.export_json) {
-    //   console.log('importing json from file: ', args.export_json);
-    // } else {
-    //   console.log('skipping exporting json');
-    // }
+    if (args.export_json) {
+      console.log('exporting json into file: ', args.export_json);
+      const allItems = await fetchAllItems({ database: args.database });
+      let fileName = args.export_json;
+      if (!fileName.endsWith('.json')) {
+        fileName += '.json';
+      }
+
+      const fileData = JSON.stringify(allItems);
+      saveToFile(fileName, fileData);
+    } else {
+      console.log('skipping exporting json');
+    }
   }
 
   /**

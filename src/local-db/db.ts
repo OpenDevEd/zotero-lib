@@ -186,6 +186,20 @@ export function saveZoteroItems({
   });
 }
 
+export function fetchAllItems({ database }) {
+  const db = createDBConnection(database);
+  return new Promise((res, rej) => {
+    db.all('SELECT id, data from items', (err, rows) => {
+      if (err) {
+        rej(err);
+      } else {
+        res(rows);
+      }
+      db.close();
+    });
+  });
+}
+
 export function saveZoteroItem(itemData: {
   database: string;
   item: ZoteroItem;
