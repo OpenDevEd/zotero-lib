@@ -21,11 +21,12 @@ import { readConfigFile } from './readConfigFile';
 import md5File from './utils/md5-file';
 import {
   fetchCurrentKey,
+  fetchGroupData,
   fetchGroups,
   fetchItemsByIds,
   getChangedItemsForGroup,
 } from './local-db/api';
-import { getAllGroups } from './local-db/db';
+import { getAllGroups, saveGroup, saveZoteroItems } from './local-db/db';
 import printJSON from './utils/printJSON';
 
 require('dotenv').config();
@@ -1765,8 +1766,8 @@ class Zotero {
       const offlineGroups = await getAllGroups({ ...args, ...this.config });
       console.log('offline groups: ', offlineGroups);
 
-      const offlineLastSyncedVersions = offlineGroups.reduce(
-        (a, c) => ({ ...a, [c.id]: c.lastSyncVersion }),
+      const offlineSyncedVersionsForGroups = offlineGroups.reduce(
+        (a, c) => ({ ...a, [c.id]: c.version }),
         {},
       );
 
@@ -1792,37 +1793,58 @@ class Zotero {
       if (changedGroups.length === 0) {
         console.log('found no changed group, so not fetch group data');
       }
+      /*
+        online groups:  { '2259720': 27, '4641034': 2 }
+        offline groups:  []
+        changed  groups:  [ '2259720', '4641034' ]
+      */
       console.log('changed  groups: ', changedGroups);
+      let allChangedGroupsData = await Promise.all(
+        changedGroups.map((changedGroup) =>
+          fetchGroupData({ ...args, ...this.config, group_id: changedGroup }),
+        ),
+      );
+      console.log('allChangedGroupsData: ', printJSON(allChangedGroupsData));
 
-      //TODO: fetch changed group and update their data locally
+      const savedChangedGroups = await Promise.all(
+        allChangedGroupsData.map((groupData) =>
+          saveGroup({ database: args.database, group: groupData }),
+        ),
+      );
+      console.log('savedChangedGroups: ', printJSON(savedChangedGroups));
 
+      const changedGroupsArray = Object.keys(onlineGroups);
       //TODO: push local changes
 
       // get remote changes
       const changedItemsForGroups = await Promise.all(
-        changedGroups.map((group) =>
+        changedGroupsArray.map((group) =>
           getChangedItemsForGroup({
             ...args,
             ...this.config,
             group,
-            version: offlineLastSyncedVersions[group],
+            version: offlineSyncedVersionsForGroups[group],
           }),
         ),
       );
 
-      console.log('changed items for groups: ', changedItemsForGroups);
+      // console.log('changed items for groups: ', changedItemsForGroups);
+      console.log(
+        'Total items to by synced: ',
+        changedItemsForGroups.reduce((a, c) => a + Object.keys(c).length, 0),
+      );
       // convert id: version map to array of ids, chuncked by 50 items max
       const chunckedItemsByGroup = changedItemsForGroups.map((item, index) => ({
-        group: changedGroups[index],
+        group: changedGroupsArray[index],
         itemIds: _.chunk(Object.keys(item), 50),
       }));
 
       console.log('chuncked items by group: ', printJSON(chunckedItemsByGroup));
 
-      const onlineSyncedVersions = {};
+      const itemsLastModifiedVersion = {};
       // for each group fetch all items with given ids, in batch of 50
       const allFetchedItems = await Promise.all(
-        chunckedItemsByGroup.map(({ group, itemIds }) =>
+        chunckedItemsByGroup.flatMap(({ group, itemIds }) =>
           Promise.all(
             itemIds.map((chunk) =>
               fetchItemsByIds({
@@ -1831,7 +1853,7 @@ class Zotero {
                 itemIds: chunk,
                 group,
               }).then((res) => {
-                onlineSyncedVersions[group] =
+                itemsLastModifiedVersion[group] =
                   res.headers['last-modified-version'];
                 return res.data;
               }),
@@ -1841,8 +1863,9 @@ class Zotero {
       );
 
       if (allFetchedItems.length) {
-        console.log('onlineSyncedVersions: ', onlineSyncedVersions);
+        console.log('itemsVersion: ', itemsLastModifiedVersion);
         console.log('allfetchedItems: ', printJSON(allFetchedItems));
+        await saveZoteroItems({ allFetchedItems, database: args.database });
       }
     } else {
       console.log('skipping syncing with online library');

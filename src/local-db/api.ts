@@ -1,3 +1,5 @@
+import { RequestArgs } from './types';
+
 const axios = require('axios');
 
 function getZoteroURL(subpath = '') {
@@ -10,9 +12,7 @@ function getZoteroURL(subpath = '') {
   return BASE_URL;
 }
 
-export async function fetchCurrentKey(
-  options: RequestOptions = { api_key: '' },
-) {
+export async function fetchCurrentKey(options: RequestArgs = { api_key: '' }) {
   const { api_key } = options;
 
   const headers = { Authorization: `Bearer ${api_key}` };
@@ -22,13 +22,8 @@ export async function fetchCurrentKey(
     .then((res) => res.data);
 }
 
-interface RequestOptions {
-  api_key?: string;
-  user_id?: string;
-}
-
 export async function fetchGroups(
-  options: RequestOptions = { api_key: '', user_id: '' },
+  options: RequestArgs = { api_key: '', user_id: '' },
 ) {
   const { api_key, user_id } = options;
 
@@ -37,6 +32,21 @@ export async function fetchGroups(
   return axios
     .get(getZoteroURL(`users/${user_id}/groups/?format=versions`), { headers })
     .then((res) => res.data);
+}
+
+export async function fetchGroupData(
+  options: RequestArgs = { api_key: '', user_id: '' },
+) {
+  const { api_key, group_id } = options;
+
+  const headers = { Authorization: `Bearer ${api_key}` };
+
+  const requestURL = getZoteroURL(`groups/${group_id}`);
+  console.log('requestURL', requestURL);
+  return axios.get(requestURL, { headers }).then((res) => {
+    console.log('fetchGrupData: ', res.data);
+    return res.data;
+  });
 }
 
 export async function getChangedItemsForGroup(options) {
