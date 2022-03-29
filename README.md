@@ -164,3 +164,21 @@ zotero-lib items --filter '{"limit": 10}'
 ## Also see
 
 [zotero-api-client](https://github.com/tnajdek/zotero-api-client) (With hindsight we might have built on zotero-api-client - we might still rebuild our code to use zotero-api-client.)
+
+## Syncing
+
+Note: this documentation is under progress and not yet finished
+
+sync given db file with online version
+zotero-cli --group-id xxxx db backup.db --sync
+zotero-cli --group-id xxxx db backup.db --export-json
+zotero-cli --group-id xxxx db backup.db --import-json
+zotero-cli --group-id xxxx db backup.db --sync --export-json --import-json
+
+--import-json=<file-name.json> takes a given file and apply its changes to localdb
+--sync reconcile localdb with online library
+--import-json=<file-name.json> export localdb as json with given file-name
+
+these options are optional and can be combined as required, however they will always execute in above order
+
+zotero-cli --group-id xxxx db backup.db --import-json
