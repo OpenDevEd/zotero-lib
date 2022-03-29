@@ -186,10 +186,12 @@ export function saveZoteroItems({
   });
 }
 
-export function fetchAllItems({ database }) {
+export function fetchAllItems({
+  database,
+}): Promise<Array<{ id: string; data: string }>> {
   const db = createDBConnection(database);
   return new Promise((res, rej) => {
-    db.all('SELECT id, data from items', (err, rows) => {
+    db.all('SELECT id, data FROM items', (err, rows) => {
       if (err) {
         rej(err);
       } else {

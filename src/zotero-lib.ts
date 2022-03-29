@@ -1892,8 +1892,12 @@ class Zotero {
       if (!fileName.endsWith('.json')) {
         fileName += '.json';
       }
-
-      const fileData = JSON.stringify(allItems, null, 2);
+      console.log(allItems.slice(4));
+      const fileData = JSON.stringify(
+        allItems.map((item) => JSON.parse(item.data)),
+        null,
+        2,
+      );
       saveToFile(fileName, fileData);
     } else {
       console.log('skipping exporting json');
