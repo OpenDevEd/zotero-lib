@@ -170,9 +170,11 @@ The underlying database is SQLite. You dont need to install any server or anythi
 To use this cmd you need to provide your db name along with one or more options. The options which you can specify are detailed below.
 
 `--sync` make local db synced with online library  
+`--lookup` allow you to lookup specific items in the local db
+`--keys` this must be used with `--lookup` to specify specfic keys you want to locate
 `--export-json=<file-name.json>` export localdb as json with given `file-name.json`
 
-These options are optional and can be combined as required. If both options are specified then database will be synced locally first then data from local db will be exported as json.
+These options are optional and can be combined as required. If all options are specified then they will be read/applied in above order.
 
 #### Examples
 

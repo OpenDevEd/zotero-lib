@@ -1885,21 +1885,27 @@ class Zotero {
       console.log('skipping syncing with online library');
     }
 
+    let filters = undefined;
+    if (args.lookup && Array.isArray(args.keys) && args.keys.length > 0) {
+      filters = { keys: [...args.keys] };
+    }
+
+    const allItems = await fetchAllItems({ database: args.database, filters });
+
+    const itemsAsJSON = JSON.stringify(
+      allItems.map((item) => JSON.parse(item.data)),
+      null,
+      2,
+    );
     if (args.export_json) {
       console.log('exporting json into file: ', args.export_json);
-      const allItems = await fetchAllItems({ database: args.database });
       let fileName = args.export_json;
       if (!fileName.endsWith('.json')) {
         fileName += '.json';
       }
-      const fileData = JSON.stringify(
-        allItems.map((item) => JSON.parse(item.data)),
-        null,
-        2,
-      );
-      saveToFile(fileName, fileData);
+      saveToFile(fileName, itemsAsJSON);
     } else {
-      console.log('skipping exporting json');
+      console.log(itemsAsJSON);
     }
   }
 

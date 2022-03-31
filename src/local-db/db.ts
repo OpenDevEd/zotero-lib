@@ -188,10 +188,24 @@ export function saveZoteroItems({
 
 export function fetchAllItems({
   database,
+  filters,
+}: {
+  database: string;
+  filters?: { keys: Array<string> };
 }): Promise<Array<{ id: string; data: string }>> {
+  const { keys = [] } = filters;
+
+  let whereClause = ``;
+  if (keys.length) {
+    const ids = keys.map((i) => `"${i}"`).join(',');
+    whereClause = `WHERE id in (${ids})`;
+  }
+
   const db = createDBConnection(database);
   return new Promise((res, rej) => {
-    db.all('SELECT id, data FROM items', (err, rows) => {
+    const sql = `SELECT id, data FROM items ${whereClause}`;
+    console.log('given sql:', sql);
+    db.all(sql, (err, rows) => {
       if (err) {
         rej(err);
       } else {

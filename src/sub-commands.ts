@@ -835,6 +835,16 @@ subParsersMap.set('db', function (subparsers, subCmdName) {
     help: 'Sync online library in local database',
   });
 
+  argparser.add_argument('--lookup', {
+    action: 'store_true',
+    help: 'Lookup records in local db',
+  });
+
+  argparser.add_argument('--keys', {
+    nargs: '*',
+    help: 'Keys to perform lookup on local db',
+  });
+
   argparser.add_argument('--export-json', {
     action: 'store',
     help:
