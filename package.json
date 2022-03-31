@@ -53,6 +53,7 @@
     "he": "^1.2.0",
     "http-link-header": "^1.0.3",
     "lodash": "^4.17.21",
+    "node-cron": "^3.0.0",
     "node-libcurl": "^2.3.3",
     "object-hash": "^3.0.0",
     "sqlite3": "^5.0.2",

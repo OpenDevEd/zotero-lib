@@ -3,6 +3,7 @@
 import Ajv from 'ajv';
 import logger from './logger';
 import sleep from './utils/sleep';
+import cron from 'node-cron';
 
 import processExtraField from './utils/processExtraField';
 import newVanityDOI from './utils/newVanityDOI';
@@ -1749,138 +1750,16 @@ class Zotero {
   public async manageLocalDB(args) {
     console.log('args: ', { ...args }, this.config);
 
-    // if (args.import_json) {
-    //   console.log('importing json from file: ', args.import_json);
-    // } else {
-    //   console.log('skipping importing json');
-    // }
-
     if (args.sync) {
-      console.log('syncing local db with online library');
-
-      // perform key check i.e. do we have valid key and we'll also get userId as a bonus
-      const keyCheck = await fetchCurrentKey(this.config);
-      //TODO: here we can perform extra check that the key is still valid and has access to groups
-      const { userID } = keyCheck;
-
-      args.user_id = userID;
-
-      // fetch groups version and check which are changed
-      const onlineGroups = await fetchGroups({ ...args, ...this.config });
-      // console.log('online groups: ', onlineGroups);
-
-      const offlineGroups = await getAllGroups({ ...args, ...this.config });
-      // console.log('offline groups: ', offlineGroups);
-
-      const offlineItemsVersion = offlineGroups.reduce(
-        (a, c) => ({ ...a, [c.id]: c.itemsVersion }),
-        {},
-      );
-
-      function getChangedGroups(online, local) {
-        const localGroupsMap = local.reduce(
-          (a, c) => ({ ...a, [c.id]: c.version }),
-          {},
-        );
-
-        let res = [];
-
-        for (let group in online) {
-          if (online[group] !== localGroupsMap[group]) {
-            res.push(group);
-          }
+      if (args.demon) {
+        if (!cron.validate(args.demon)) {
+          throw new Error(`Invalid cron pattern ${args.demon}`);
         }
-
-        return res;
+        cron.schedule(args.demon, () => {
+          syncToLocalDB({ ...args, ...this.config });
+        });
       }
-
-      const changedGroups = getChangedGroups(onlineGroups, offlineGroups);
-
-      if (changedGroups.length === 0) {
-        console.log('found no changed group, so not fetch group data');
-      } else {
-        console.log('changed group count: ', changedGroups.length);
-        console.log('changed  groups: ', changedGroups);
-        let allChangedGroupsData = await Promise.all(
-          changedGroups.map((changedGroup) =>
-            fetchGroupData({ ...args, ...this.config, group_id: changedGroup }),
-          ),
-        );
-        // console.log('allChangedGroupsData: ', printJSON(allChangedGroupsData));
-
-        await Promise.all(
-          allChangedGroupsData.map((groupData) =>
-            saveGroup({ database: args.database, group: groupData }),
-          ),
-        );
-        // console.log('savedChangedGroups: ', printJSON(savedChangedGroups));
-      }
-
-      const changedGroupsArray = Object.keys(onlineGroups);
-      //TODO: push local changes
-
-      // get remote changes
-      const changedItemsForGroups = await Promise.all(
-        changedGroupsArray.map((group) =>
-          getChangedItemsForGroup({
-            ...args,
-            ...this.config,
-            group,
-            version: offlineItemsVersion[group] || 0,
-          }),
-        ),
-      );
-
-      const totalToBeSynced = changedItemsForGroups.reduce(
-        (a, c) => a + Object.keys(c).length,
-        0,
-      );
-      // console.log('changed items for groups: ', changedItemsForGroups);
-      console.log('Total items to be synced: ', totalToBeSynced);
-      if (totalToBeSynced > 0) {
-        // convert id: version map to array of ids, chuncked by 50 items max
-        const chunckedItemsByGroup = changedItemsForGroups.map(
-          (item, index) => ({
-            group: changedGroupsArray[index],
-            itemIds: _.chunk(Object.keys(item), 50),
-          }),
-        );
-
-        // console.log('chuncked items by group: ', printJSON(chunckedItemsByGroup));
-
-        const itemsLastModifiedVersion = {};
-        // for each group fetch all items with given ids, in batch of 50
-        const allFetchedItems = await Promise.all(
-          chunckedItemsByGroup.flatMap(({ group, itemIds }) =>
-            Promise.all(
-              itemIds.map((chunk) =>
-                fetchItemsByIds({
-                  ...args,
-                  ...this.config,
-                  itemIds: chunk,
-                  group,
-                }).then((res) => {
-                  itemsLastModifiedVersion[group] =
-                    res.headers['last-modified-version'];
-                  return res.data;
-                }),
-              ),
-            ),
-          ),
-        );
-
-        if (allFetchedItems.length) {
-          console.log('itemsVersion: ', itemsLastModifiedVersion);
-          // console.log('allfetchedItems: ', printJSON(allFetchedItems));
-          saveZoteroItems({
-            allFetchedItems,
-            database: args.database,
-            lastModifiedVersion: itemsLastModifiedVersion,
-          });
-        }
-      } else {
-        console.log('Everything already synced!!! Hurray!!!');
-      }
+      await syncToLocalDB({ ...args, ...this.config });
     } else {
       console.log('skipping syncing with online library');
     }
@@ -1905,7 +1784,9 @@ class Zotero {
       }
       saveToFile(fileName, itemsAsJSON);
     } else {
-      console.log(itemsAsJSON);
+      if (args.lookup) {
+        console.log(itemsAsJSON);
+      }
     }
   }
 
@@ -2522,3 +2403,124 @@ class Zotero {
 }
 
 export = Zotero;
+
+async function syncToLocalDB(args: any) {
+  console.log('syncing local db with online library');
+
+  // perform key check i.e. do we have valid key and we'll also get userId as a bonus
+  const keyCheck = await fetchCurrentKey(args);
+  //TODO: here we can perform extra check that the key is still valid and has access to groups
+  const { userID } = keyCheck;
+
+  args.user_id = userID;
+
+  // fetch groups version and check which are changed
+  const onlineGroups = await fetchGroups({ ...args });
+  // console.log('online groups: ', onlineGroups);
+  const offlineGroups = await getAllGroups({ ...args });
+  // console.log('offline groups: ', offlineGroups);
+  const offlineItemsVersion = offlineGroups.reduce(
+    (a, c) => ({ ...a, [c.id]: c.itemsVersion }),
+    {},
+  );
+
+  function getChangedGroups(online, local) {
+    const localGroupsMap = local.reduce(
+      (a, c) => ({ ...a, [c.id]: c.version }),
+      {},
+    );
+
+    let res = [];
+
+    for (let group in online) {
+      if (online[group] !== localGroupsMap[group]) {
+        res.push(group);
+      }
+    }
+
+    return res;
+  }
+
+  const changedGroups = getChangedGroups(onlineGroups, offlineGroups);
+
+  if (changedGroups.length === 0) {
+    console.log('found no changed group, so not fetch group data');
+  } else {
+    console.log('changed group count: ', changedGroups.length);
+    console.log('changed  groups: ', changedGroups);
+    let allChangedGroupsData = await Promise.all(
+      changedGroups.map((changedGroup) =>
+        fetchGroupData({ ...args, group_id: changedGroup }),
+      ),
+    );
+    // console.log('allChangedGroupsData: ', printJSON(allChangedGroupsData));
+    await Promise.all(
+      allChangedGroupsData.map((groupData) =>
+        saveGroup({ database: args.database, group: groupData }),
+      ),
+    );
+    // console.log('savedChangedGroups: ', printJSON(savedChangedGroups));
+  }
+
+  const changedGroupsArray = Object.keys(onlineGroups);
+  //TODO: push local changes
+  // get remote changes
+  const changedItemsForGroups = await Promise.all(
+    changedGroupsArray.map((group) =>
+      getChangedItemsForGroup({
+        ...args,
+
+        group,
+        version: offlineItemsVersion[group] || 0,
+      }),
+    ),
+  );
+
+  const totalToBeSynced = changedItemsForGroups.reduce(
+    (a, c) => a + Object.keys(c).length,
+    0,
+  );
+  // console.log('changed items for groups: ', changedItemsForGroups);
+  console.log('Total items to be synced: ', totalToBeSynced);
+  if (totalToBeSynced > 0) {
+    // convert id: version map to array of ids, chuncked by 50 items max
+    const chunckedItemsByGroup = changedItemsForGroups.map((item, index) => ({
+      group: changedGroupsArray[index],
+      itemIds: _.chunk(Object.keys(item), 50),
+    }));
+
+    // console.log('chuncked items by group: ', printJSON(chunckedItemsByGroup));
+    const itemsLastModifiedVersion = {};
+    // for each group fetch all items with given ids, in batch of 50
+    const allFetchedItems = await Promise.all(
+      chunckedItemsByGroup.flatMap(({ group, itemIds }) =>
+        Promise.all(
+          itemIds.map((chunk) =>
+            fetchItemsByIds({
+              ...args,
+
+              itemIds: chunk,
+              group,
+            }).then((res) => {
+              itemsLastModifiedVersion[group] =
+                res.headers['last-modified-version'];
+              return res.data;
+            }),
+          ),
+        ),
+      ),
+    );
+
+    if (allFetchedItems.length) {
+      console.log('itemsVersion: ', itemsLastModifiedVersion);
+      // console.log('allfetchedItems: ', printJSON(allFetchedItems));
+      saveZoteroItems({
+        allFetchedItems,
+        database: args.database,
+        lastModifiedVersion: itemsLastModifiedVersion,
+      });
+    }
+  } else {
+    console.log('Everything already synced!!! Hurray!!!');
+  }
+}

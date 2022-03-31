@@ -850,6 +850,11 @@ subParsersMap.set('db', function (subparsers, subCmdName) {
     help:
       'export records from local db to given file as json, note: the records in local db may not have latest changes as online library, pass --sync to make sure that local db is synced before exporting.',
   });
+
+  argparser.add_argument('--demon', {
+    action: 'store',
+    help: 'run sync as cron job, you can specify any valid cron pattern',
+  });
 });
 
 export function configAllParsers(subparsers) {

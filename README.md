@@ -170,9 +170,10 @@ The underlying database is SQLite. You dont need to install any server or anythi
 To use this cmd you need to provide your db name along with one or more options. The options which you can specify are detailed below.
 
 `--sync` make local db synced with online library  
-`--lookup` allow you to lookup specific items in the local db
-`--keys` this must be used with `--lookup` to specify specfic keys you want to locate
-`--export-json=<file-name.json>` export localdb as json with given `file-name.json`
+`--lookup` allow you to lookup specific items in the local db  
+`--keys` this must be used with `--lookup` to specify specfic keys you want to locate  
+`--export-json=<file-name.json>` export localdb as json with given `file-name.json`  
+`--demon=<valid-cron-pattern` this will make the sync process run in demon mode, where it will peridically sync by itself, see [https://crontab.guru](https://crontab.guru) to learn about crontab pattern  
 
 These options are optional and can be combined as required. If all options are specified then they will be read/applied in above order.
 

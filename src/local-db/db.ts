@@ -193,7 +193,7 @@ export function fetchAllItems({
   database: string;
   filters?: { keys: Array<string> };
 }): Promise<Array<{ id: string; data: string }>> {
-  const { keys = [] } = filters;
+  const { keys = [] } = filters || {};
 
   let whereClause = ``;
   if (keys.length) {
