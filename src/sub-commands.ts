@@ -855,6 +855,17 @@ subParsersMap.set('db', function (subparsers, subCmdName) {
     action: 'store',
     help: 'run sync as cron job, you can specify any valid cron pattern',
   });
+
+  argparser.add_argument('--lockfile', {
+    action: 'store',
+    default: 'sync.lock',
+    help: 'run sync as cron job, you can specify any valid cron pattern',
+  });
+
+  argparser.add_argument('--lock-timeout', {
+    action: 'store',
+    help: 'Number of seconds to wait before resetting the lock',
+  });
 });
 
 export function configAllParsers(subparsers) {

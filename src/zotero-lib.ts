@@ -34,6 +34,7 @@ import {
   saveZoteroItems,
 } from './local-db/db';
 import saveToFile from './local-db/saveToFile';
+import { checkForValidLockFile, removeLockFile } from './lock.utils';
 // import printJSON from './utils/printJSON';
 
 require('dotenv').config();
@@ -1751,15 +1752,31 @@ class Zotero {
     console.log('args: ', { ...args }, this.config);
 
     if (args.sync) {
+      const lockFileName = args.lockfile;
+      const runSync = () => {
+        return checkForValidLockFile(args.lockfile, args.lock_timeout).then(
+          (hasValidLock: any) => {
+            if (hasValidLock) {
+              console.log(
+                `Another sync run is in progress, please wait for it, or remove its lockfile ${lockFileName}`,
+              );
+              return hasValidLock;
+            }
+            return syncToLocalDB({ ...args, ...this.config }).then(() =>
+              removeLockFile(lockFileName),
+            );
+          },
+        );
+      };
+
       if (args.demon) {
         if (!cron.validate(args.demon)) {
           throw new Error(`Invalid cron pattern ${args.demon}`);
         }
-        cron.schedule(args.demon, () => {
-          syncToLocalDB({ ...args, ...this.config });
-        });
+        cron.schedule(args.demon, runSync);
+      } else {
+        await runSync();
       }
-      await syncToLocalDB({ ...args, ...this.config });
     } else {
       console.log('skipping syncing with online library');
     }
