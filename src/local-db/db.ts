@@ -137,7 +137,6 @@ export function saveZoteroItems({
   //fetch all keys from db first to see which items need to be created/updated
   // write one big query to insert and update all items at once
   const db = createDBConnection(database);
-  const syncStart = Date.now();
   // console.log('db save start: ', syncStart);
   db.all('SELECT id from items', (err, rows) => {
     const existingItemIdsMap = rows.reduce((a, c) => ({ ...a, [c.id]: c }), {});
@@ -151,25 +150,23 @@ export function saveZoteroItems({
       let updateStmt = db.prepare(updateSql);
       let itemsLastVersionUpdateStmt = db.prepare(itemsLastVersionSql);
       allFetchedItems.forEach((groupItems) =>
-        groupItems.forEach((groupItemsChunk) =>
-          groupItemsChunk.forEach((item) => {
-            if (item.key in existingItemIdsMap) {
-              // console.log('updating: ', item.key);
-              updateStmt.run({
-                $id: item.key,
-                $version: item.version,
-                $data: JSON.stringify(item),
-              });
-            } else {
-              // console.log('creating: ', item.key);
-              createStmt.run({
-                $id: item.key,
-                $version: item.version,
-                $data: JSON.stringify(item),
-              });
-            }
-          }),
-        ),
+        groupItems.forEach((item) => {
+          if (item.key in existingItemIdsMap) {
+            // console.log('updating: ', item.key);
+            updateStmt.run({
+              $id: item.key,
+              $version: item.version,
+              $data: JSON.stringify(item),
+            });
+          } else {
+            // console.log('creating: ', item.key);
+            createStmt.run({
+              $id: item.key,
+              $version: item.version,
+              $data: JSON.stringify(item),
+            });
+          }
+        }),
       );
 
       Object.entries(lastModifiedVersion).forEach(([group, version]) =>
@@ -181,8 +178,6 @@ export function saveZoteroItems({
       db.run('COMMIT');
     });
     db.close();
-    const syncEnd = Date.now();
-    console.log(`Time taken: ${syncEnd - syncStart}ms`);
   });
 }
 

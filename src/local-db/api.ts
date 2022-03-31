@@ -54,7 +54,7 @@ export async function getChangedItemsForGroup(options) {
   return axios
     .get(
       getZoteroURL(
-        `groups/${group}/items/top?since=${version}&format=versions&includeTrashed=1`,
+        `groups/${group}/items?since=${version}&format=versions&includeTrashed=1`,
       ),
       { headers },
     )

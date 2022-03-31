@@ -2422,6 +2422,7 @@ class Zotero {
 export = Zotero;
 
 async function syncToLocalDB(args: any) {
+  const syncStart = Date.now();
   console.log('syncing local db with online library');
 
   // perform key check i.e. do we have valid key and we'll also get userId as a bonus
@@ -2486,7 +2487,6 @@ async function syncToLocalDB(args: any) {
     changedGroupsArray.map((group) =>
       getChangedItemsForGroup({
         ...args,
-
         group,
         version: offlineItemsVersion[group] || 0,
       }),
@@ -2508,25 +2508,49 @@ async function syncToLocalDB(args: any) {
 
     // console.log('chuncked items by group: ', printJSON(chunckedItemsByGroup));
     const itemsLastModifiedVersion = {};
+
+    // item children map
+    const childrenMap = {};
+    // item referenced by map
+
     // for each group fetch all items with given ids, in batch of 50
-    const allFetchedItems = await Promise.all(
-      chunckedItemsByGroup.flatMap(({ group, itemIds }) =>
+    let allFetchedItems = await Promise.all(
+      chunckedItemsByGroup.map(({ group, itemIds }) =>
         Promise.all(
           itemIds.map((chunk) =>
             fetchItemsByIds({
               ...args,
-
               itemIds: chunk,
               group,
             }).then((res) => {
               itemsLastModifiedVersion[group] =
                 res.headers['last-modified-version'];
+
+              res.data.forEach((item) => {
+                if (item.data.parentItem) {
+                  childrenMap[item.data.parentItem] = [
+                    ...(childrenMap[item.data.parentItem] || []),
+                    item.key,
+                  ];
+                }
+              });
               return res.data;
             }),
           ),
         ),
       ),
     );
+
+    allFetchedItems = allFetchedItems.map((groupItems) =>
+      groupItems.flatMap((chunkedItems) => {
+        return chunkedItems.map((chunkedItem) => {
+          chunkedItem.children = childrenMap[chunkedItem.key];
+          return chunkedItem;
+        });
+      }),
+    );
+    console.log(allFetchedItems);
+    // console.log(childrenMap);
 
     if (allFetchedItems.length) {
       console.log('itemsVersion: ', itemsLastModifiedVersion);
@@ -2540,4 +2564,6 @@ async function syncToLocalDB(args: any) {
   } else {
     console.log('Everything already synced!!! Hurray!!!');
   }
+  const syncEnd = Date.now();
+  console.log(`Time taken: ${(syncEnd - syncStart) / 1000}s`);
 }
