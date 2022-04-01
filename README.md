@@ -176,6 +176,7 @@ To use this cmd you need to provide your db name along with one or more options.
 `--lock-timeout` if a lock file already exist, how much older it should be to classify it as outdated, if its outdated it will be removed and a new one will be generated
 `--export-json=<file-name.json>` export localdb as json with given `file-name.json`  
 `--demon=<valid-cron-pattern` this will make the sync process run in demon mode, where it will peridically sync by itself, see [https://crontab.guru](https://crontab.guru) to learn about crontab pattern  
+`--errors` this will list all inconsistent items which have non zero children and non zero references 
 
 These options are optional and can be combined as required. If all options are specified then they will be read/applied in above order.
 
