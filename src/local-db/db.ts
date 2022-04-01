@@ -1,4 +1,4 @@
-import { ZoteroGroup, ZoteroItem } from './types';
+import { ZoteroGroup } from './types';
 
 const sqlite3 = require('sqlite3').verbose();
 const fs = require('fs');
@@ -18,6 +18,7 @@ export function initDB(dbName) {
         version INT,
         synced BOOLEAN,
         data TEXT,
+        inconsistent BOOLEAN,
         createdAt TEXT NOT NULL,
         updatedAt TEXT NOT NULL
     );`);
@@ -147,8 +148,8 @@ export function saveZoteroItems({
         (a, c) => ({ ...a, [c.id]: c }),
         {},
       );
-      const insertSql = `INSERT into items (id,version,data,createdAt,updatedAt) VALUES ($id, $version, $data, datetime('now'), datetime('now'))`;
-      const updateSql = `UPDATE items SET version=$version, data=$data, updatedAt=datetime('now') WHERE id=$id`;
+      const insertSql = `INSERT into items (id,version,data,inconsistent,createdAt,updatedAt) VALUES ($id, $version, $data, $inconsistent, datetime('now'), datetime('now'))`;
+      const updateSql = `UPDATE items SET version=$version, data=$data, inconsistent=$inconsistent, updatedAt=datetime('now') WHERE id=$id`;
       const itemsLastVersionSql = `UPDATE groups SET itemsVersion=$version, updatedAt=datetime('now') WHERE id=$id`;
 
       db.serialize(function () {
@@ -163,12 +164,14 @@ export function saveZoteroItems({
               updateStmt.run({
                 $id: item.key,
                 $version: item.version,
+                $inconsistent: item.inconsistent,
                 $data: JSON.stringify(item),
               });
             } else {
               // console.log('creating: ', item.key);
               createStmt.run({
                 $id: item.key,
+                $inconsistent: item.inconsistent,
                 $version: item.version,
                 $data: JSON.stringify(item),
               });
@@ -182,10 +185,11 @@ export function saveZoteroItems({
         createStmt.finalize();
         updateStmt.finalize();
         itemsLastVersionUpdateStmt.finalize();
-        db.run('COMMIT');
+        db.run('COMMIT', () => {
+          db.close();
+          resolve(true);
+        });
       });
-      db.close();
-      resolve(true);
     });
   });
 }
@@ -195,14 +199,22 @@ export function fetchAllItems({
   filters,
 }: {
   database: string;
-  filters?: { keys: Array<string> };
+  filters?: { keys: Array<string>; errors: boolean };
 }): Promise<Array<{ id: string; data: string }>> {
-  const { keys = [] } = filters || {};
-
+  const { keys = [], errors = false } = filters || {};
+  console.log('filters: ', filters);
   let whereClause = ``;
   if (keys.length) {
     const ids = keys.map((i) => `"${i}"`).join(',');
     whereClause = `WHERE id in (${ids})`;
+  }
+
+  if (errors) {
+    if (whereClause.length) {
+      whereClause += `AND inconsistent = true`;
+    } else {
+      whereClause = `WHERE inconsistent = true`;
+    }
   }
 
   const db = createDBConnection(database);
@@ -213,96 +225,10 @@ export function fetchAllItems({
       if (err) {
         rej(err);
       } else {
+        console.log(`total items found: ${rows.length}`);
         res(rows);
       }
       db.close();
     });
-  });
-}
-
-export function saveZoteroItem(itemData: {
-  database: string;
-  item: ZoteroItem;
-  closeConn: boolean;
-}) {
-  const { database, item, closeConn = true } = itemData;
-  console.log('saving', itemData);
-  return new Promise((res, rej) => {
-    const db = createDBConnection(database);
-    db.get(
-      'SELECT * FROM items WHERE id = $id',
-      { $id: item.key },
-      (err, row) => {
-        if (err) {
-          rej(err);
-          if (closeConn) {
-            db.close();
-          }
-          return;
-        }
-        if (row) {
-          res(updateItem({ database, item, closeConn }));
-        } else {
-          res(createItem({ database, item, closeConn }));
-        }
-        if (closeConn) {
-          db.close();
-        }
-      },
-    );
-  });
-}
-
-export async function createItem(itemData) {
-  const { database, item, closeConn = true } = itemData;
-  console.log('creating item', itemData);
-  return new Promise((res, rej) => {
-    const db = createDBConnection(database);
-    db.run(
-      `INSERT into items (id,version,data,createdAt,updatedAt) VALUES ($id, $version, $data, datetime('now'), datetime('now'))`,
-      {
-        $id: item.key,
-        $version: item.version,
-        $data: JSON.stringify(item),
-      },
-      (err, row) => {
-        if (err) {
-          rej(err);
-          if (closeConn) {
-            db.close();
-          }
-          return;
-        }
-        res(row);
-        if (closeConn) {
-          db.close();
-        }
-      },
-    );
-  });
-}
-
-export async function updateItem(itemData) {
-  const { database, item } = itemData;
-  console.log('updating item', itemData);
-  return new Promise((res, rej) => {
-    const db = createDBConnection(database);
-    db.run(
-      `UPDATE items SET version=$version, data=$data, updatedAt=datetime('now') WHERE id=$id`,
-      {
-        $id: item.key,
-        $version: item.version,
-        $data: JSON.stringify(item),
-      },
-      (err, row) => {
-        if (err) {
-          rej(err);
-          db.close();
-          return;
-        }
-        res(row);
-        db.close();
-      },
-    );
   });
 }

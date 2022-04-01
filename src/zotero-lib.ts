@@ -1773,7 +1773,7 @@ class Zotero {
         if (!cron.validate(args.demon)) {
           throw new Error(`Invalid cron pattern ${args.demon}`);
         }
-        cron.schedule(args.demon, runSync);
+        cron.schedule(args.demon, () => runSync());
       } else {
         await runSync();
       }
@@ -1786,7 +1786,14 @@ class Zotero {
       filters = { keys: [...args.keys] };
     }
 
-    const allItems = await fetchAllItems({ database: args.database, filters });
+    if (args.errors) {
+      filters = { errors: args.errors };
+    }
+
+    const allItems = await fetchAllItems({
+      database: args.database,
+      filters,
+    });
 
     const itemsAsJSON = JSON.stringify(
       allItems.map((item) => JSON.parse(item.data)),
@@ -1801,7 +1808,7 @@ class Zotero {
       }
       saveToFile(fileName, itemsAsJSON);
     } else {
-      if (args.lookup) {
+      if (args.lookup || args.errors) {
         console.log(itemsAsJSON);
       }
     }
@@ -2462,7 +2469,7 @@ async function syncToLocalDB(args: any) {
   const changedGroups = getChangedGroups(onlineGroups, offlineGroups);
 
   if (changedGroups.length === 0) {
-    console.log('found no changed group, so not fetch group data');
+    console.log('found no changed group, so not fetching group data');
   } else {
     console.log('changed group count: ', changedGroups.length);
     console.log('changed  groups: ', changedGroups);
@@ -2565,7 +2572,15 @@ async function syncToLocalDB(args: any) {
       groupItems.flatMap((chunkedItems) => {
         return chunkedItems.map((chunkedItem) => {
           chunkedItem.children = childrenMap[chunkedItem.key];
-          chunkedItem.referencedBy = referenceMap[chunkedItem.key];
+          chunkedItem.referencedBy = [
+            ...new Set(referenceMap[chunkedItem.key]),
+          ];
+
+          chunkedItem.inconsistent = Boolean(
+            (chunkedItem.children || []).length &&
+              (chunkedItem.referencedBy || []).length,
+          );
+
           return chunkedItem;
         });
       }),
@@ -2581,7 +2596,7 @@ async function syncToLocalDB(args: any) {
         allFetchedItems,
         database: args.database,
         lastModifiedVersion: itemsLastModifiedVersion,
-      });
+      }).then(() => console.log('items saved to db'));
     }
   } else {
     console.log('Everything already synced!!! Hurray!!!');

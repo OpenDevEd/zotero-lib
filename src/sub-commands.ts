@@ -856,6 +856,10 @@ subParsersMap.set('db', function (subparsers, subCmdName) {
     help: 'run sync as cron job, you can specify any valid cron pattern',
   });
 
+  argparser.add_argument('--errors', {
+    action: 'store_true',
+    help: "Search any key where children and referencedBy aren't equal",
+  });
   argparser.add_argument('--lockfile', {
     action: 'store',
     default: 'sync.lock',
