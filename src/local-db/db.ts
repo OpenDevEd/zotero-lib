@@ -136,48 +136,57 @@ export function saveZoteroItems({
   // batch updates
   //fetch all keys from db first to see which items need to be created/updated
   // write one big query to insert and update all items at once
-  const db = createDBConnection(database);
-  // console.log('db save start: ', syncStart);
-  db.all('SELECT id from items', (err, rows) => {
-    const existingItemIdsMap = rows.reduce((a, c) => ({ ...a, [c.id]: c }), {});
-    const insertSql = `INSERT into items (id,version,data,createdAt,updatedAt) VALUES ($id, $version, $data, datetime('now'), datetime('now'))`;
-    const updateSql = `UPDATE items SET version=$version, data=$data, updatedAt=datetime('now') WHERE id=$id`;
-    const itemsLastVersionSql = `UPDATE groups SET itemsVersion=$version, updatedAt=datetime('now') WHERE id=$id`;
-
-    db.serialize(function () {
-      db.run('BEGIN');
-      let createStmt = db.prepare(insertSql);
-      let updateStmt = db.prepare(updateSql);
-      let itemsLastVersionUpdateStmt = db.prepare(itemsLastVersionSql);
-      allFetchedItems.forEach((groupItems) =>
-        groupItems.forEach((item) => {
-          if (item.key in existingItemIdsMap) {
-            // console.log('updating: ', item.key);
-            updateStmt.run({
-              $id: item.key,
-              $version: item.version,
-              $data: JSON.stringify(item),
-            });
-          } else {
-            // console.log('creating: ', item.key);
-            createStmt.run({
-              $id: item.key,
-              $version: item.version,
-              $data: JSON.stringify(item),
-            });
-          }
-        }),
+  return new Promise((resolve, reject) => {
+    const db = createDBConnection(database);
+    // console.log('db save start: ', syncStart);
+    db.all('SELECT id from items', (err, rows) => {
+      if (err) {
+        return reject(err);
+      }
+      const existingItemIdsMap = rows.reduce(
+        (a, c) => ({ ...a, [c.id]: c }),
+        {},
       );
+      const insertSql = `INSERT into items (id,version,data,createdAt,updatedAt) VALUES ($id, $version, $data, datetime('now'), datetime('now'))`;
+      const updateSql = `UPDATE items SET version=$version, data=$data, updatedAt=datetime('now') WHERE id=$id`;
+      const itemsLastVersionSql = `UPDATE groups SET itemsVersion=$version, updatedAt=datetime('now') WHERE id=$id`;
 
-      Object.entries(lastModifiedVersion).forEach(([group, version]) =>
-        itemsLastVersionUpdateStmt.run({ $id: group, $version: version }),
-      );
-      createStmt.finalize();
-      updateStmt.finalize();
-      itemsLastVersionUpdateStmt.finalize();
-      db.run('COMMIT');
+      db.serialize(function () {
+        db.run('BEGIN');
+        let createStmt = db.prepare(insertSql);
+        let updateStmt = db.prepare(updateSql);
+        let itemsLastVersionUpdateStmt = db.prepare(itemsLastVersionSql);
+        allFetchedItems.forEach((groupItems) =>
+          groupItems.forEach((item) => {
+            if (item.key in existingItemIdsMap) {
+              // console.log('updating: ', item.key);
+              updateStmt.run({
+                $id: item.key,
+                $version: item.version,
+                $data: JSON.stringify(item),
+              });
+            } else {
+              // console.log('creating: ', item.key);
+              createStmt.run({
+                $id: item.key,
+                $version: item.version,
+                $data: JSON.stringify(item),
+              });
+            }
+          }),
+        );
+
+        Object.entries(lastModifiedVersion).forEach(([group, version]) =>
+          itemsLastVersionUpdateStmt.run({ $id: group, $version: version }),
+        );
+        createStmt.finalize();
+        updateStmt.finalize();
+        itemsLastVersionUpdateStmt.finalize();
+        db.run('COMMIT');
+      });
+      db.close();
+      resolve(true);
     });
-    db.close();
   });
 }
 

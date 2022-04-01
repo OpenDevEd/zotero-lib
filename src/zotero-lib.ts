@@ -2512,6 +2512,7 @@ async function syncToLocalDB(args: any) {
     // item children map
     const childrenMap = {};
     // item referenced by map
+    const referenceMap = {};
 
     // for each group fetch all items with given ids, in batch of 50
     let allFetchedItems = await Promise.all(
@@ -2527,11 +2528,30 @@ async function syncToLocalDB(args: any) {
                 res.headers['last-modified-version'];
 
               res.data.forEach((item) => {
+                // get children
                 if (item.data.parentItem) {
                   childrenMap[item.data.parentItem] = [
                     ...(childrenMap[item.data.parentItem] || []),
                     item.key,
                   ];
+                }
+                // get references
+                if (
+                  (item.data.extra || '').includes('KerkoCite.ItemAlsoKnownAs:')
+                ) {
+                  const kerkoLine = item.data.extra
+                    .split('\n')
+                    .find((i) => i.startsWith('KerkoCite'));
+                  const [, ...refs] = kerkoLine.split(' ');
+                  refs
+                    .filter((i) => !i.includes('zenodo') && i.includes(':'))
+                    .forEach((ref) => {
+                      const srcKey = ref.split(':')[1];
+                      referenceMap[srcKey] = [
+                        ...(referenceMap[srcKey] || []),
+                        srcKey,
+                      ];
+                    });
                 }
               });
               return res.data;
@@ -2545,17 +2565,19 @@ async function syncToLocalDB(args: any) {
       groupItems.flatMap((chunkedItems) => {
         return chunkedItems.map((chunkedItem) => {
           chunkedItem.children = childrenMap[chunkedItem.key];
+          chunkedItem.referencedBy = referenceMap[chunkedItem.key];
           return chunkedItem;
         });
       }),
     );
-    console.log(allFetchedItems);
+    // console.log(allFetchedItems);
     // console.log(childrenMap);
+    // console.log(referenceMap);
 
     if (allFetchedItems.length) {
       console.log('itemsVersion: ', itemsLastModifiedVersion);
       // console.log('allfetchedItems: ', printJSON(allFetchedItems));
-      saveZoteroItems({
+      await saveZoteroItems({
         allFetchedItems,
         database: args.database,
         lastModifiedVersion: itemsLastModifiedVersion,
