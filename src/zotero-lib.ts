@@ -3,6 +3,7 @@
 import Ajv from 'ajv';
 import logger from './logger';
 import sleep from './utils/sleep';
+import cron from 'node-cron';
 
 import processExtraField from './utils/processExtraField';
 import newVanityDOI from './utils/newVanityDOI';
@@ -19,6 +20,22 @@ import {
 import decorations from './decorations';
 import { readConfigFile } from './readConfigFile';
 import md5File from './utils/md5-file';
+import {
+  fetchCurrentKey,
+  fetchGroupData,
+  fetchGroups,
+  fetchItemsByIds,
+  getChangedItemsForGroup,
+} from './local-db/api';
+import {
+  fetchAllItems,
+  getAllGroups,
+  saveGroup,
+  saveZoteroItems,
+} from './local-db/db';
+import saveToFile from './local-db/saveToFile';
+import { checkForValidLockFile, removeLockFile } from './lock.utils';
+// import printJSON from './utils/printJSON';
 
 require('dotenv').config();
 
@@ -57,7 +74,6 @@ class Zotero {
   constructor(args = {}) {
     // Read config
     this.config = this.configure(args, true);
-
     this.http = createHttpClient({
       headers: {
         'User-Agent': 'Zotero-CLI',
@@ -217,7 +233,7 @@ class Zotero {
   // see if we can make it private again
   public print(...args: any[]) {
     if (!this.config.out) {
-      logger.info.apply(console, args);
+      logger.info(args);
       return;
     }
 
@@ -862,8 +878,6 @@ class Zotero {
             .map(async (child) => {
               if (child.data.filename) {
                 logger.info(`Downloading file ${child.data.filename}`);
-                // TODO:
-                // ??? await this.attachment({key: item.key, save: item.data.filename})
                 // TODO: Is 'binary' correct?
                 fs.writeFileSync(
                   child.data.filename,
@@ -874,6 +888,12 @@ class Zotero {
                   ),
                   'binary',
                 );
+
+                // checking md5, if it doesn't match we throw an error
+                const downloadedFilesMD5 = md5File(child.data.filename);
+                if (child.data.md5 !== downloadedFilesMD5) {
+                  throw new Error("The md5 doesn't match for downloaded file");
+                }
               } else {
                 logger.info(
                   `Not downloading file ${child.key}/${child.data.itemType}/${child.data.linkMode}/${child.data.title}`,
@@ -883,35 +903,46 @@ class Zotero {
         );
       }
 
+      //TODO: extract UploadItem class
       if (args.addfiles) {
         logger.info('Adding files...');
+
+        // get attachment template
         const attachmentTemplate = await this.http.get(
           '/items/new?itemType=attachment&linkMode=imported_file',
           { userOrGroupPrefix: false },
           this.config,
         );
+
+        // try to upload each file
         for (const filename of args.addfiles) {
           if (args.debug) logger.info('Adding file: ' + filename);
           if (!fs.existsSync(filename)) {
             return this.message(0, `Ignoring non-existing file: ${filename}.`);
           }
 
-          const attach = attachmentTemplate;
-          attach.title = path.basename(filename);
-          attach.filename = path.basename(filename);
-          attach.contentType = `application/${path.extname(filename).slice(1)}`;
-          attach.parentItem = args.key;
+          // create an upload file using attachment template
+          const attachmentFileData = { ...attachmentTemplate };
+          attachmentFileData.title = path.basename(filename);
+          attachmentFileData.filename = path.basename(filename);
+          attachmentFileData.contentType = `application/${path
+            .extname(filename)
+            .slice(1)}`;
+          attachmentFileData.parentItem = args.key;
+
           const stat = fs.statSync(filename);
+
+          // upload file using attachment template
           const uploadItem = await this.http.post(
             '/items',
-            JSON.stringify([attach]),
+            JSON.stringify([attachmentFileData]),
             {},
             this.config,
           );
-          const uploadAuth = await this.http.post(
+          const uploadAuthorization = await this.http.post(
             `/items/${uploadItem.successful[0].key}/file?md5=${md5File(
               filename,
-            )}&filename=${attach.filename}&filesize=${
+            )}&filename=${attachmentFileData.filename}&filesize=${
               fs.statSync(filename)['size']
             }&mtime=${stat.mtimeMs}`,
             '{}',
@@ -920,16 +951,16 @@ class Zotero {
           );
 
           let request_post = null;
-          if (uploadAuth.exists !== 1) {
+          if (uploadAuthorization.exists !== 1) {
             const uploadResponse = await this.http
               .post(
-                uploadAuth.url,
+                uploadAuthorization.url,
                 Buffer.concat([
-                  Buffer.from(uploadAuth.prefix),
+                  Buffer.from(uploadAuthorization.prefix),
                   fs.readFileSync(filename),
-                  Buffer.from(uploadAuth.suffix),
+                  Buffer.from(uploadAuthorization.suffix),
                 ]),
-                { 'Content-Type': uploadAuth.contentType },
+                { 'Content-Type': uploadAuthorization.contentType },
                 this.config,
               )
               .then((res) => res.data);
@@ -938,7 +969,7 @@ class Zotero {
               this.show(uploadResponse);
             }
             request_post = await this.http.post(
-              `/items/${uploadItem.successful[0].key}/file?upload=${uploadAuth.uploadKey}`,
+              `/items/${uploadItem.successful[0].key}/file?upload=${uploadAuthorization.uploadKey}`,
               '{}',
               {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -1717,6 +1748,72 @@ class Zotero {
     return doi;
   }
 
+  public async manageLocalDB(args) {
+    console.log('args: ', { ...args }, this.config);
+
+    if (args.sync) {
+      const lockFileName = args.lockfile;
+      const runSync = () => {
+        return checkForValidLockFile(args.lockfile, args.lock_timeout).then(
+          (hasValidLock: any) => {
+            if (hasValidLock) {
+              console.log(
+                `Another sync run is in progress, please wait for it, or remove its lockfile ${lockFileName}`,
+              );
+              return hasValidLock;
+            }
+            return syncToLocalDB({ ...args, ...this.config }).then(() =>
+              removeLockFile(lockFileName),
+            );
+          },
+        );
+      };
+
+      if (args.demon) {
+        if (!cron.validate(args.demon)) {
+          throw new Error(`Invalid cron pattern ${args.demon}`);
+        }
+        cron.schedule(args.demon, () => runSync());
+      } else {
+        await runSync();
+      }
+    } else {
+      console.log('skipping syncing with online library');
+    }
+
+    let filters = undefined;
+    if (args.lookup && Array.isArray(args.keys) && args.keys.length > 0) {
+      filters = { keys: [...args.keys] };
+    }
+
+    if (args.errors) {
+      filters = { errors: args.errors };
+    }
+
+    const allItems = await fetchAllItems({
+      database: args.database,
+      filters,
+    });
+
+    const itemsAsJSON = JSON.stringify(
+      allItems.map((item) => JSON.parse(item.data)),
+      null,
+      2,
+    );
+    if (args.export_json) {
+      console.log('exporting json into file: ', args.export_json);
+      let fileName = args.export_json;
+      if (!fileName.endsWith('.json')) {
+        fileName += '.json';
+      }
+      saveToFile(fileName, itemsAsJSON);
+    } else {
+      if (args.lookup || args.errors) {
+        console.log(itemsAsJSON);
+      }
+    }
+  }
+
   /**
    * Update the DOI of the item provided.
    */
@@ -1727,7 +1824,7 @@ class Zotero {
     args.key = as_value(args.key);
     // We dont know what kind of item this is - gotta get the item to see
     const item = await this.item(args);
-    const existingDOI = this.get_doi_from_item(item);
+    const existingDOI = this.get_doi_from_item(item) || '';
     if ('doi' in args || 'zenodoRecordID' in args) {
       let json = {};
       let update = false;
@@ -1738,7 +1835,9 @@ class Zotero {
         update = true;
       }
       // logger.info("update_doi: " + `${args.doi} != ${existingDOI}`)
-      if (args.doi != existingDOI) {
+      //TODO: args parsing code
+      args.doi = args.doi || '';
+      if (args.doi !== existingDOI) {
         update = true;
         if ('doi' in item) {
           json['doi'] = args.doi;
@@ -2328,3 +2427,180 @@ class Zotero {
 }
 
 export = Zotero;
+
+async function syncToLocalDB(args: any) {
+  const syncStart = Date.now();
+  console.log('syncing local db with online library');
+
+  // perform key check i.e. do we have valid key and we'll also get userId as a bonus
+  const keyCheck = await fetchCurrentKey(args);
+  //TODO: here we can perform extra check that the key is still valid and has access to groups
+  const { userID } = keyCheck;
+
+  args.user_id = userID;
+
+  // fetch groups version and check which are changed
+  const onlineGroups = await fetchGroups({ ...args });
+  // console.log('online groups: ', onlineGroups);
+  const offlineGroups = await getAllGroups({ ...args });
+  // console.log('offline groups: ', offlineGroups);
+  const offlineItemsVersion = offlineGroups.reduce(
+    (a, c) => ({ ...a, [c.id]: c.itemsVersion }),
+    {},
+  );
+
+  function getChangedGroups(online, local) {
+    const localGroupsMap = local.reduce(
+      (a, c) => ({ ...a, [c.id]: c.version }),
+      {},
+    );
+
+    let res = [];
+
+    for (let group in online) {
+      if (online[group] !== localGroupsMap[group]) {
+        res.push(group);
+      }
+    }
+
+    return res;
+  }
+
+  const changedGroups = getChangedGroups(onlineGroups, offlineGroups);
+
+  if (changedGroups.length === 0) {
+    console.log('found no changed group, so not fetching group data');
+  } else {
+    console.log('changed group count: ', changedGroups.length);
+    console.log('changed  groups: ', changedGroups);
+    let allChangedGroupsData = await Promise.all(
+      changedGroups.map((changedGroup) =>
+        fetchGroupData({ ...args, group_id: changedGroup }),
+      ),
+    );
+    // console.log('allChangedGroupsData: ', printJSON(allChangedGroupsData));
+    await Promise.all(
+      allChangedGroupsData.map((groupData) =>
+        saveGroup({ database: args.database, group: groupData }),
+      ),
+    );
+    // console.log('savedChangedGroups: ', printJSON(savedChangedGroups));
+  }
+
+  const changedGroupsArray = Object.keys(onlineGroups);
+  //TODO: push local changes
+  // get remote changes
+  const changedItemsForGroups = await Promise.all(
+    changedGroupsArray.map((group) =>
+      getChangedItemsForGroup({
+        ...args,
+        group,
+        version: offlineItemsVersion[group] || 0,
+      }),
+    ),
+  );
+
+  const totalToBeSynced = changedItemsForGroups.reduce(
+    (a, c) => a + Object.keys(c).length,
+    0,
+  );
+  // console.log('changed items for groups: ', changedItemsForGroups);
+  console.log('Total items to be synced: ', totalToBeSynced);
+  if (totalToBeSynced > 0) {
+    // convert id: version map to array of ids, chuncked by 50 items max
+    const chunckedItemsByGroup = changedItemsForGroups.map((item, index) => ({
+      group: changedGroupsArray[index],
+      itemIds: _.chunk(Object.keys(item), 50),
+    }));
+
+    // console.log('chuncked items by group: ', printJSON(chunckedItemsByGroup));
+    const itemsLastModifiedVersion = {};
+
+    // item children map
+    const childrenMap = {};
+    // item referenced by map
+    const referenceMap = {};
+
+    // for each group fetch all items with given ids, in batch of 50
+    let allFetchedItems = await Promise.all(
+      chunckedItemsByGroup.map(({ group, itemIds }) =>
+        Promise.all(
+          itemIds.map((chunk) =>
+            fetchItemsByIds({
+              ...args,
+              itemIds: chunk,
+              group,
+            }).then((res) => {
+              itemsLastModifiedVersion[group] =
+                res.headers['last-modified-version'];
+
+              res.data.forEach((item) => {
+                // get children
+                if (item.data.parentItem) {
+                  childrenMap[item.data.parentItem] = [
+                    ...(childrenMap[item.data.parentItem] || []),
+                    item.key,
+                  ];
+                }
+                // get references
+                if (
+                  (item.data.extra || '').includes('KerkoCite.ItemAlsoKnownAs:')
+                ) {
+                  const kerkoLine = item.data.extra
+                    .split('\n')
+                    .find((i) => i.startsWith('KerkoCite'));
+                  const [, ...refs] = kerkoLine.split(' ');
+                  refs
+                    .filter((i) => !i.includes('zenodo') && i.includes(':'))
+                    .forEach((ref) => {
+                      const srcKey = ref.split(':')[1];
+                      referenceMap[srcKey] = [
+                        ...(referenceMap[srcKey] || []),
+                        srcKey,
+                      ];
+                    });
+                }
+              });
+              return res.data;
+            }),
+          ),
+        ),
+      ),
+    );
+
+    allFetchedItems = allFetchedItems.map((groupItems) =>
+      groupItems.flatMap((chunkedItems) => {
+        return chunkedItems.map((chunkedItem) => {
+          chunkedItem.children = childrenMap[chunkedItem.key];
+          chunkedItem.referencedBy = [
+            ...new Set(referenceMap[chunkedItem.key]),
+          ];
+
+          chunkedItem.inconsistent = Boolean(
+            (chunkedItem.children || []).length &&
+              (chunkedItem.referencedBy || []).length,
+          );
+
+          return chunkedItem;
+        });
+      }),
+    );
+    // console.log(allFetchedItems);
+    // console.log(childrenMap);
+    // console.log(referenceMap);
+
+    if (allFetchedItems.length) {
+      console.log('itemsVersion: ', itemsLastModifiedVersion);
+      // console.log('allfetchedItems: ', printJSON(allFetchedItems));
+      await saveZoteroItems({
+        allFetchedItems,
+        database: args.database,
+        lastModifiedVersion: itemsLastModifiedVersion,
+      }).then(() => console.log('items saved to db'));
+    }
+  } else {
+    console.log('Everything already synced!!! Hurray!!!');
+  }
+  const syncEnd = Date.now();
+  console.log(`Time taken: ${(syncEnd - syncStart) / 1000}s`);
+}

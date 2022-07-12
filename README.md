@@ -161,6 +161,46 @@ zotero-lib items --filter '{"limit": 10}'
 
 ### bibliography
 
+### Local Database Syncing
+
+You can use this cli to locally backup your online zotero library. The `db` cmd allows you to sync online library in local sqlite database. On first run all online records are synced into local database. On subsequent runs only those records are fetched, which were modifed since last sync.
+
+The underlying database is SQLite. You dont need to install any server or anything it will work out of box as SQLite comes bundled with this cli. 
+
+To use this cmd you need to provide your db name along with one or more options. The options which you can specify are detailed below.
+
+`--sync` make local db synced with online library  
+`--lookup` allow you to lookup specific items in the local db  
+`--keys` this must be used with `--lookup` to specify specfic keys you want to locate  
+`--lockfile` name of lock file to be used, default is "sync.lock" 
+`--lock-timeout` if a lock file already exist, how much older it should be to classify it as outdated, if its outdated it will be removed and a new one will be generated
+`--export-json=<file-name.json>` export localdb as json with given `file-name.json`  
+`--demon=<valid-cron-pattern` this will make the sync process run in demon mode, where it will peridically sync by itself, see [https://crontab.guru](https://crontab.guru) to learn about crontab pattern  
+`--errors` this will list all inconsistent items which have non zero children and non zero references 
+
+These options are optional and can be combined as required. If all options are specified then they will be read/applied in above order.
+
+#### Examples
+
+To sync given db file `backup.db` with online version
+
+````bash
+zotero-cli db backup.db --sync
+````
+
+To export give db file `backup.db` as json file `./backup.json`
+
+````bash
+zotero-cli db backup.db --export-json="./backup.json"
+````
+
+You can combine previous two steps in one cmd
+
+````bash
+zotero-cli db backup.db --sync --export-json="./backup.json"
+````
+
+
 ## Also see
 
 [zotero-api-client](https://github.com/tnajdek/zotero-api-client) (With hindsight we might have built on zotero-api-client - we might still rebuild our code to use zotero-api-client.)

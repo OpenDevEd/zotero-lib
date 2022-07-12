@@ -15,7 +15,7 @@
     "noImplicitReturns": true,
     "esModuleInterop": true,
     "noFallthroughCasesInSwitch": true,
-    "lib": ["es2017", "dom"],
+    "lib": ["es2020", "dom"],
     "typeRoots": ["./typings", "./node_modules/@types"]
   },
   "include": ["src/*.ts", "src/**/*.ts"],
