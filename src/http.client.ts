@@ -20,8 +20,10 @@ export class HttpClient {
     const prefix = config.user_id
       ? `/users/${config.user_id}`
       : `/groups/${config.group_id}`;
-    console.log('POST' + uri);
-    uri = `${base}${prefix}${uri}`;
+    if (!uri.startsWith('http')) {
+      uri = `${base}${prefix}${uri}`;
+    }
+    console.log('POST uri: ' + uri);
     if (config.verbose) console.error('POST', uri);
 
     console.log('POST data: ', data);

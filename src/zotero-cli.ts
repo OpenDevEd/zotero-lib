@@ -15,9 +15,8 @@ const zoteroLib = new Zotero({});
 /**
  * Initialize Command Line Interface
  */
-async function commandLineInterface() {
+async function main() {
   const args = parseArguments();
-
   if (args.version) {
     getVersion();
     process.exit(0);
@@ -46,6 +45,9 @@ async function commandLineInterface() {
 
   try {
     if (args.verbose) logger.info('ARGS=' + JSON.stringify(args, null, 2));
+    if (!(args.func in zoteroLib)) {
+      throw new Error(`No cmd handler defined for ${args.func}`);
+    }
     let result = await zoteroLib[args.func](args);
     // This really just works for 'item'... should realy move those functions elsewhere
     if (args.xmp) {
@@ -79,8 +81,9 @@ async function commandLineInterface() {
       logger.info(`writing output to console`);
       logger.info(printJSON(result));
     }
-  } catch (ex) {
-    zoteroLib.print('Command execution failed: ', ex);
+  } catch (error) {
+    console.log(error);
+    zoteroLib.print('Command execution failed: ', error);
     process.exit(1);
   }
 }
@@ -101,7 +104,8 @@ function parseArguments() {
   });
   parser.add_argument('--config', {
     type: 'str',
-    help: 'Configuration file (toml format). Note that ./zotero-cli.toml and ~/.config/zotero-cli/zotero-cli.toml is picked up automatically.',
+    help:
+      'Configuration file (toml format). Note that ./zotero-cli.toml and ~/.config/zotero-cli/zotero-cli.toml is picked up automatically.',
   });
   parser.add_argument('--config-json', {
     type: 'str',
@@ -170,13 +174,9 @@ async function getZenodoJson(item, args: any) {
   return updateDoc;
 }
 
-async function main() {
-  await commandLineInterface()
-    .then()
-    .catch((err) => {
-      console.error('error:', err);
-      process.exit(1);
-    });
-}
-
-main();
+main()
+  .then()
+  .catch((err) => {
+    console.error('error:', err);
+    process.exit(1);
+  });
