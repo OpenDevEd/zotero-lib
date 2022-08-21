@@ -13,6 +13,7 @@
     "start": "node ./build/zotero-cli.js",
     "dev": "ts-node ./src/zotero-cli.ts",
     "lib": "node ./build/zotero-lib.js",
+    "test:cli_to_javascript":"node ./tests/test_cli_to_javascript.js",
     "test": "jest",
     "legacy:test": "node ./tests/*.js",
     "legacy:test_create": "node ./tests/test_create.js",

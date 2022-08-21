@@ -852,6 +852,14 @@ class Zotero {
     // TODO: args parsing code
     const my_key = this.extractKeyAndSetGroup(args.key);
     args.key = my_key;
+    
+    if (args.filter) {
+      args.filter = JSON.parse(args.filter);
+  }
+    if(!args.key)
+    {
+      args.key = args.filter.itemKey;
+    }
     // TODO: Need to implement filter as a command line option --filter="{...}"
     if (!args.key && !(args.filter && args.filter.itemKey)) {
       return this.message(

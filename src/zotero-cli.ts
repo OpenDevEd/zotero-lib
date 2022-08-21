@@ -21,6 +21,24 @@ async function main() {
     getVersion();
     process.exit(0);
   }
+  if (args.javascript) {
+    let object = {};
+    for(let key in args){
+      if((!['api_key','config','config_json','user_id','group_id','indent','verbose','javascript','dryrun','out','show','version','func'].includes(key))){
+        object[key] = args[key];
+        
+      }
+    }
+    
+    let stx = `
+    const options =  ${JSON.stringify(object)}
+    const result = await zotzenlib.${args.func}(options)
+    `
+    console.log(stx);
+    process.exit(0);
+    
+
+  }
 
   if (args.verbose) {
     logger.info('zotero-cli starting...');
@@ -128,6 +146,10 @@ function parseArguments() {
   parser.add_argument('--verbose', {
     action: 'store_true',
     help: 'Log requests.',
+  });
+  parser.add_argument('--javascript', {
+    action: 'store_true',
+    help: 'convert to santax of javascript',
   });
   parser.add_argument('--dryrun', {
     action: 'store_true',
