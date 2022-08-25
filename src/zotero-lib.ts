@@ -2040,8 +2040,9 @@ class Zotero {
         return this.message(1, 'update failed');
       }
     } else {
-      logger.info(item[args.field]);
-      process.exit(1);
+      return item[args.field];
+      //logger.info(item[args.field]);
+      //process.exit(1);
     }
     // ACTION: return values
     const data = {};
