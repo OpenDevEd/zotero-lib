@@ -15,9 +15,13 @@
     "noImplicitReturns": true,
     "esModuleInterop": true,
     "noFallthroughCasesInSwitch": true,
-    "lib": ["es2017", "dom"],
+    "lib": ["es2020", "dom"],
     "typeRoots": ["./typings", "./node_modules/@types"]
   },
-  "include": ["src/*.ts","src/**/*.ts"],
-  "exclude": ["node_modules", "BaCkUp", "*/BaCkUp"]
+  "include": ["src/*.ts", "src/**/*.ts"],
+  "exclude": ["node_modules", "BaCkUp", "*/BaCkUp"],
+  "typedocOptions": {
+    "entryPoints": ["src/zotero-lib.ts"],
+    "out": "docs-out"
+  }
 }
