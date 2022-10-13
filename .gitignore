@@ -14,6 +14,8 @@ BaCkUp/*
 */*/*~
 .vs/*
 docs-out
+test.js
+backup.json
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/node

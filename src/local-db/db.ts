@@ -111,9 +111,9 @@ export async function updateGroup(groupData) {
     db.run(
       `UPDATE  groups SET version=$version, data=$data, updatedAt=datetime('now') WHERE id=$id`,
       {
-        id: group.id,
-        version: group.version,
-        data: JSON.stringify(group),
+        $id: group.id,
+        $version: group.version,
+        $data: JSON.stringify(group),
       },
       (err, row) => {
         if (err) {
@@ -137,10 +137,10 @@ export function saveZoteroItems({
   // batch updates
   //fetch all keys from db first to see which items need to be created/updated
   // write one big query to insert and update all items at once
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     const db = createDBConnection(database);
     // console.log('db save start: ', syncStart);
-    db.all('SELECT id from items', (err, rows) => {
+    await db.all('SELECT id from items', async (err, rows) => {
       if (err) {
         return reject(err);
       }
@@ -152,40 +152,86 @@ export function saveZoteroItems({
       const updateSql = `UPDATE items SET version=$version, data=$data, inconsistent=$inconsistent, updatedAt=datetime('now') WHERE id=$id`;
       const itemsLastVersionSql = `UPDATE groups SET itemsVersion=$version, updatedAt=datetime('now') WHERE id=$id`;
 
-      db.serialize(function () {
-        db.run('BEGIN');
-        let createStmt = db.prepare(insertSql);
-        let updateStmt = db.prepare(updateSql);
-        let itemsLastVersionUpdateStmt = db.prepare(itemsLastVersionSql);
-        allFetchedItems.forEach((groupItems) =>
-          groupItems.forEach((item) => {
-            if (item.key in existingItemIdsMap) {
-              // console.log('updating: ', item.key);
-              updateStmt.run({
-                $id: item.key,
-                $version: item.version,
-                $inconsistent: item.inconsistent,
-                $data: JSON.stringify(item),
+      await db.serialize(async function () {
+        await db.run('BEGIN');
+        let createStmt = await db.prepare(insertSql);
+        let updateStmt = await db.prepare(updateSql);
+        let itemsLastVersionUpdateStmt = await db.prepare(itemsLastVersionSql);
+        await allFetchedItems.forEach(async (groupItems) => {
+          await Promise.resolve(groupItems).then(async (items) => {
+            items.forEach(async (item) => {
+              await Promise.resolve(item).then(async (i) => {
+                if (existingItemIdsMap[i.key]) {
+                  await updateStmt.run({
+                    $id: i.key,
+                    $version: i.version,
+                    $data: JSON.stringify(i),
+                    $inconsistent: false,
+                  });
+                } else {
+                 await createStmt.run({
+                    $id: i.key,
+                    $version: i.version,
+                    $data: JSON.stringify(i),
+                    $inconsistent: false,
+                  });
+                }
               });
-            } else {
-              // console.log('creating: ', item.key);
-              createStmt.run({
-                $id: item.key,
-                $inconsistent: item.inconsistent,
-                $version: item.version,
-                $data: JSON.stringify(item),
-              });
-            }
-          }),
-        );
 
-        Object.entries(lastModifiedVersion).forEach(([group, version]) =>
+              // const existingItem = existingItemIdsMap[item.key];
+              // if (existingItem) {
+              //   updateStmt.run({
+              //     $id: item.key,
+              //     $version: item.version,
+              //     $data: JSON.stringify(item),
+              //     $inconsistent: false,
+              //   });
+              // } else {
+              //   createStmt.run({
+              //     $id: item.key,
+              //     $version: item.version,
+              //     $data: JSON.stringify(item),
+              //     $inconsistent: false,
+              //   });
+              // }
+            });
+            await itemsLastVersionUpdateStmt.run({
+              $id: groupItems.groupId,
+              $version: lastModifiedVersion,
+            });
+          });
+          // groupItems.forEach((item) => {
+          //   if (item.key in existingItemIdsMap) {
+          //     // console.log('updating: ', item.key);
+          //     updateStmt.run({
+          //       $id: item.key,
+          //       $version: item.version,
+          //       $inconsistent: item.inconsistent,
+          //       $data: JSON.stringify(item),
+          //     });
+          //   } else {
+          //     // console.log('creating: ', item.key);
+          //     createStmt.run({
+          //       $id: item.key,
+          //       $inconsistent: item.inconsistent,
+          //       $version: item.version,
+          //       $data: JSON.stringify(item),
+          //     });
+          //   }
+          // });
+        });
+
+        await Object.entries(lastModifiedVersion).forEach(([group, version]) =>
           itemsLastVersionUpdateStmt.run({ $id: group, $version: version }),
         );
-        createStmt.finalize();
-        updateStmt.finalize();
-        itemsLastVersionUpdateStmt.finalize();
-        db.run('COMMIT', () => {
+        console.log('lastModifiedVersion', lastModifiedVersion);
+        console.log('createStmt', createStmt);
+        console.log('updateStmt', updateStmt);
+        console.log('itemsLastVersionUpdateStmt', itemsLastVersionUpdateStmt);
+        await createStmt.finalize();
+        await updateStmt.finalize();
+        await itemsLastVersionUpdateStmt.finalize();
+        await db.run('COMMIT', () => {
           db.close();
           resolve(true);
         });

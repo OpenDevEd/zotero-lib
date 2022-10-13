@@ -24,7 +24,7 @@ import {
   fetchCurrentKey,
   fetchGroupData,
   fetchGroups,
-  fetchItemsByIds,
+  //fetchItemsByIds,
   getChangedItemsForGroup,
 } from './local-db/api';
 import {
@@ -35,6 +35,7 @@ import {
 } from './local-db/db';
 import saveToFile from './local-db/saveToFile';
 import { checkForValidLockFile, removeLockFile } from './lock.utils';
+import axios from 'axios';
 // import printJSON from './utils/printJSON';
 
 require('dotenv').config();
@@ -852,12 +853,11 @@ class Zotero {
     // TODO: args parsing code
     const my_key = this.extractKeyAndSetGroup(args.key);
     args.key = my_key;
-    
+
     if (args.filter) {
       args.filter = JSON.parse(args.filter);
-  }
-    if(!args.key)
-    {
+    }
+    if (!args.key) {
       args.key = args.filter.itemKey;
     }
     // TODO: Need to implement filter as a command line option --filter="{...}"
@@ -2531,73 +2531,82 @@ async function syncToLocalDB(args: any) {
     const referenceMap = {};
 
     // for each group fetch all items with given ids, in batch of 50
-    let allFetchedItems = await Promise.all(
-      chunckedItemsByGroup.map(({ group, itemIds }) =>
-        Promise.all(
-          itemIds.map((chunk) =>
-            fetchItemsByIds({
-              ...args,
-              itemIds: chunk,
-              group,
-            }).then((res) => {
-              itemsLastModifiedVersion[group] =
-                res.headers['last-modified-version'];
-
-              res.data.forEach((item) => {
-                // get children
-                if (item.data.parentItem) {
-                  childrenMap[item.data.parentItem] = [
-                    ...(childrenMap[item.data.parentItem] || []),
-                    item.key,
-                  ];
-                }
-                // get references
-                if (
-                  (item.data.extra || '').includes('KerkoCite.ItemAlsoKnownAs:')
-                ) {
-                  const kerkoLine = item.data.extra
-                    .split('\n')
-                    .find((i) => i.startsWith('KerkoCite'));
-                  const [, ...refs] = kerkoLine.split(' ');
-                  refs
-                    .filter((i) => !i.includes('zenodo') && i.includes(':'))
-                    .forEach((ref) => {
-                      const srcKey = ref.split(':')[1];
-                      referenceMap[srcKey] = [
-                        ...(referenceMap[srcKey] || []),
-                        srcKey,
-                      ];
-                    });
-                }
-              });
-              return res.data;
-            }),
-          ),
-        ),
-      ),
-    );
-
-    allFetchedItems = allFetchedItems.map((groupItems) =>
-      groupItems.flatMap((chunkedItems) => {
-        return chunkedItems.map((chunkedItem) => {
-          chunkedItem.children = childrenMap[chunkedItem.key];
-          chunkedItem.referencedBy = [
-            ...new Set(referenceMap[chunkedItem.key]),
-          ];
-
-          chunkedItem.inconsistent = Boolean(
-            (chunkedItem.children || []).length &&
-              (chunkedItem.referencedBy || []).length,
+    // 👇️ ts-ignore ignores any ts errors on the next line
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    let allItems = [];
+    let counter = 0;
+    for (let group of chunckedItemsByGroup) {
+      console.log('group length: ', group.itemIds.length);
+      for (let itemIds of group.itemIds) {
+        // console.log(itemIds);
+        // @ts-ignore
+        try {
+          const res = await axios.get(
+            `https://api.zotero.org/groups/${group.group}/items/?itemKey=${itemIds}`,
+            {
+              headers: { Authorization: `Bearer ygGpGCx7vwkEICx05kLXxpKD` },
+            },
           );
 
-          return chunkedItem;
-        });
+          itemsLastModifiedVersion[group.group] =
+            res.headers['last-modified-version'];
+
+          await res.data.forEach((item) => {
+            // get children
+            if (item.data.parentItem) {
+              childrenMap[item.data.parentItem] = [
+                ...(childrenMap[item.data.parentItem] || []),
+                item.key,
+              ];
+            }
+            // get references
+            if (
+              (item.data.extra || '').includes('KerkoCite.ItemAlsoKnownAs:')
+            ) {
+              const kerkoLine = item.data.extra
+                .split('\n')
+                .find((i) => i.startsWith('KerkoCite'));
+              const [, ...refs] = kerkoLine.split(' ');
+              refs
+                .filter((i) => !i.includes('zenodo') && i.includes(':'))
+                .forEach((ref) => {
+                  const srcKey = ref.split(':')[1];
+                  referenceMap[srcKey] = [
+                    ...(referenceMap[srcKey] || []),
+                    srcKey,
+                  ];
+                });
+            }
+          });
+          // console.log('res', res);
+          // @ts-ignore
+          await allItems.push(res.data);
+
+          if (++counter % 10 === 0) {
+            console.log('counter: ', counter);
+          }
+        } catch (error) {
+          console.log('error', error);
+        }
+      }
+    }
+    let allFetchedItems = allItems.map(async (groupItems) =>
+      groupItems.map(async (chunkedItem) => {
+        // resolve promises
+        //console.log('chunkedItems', chunkedItem);
+
+        chunkedItem.children = childrenMap[chunkedItem.key];
+        chunkedItem.referencedBy = [...new Set(referenceMap[chunkedItem.key])];
+
+        chunkedItem.inconsistent = Boolean(
+          (chunkedItem.children || []).length &&
+            (chunkedItem.referencedBy || []).length,
+        );
+
+        return chunkedItem;
       }),
     );
-    // console.log(allFetchedItems);
-    // console.log(childrenMap);
-    // console.log(referenceMap);
-
     if (allFetchedItems.length) {
       console.log('itemsVersion: ', itemsLastModifiedVersion);
       // console.log('allfetchedItems: ', printJSON(allFetchedItems));
@@ -2607,6 +2616,62 @@ async function syncToLocalDB(args: any) {
         lastModifiedVersion: itemsLastModifiedVersion,
       }).then(() => console.log('items saved to db'));
     }
+
+    //save to json file using fs
+
+    // let allFetchedItems = await Promise.all(
+    //   chunckedItemsByGroup.map(
+    //     async ({ group, itemIds }) =>
+    //       await itemIds.map((chunk) =>
+    //         axios
+    //           .get(
+    //             `https://api.zotero.org/groups/${group}/items/?itemKey=${chunk}`,
+    //             {
+    //               headers: { Authorization: `Bearer ygGpGCx7vwkEICx05kLXxpKD` },
+    //             },
+    //           )
+    //           .then((res) => {
+    //             itemsLastModifiedVersion[group] =
+    //               res.headers['last-modified-version'];
+
+    //             res.data.forEach((item) => {
+    //               // get children
+    //               if (item.data.parentItem) {
+    //                 childrenMap[item.data.parentItem] = [
+    //                   ...(childrenMap[item.data.parentItem] || []),
+    //                   item.key,
+    //                 ];
+    //               }
+    //               // get references
+    //               if (
+    //                 (item.data.extra || '').includes(
+    //                   'KerkoCite.ItemAlsoKnownAs:',
+    //                 )
+    //               ) {
+    //                 const kerkoLine = item.data.extra
+    //                   .split('\n')
+    //                   .find((i) => i.startsWith('KerkoCite'));
+    //                 const [, ...refs] = kerkoLine.split(' ');
+    //                 refs
+    //                   .filter((i) => !i.includes('zenodo') && i.includes(':'))
+    //                   .forEach((ref) => {
+    //                     const srcKey = ref.split(':')[1];
+    //                     referenceMap[srcKey] = [
+    //                       ...(referenceMap[srcKey] || []),
+    //                       srcKey,
+    //                     ];
+    //                   });
+    //               }
+    //             });
+    //             return res.data;
+    //           }),
+    //       ),
+    //   ),
+    // );
+
+    // console.log(allFetchedItems);
+    // console.log(childrenMap);
+    // console.log(referenceMap);
   } else {
     console.log('Everything already synced!!! Hurray!!!');
   }
