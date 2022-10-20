@@ -2447,6 +2447,8 @@ async function syncToLocalDB(args: any) {
   const { userID } = keyCheck;
 
   args.user_id = userID;
+  const { groupid } = args;
+  console.log(groupid);
 
   // fetch groups version and check which are changed
   const onlineGroups = await fetchGroups({ ...args });
@@ -2474,8 +2476,9 @@ async function syncToLocalDB(args: any) {
 
     return res;
   }
-
-  const changedGroups = getChangedGroups(onlineGroups, offlineGroups);
+  let changedGroups;
+  if (!groupid) changedGroups = getChangedGroups(onlineGroups, offlineGroups);
+  else changedGroups = [groupid];
 
   if (changedGroups.length === 0) {
     console.log('found no changed group, so not fetching group data');
@@ -2496,7 +2499,10 @@ async function syncToLocalDB(args: any) {
     // console.log('savedChangedGroups: ', printJSON(savedChangedGroups));
   }
 
-  const changedGroupsArray = Object.keys(onlineGroups);
+  let changedGroupsArray;
+  if (groupid) changedGroupsArray = [groupid];
+  else changedGroupsArray = Object.keys(onlineGroups);
+
   //TODO: push local changes
   // get remote changes
   const changedItemsForGroups = await Promise.all(
