@@ -13,14 +13,38 @@ export function initDB(dbName) {
         createdAt TEXT NOT NULL,
         updatedAt TEXT NOT NULL
     );`);
+  db.exec(`CREATE TABLE IF NOT EXISTS collections (
+        id TEXT PRIMARY KEY NOT NULL,
+        createdAt TEXT NOT NULL,
+        updatedAt TEXT NOT NULL
+    );`);
   db.exec(`CREATE TABLE IF NOT EXISTS items (
         id TEXT PRIMARY KEY NOT NULL,
         version INT,
         synced BOOLEAN,
         data TEXT,
         inconsistent BOOLEAN,
+        group_id INT ,
         createdAt TEXT NOT NULL,
-        updatedAt TEXT NOT NULL
+        updatedAt TEXT NOT NULL,
+        FOREIGN KEY(group_id) REFERENCES groups(id)
+    );`);
+  db.exec(`CREATE TABLE IF NOT EXISTS item_Collection (
+        item_id TEXT NOT NULL,
+        collection_id TEXT NOT NULL,
+        createdAt TEXT NOT NULL,
+        updatedAt TEXT NOT NULL,
+        FOREIGN KEY(collection_id) REFERENCES collections(id),
+        FOREIGN KEY(item_id) REFERENCES items(id)
+    );`);
+  db.exec(`CREATE TABLE IF NOT EXISTS alsoKnownAs  (
+        item_id TEXT NOT NULL,
+        group_id INT NOT NULL,
+        alsoKnownAs TEXT NOT NULL,
+        createdAt TEXT NOT NULL,
+        updatedAt TEXT NOT NULL,
+        FOREIGN KEY(item_id) REFERENCES items(id),
+        FOREIGN KEY(group_id) REFERENCES groups(id)
     );`);
 
   return db;
@@ -128,6 +152,23 @@ export async function updateGroup(groupData) {
   });
 }
 
+// get all collections
+export function getAllCollections({ database }) {
+  const db = createDBConnection(database);
+  const sql = 'SELECT * FROM collections';
+
+  return new Promise((resolve, reject) => {
+    db.all(sql, (err, rows) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(rows);
+      }
+      db.close();
+    });
+  });
+}
+
 export function saveZoteroItems({
   allFetchedItems,
   database,
@@ -148,32 +189,92 @@ export function saveZoteroItems({
         (a, c) => ({ ...a, [c.id]: c }),
         {},
       );
-      const insertSql = `INSERT into items (id,version,data,inconsistent,createdAt,updatedAt) VALUES ($id, $version, $data, $inconsistent, datetime('now'), datetime('now'))`;
-      const updateSql = `UPDATE items SET version=$version, data=$data, inconsistent=$inconsistent, updatedAt=datetime('now') WHERE id=$id`;
+      const existingCollectionIdsMap = rows.reduce(
+        (a, c) => ({ ...a, [c.id]: c }),
+        {},
+      );
+      console.log('here');
+      let collections = [];
+      const insertSql = `INSERT into items (id,version,data,inconsistent,createdAt,updatedAt, group_id ) VALUES ($id, $version, $data, $inconsistent, datetime('now'), datetime('now'), $group_id)`;
+      const updateSql = `UPDATE  items SET version=$version, data=$data, inconsistent=$inconsistent, updatedAt=datetime('now'), group_id=$group_id WHERE id=$id`;
       const itemsLastVersionSql = `UPDATE groups SET itemsVersion=$version, updatedAt=datetime('now') WHERE id=$id`;
+      const insertCollectionSql = `INSERT into collections (id,createdAt,updatedAt) VALUES ($id, datetime('now'), datetime('now'))`;
+      const insertItemCollectionSql = `INSERT into item_Collection (item_id,collection_id,createdAt,updatedAt) VALUES ($item_id, $collection_id, datetime('now'), datetime('now'))`;
+      const insertAlsoKnownAsSql = `INSERT into alsoKnownAs (item_id,group_id,alsoKnownAs,createdAt,updatedAt) VALUES ($item_id, $group_id, $alsoKnownAs, datetime('now'), datetime('now'))`;
 
       await db.serialize(async function () {
         await db.run('BEGIN');
         let createStmt = await db.prepare(insertSql);
         let updateStmt = await db.prepare(updateSql);
         let itemsLastVersionUpdateStmt = await db.prepare(itemsLastVersionSql);
+        let insertCollectionStmt = await db.prepare(insertCollectionSql);
+        let insertItemCollectionStmt = await db.prepare(
+          insertItemCollectionSql,
+        );
+        let insertAlsoKnownAsStmt = await db.prepare(insertAlsoKnownAsSql);
+
         await allFetchedItems.forEach(async (groupItems) => {
           await Promise.resolve(groupItems).then(async (items) => {
             items.forEach(async (item) => {
               await Promise.resolve(item).then(async (i) => {
+                //
+                if (i.data.collections) {
+                  i.data.collections.forEach(async (collection) => {
+                    if (
+                      !existingCollectionIdsMap[collection] &&
+                      !collections.includes(collection) &&
+                      collection
+                    ) {
+                      // console.log(
+                      //   'condtion',
+                      //   !existingCollectionIdsMap[collection],
+                      //   !collections.includes(collection),
+                      //   collection,
+                      // );
+
+                      collections.push(collection);
+                      await insertCollectionStmt.run({
+                        $id: collection,
+                      });
+                    }
+                  });
+                }
+
+                // create or update item and check if it has a collection
+                if (!existingItemIdsMap[i.key]) {
+                  await createStmt.run({
+                    $id: i.key,
+                    $version: i.version,
+                    $data: JSON.stringify(i.data),
+                    $inconsistent: i.inconsistent,
+                    $group_id: i.library.id,
+                  });
+                  if (i.data.extra) {
+                    await insertAlsoKnownAsStmt.run({
+                      $item_id: i.key,
+                      $group_id: i.library.id,
+                      $alsoKnownAs: JSON.stringify(i.data.extra),
+                    });
+                  }
+                }
                 if (existingItemIdsMap[i.key]) {
                   await updateStmt.run({
                     $id: i.key,
                     $version: i.version,
-                    $data: JSON.stringify(i),
-                    $inconsistent: false,
+                    $data: JSON.stringify(i.data),
+                    $inconsistent: i.inconsistent,
+                    $group_id: i.library.id,
                   });
-                } else {
-                 await createStmt.run({
-                    $id: i.key,
-                    $version: i.version,
-                    $data: JSON.stringify(i),
-                    $inconsistent: false,
+                }
+                // check if item has a collection
+                if (i.data.collections) {
+                  i.data.collections.forEach(async (collection) => {
+                    if (collection) {
+                      await insertItemCollectionStmt.run({
+                        $item_id: i.key,
+                        $collection_id: collection,
+                      });
+                    }
                   });
                 }
               });
@@ -224,13 +325,12 @@ export function saveZoteroItems({
         await Object.entries(lastModifiedVersion).forEach(([group, version]) =>
           itemsLastVersionUpdateStmt.run({ $id: group, $version: version }),
         );
-        console.log('lastModifiedVersion', lastModifiedVersion);
-        console.log('createStmt', createStmt);
-        console.log('updateStmt', updateStmt);
-        console.log('itemsLastVersionUpdateStmt', itemsLastVersionUpdateStmt);
+        await insertCollectionStmt.finalize();
         await createStmt.finalize();
         await updateStmt.finalize();
         await itemsLastVersionUpdateStmt.finalize();
+        await insertItemCollectionStmt.finalize();
+        await insertAlsoKnownAsStmt.finalize();
         await db.run('COMMIT', () => {
           db.close();
           resolve(true);

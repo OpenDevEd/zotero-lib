@@ -2545,7 +2545,7 @@ async function syncToLocalDB(args: any) {
           const res = await axios.get(
             `https://api.zotero.org/groups/${group.group}/items/?itemKey=${itemIds}`,
             {
-              headers: { Authorization: `Bearer ygGpGCx7vwkEICx05kLXxpKD` },
+              headers: { Authorization: `Bearer ${args.api_key}` },
             },
           );
 
