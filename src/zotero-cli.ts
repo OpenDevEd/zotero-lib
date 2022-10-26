@@ -23,21 +23,34 @@ async function main() {
   }
   if (args.javascript) {
     let object = {};
-    for(let key in args){
-      if((!['api_key','config','config_json','user_id','group_id','indent','verbose','javascript','dryrun','out','show','version','func'].includes(key))){
+    for (let key in args) {
+      if (
+        ![
+          'api_key',
+          'config',
+          'config_json',
+          'user_id',
+          'group_id',
+          'indent',
+          'verbose',
+          'javascript',
+          'dryrun',
+          'out',
+          'show',
+          'version',
+          'func',
+        ].includes(key)
+      ) {
         object[key] = args[key];
-        
       }
     }
-    
+
     let stx = `
     const options =  ${JSON.stringify(object)}
     const result = await zotzenlib.${args.func}(options)
-    `
+    `;
     console.log(stx);
     process.exit(0);
-    
-
   }
 
   if (args.verbose) {
@@ -122,8 +135,7 @@ function parseArguments() {
   });
   parser.add_argument('--config', {
     type: 'str',
-    help:
-      'Configuration file (toml format). Note that ./zotero-cli.toml and ~/.config/zotero-cli/zotero-cli.toml is picked up automatically.',
+    help: 'Configuration file (toml format). Note that ./zotero-cli.toml and ~/.config/zotero-cli/zotero-cli.toml is picked up automatically.',
   });
   parser.add_argument('--config-json', {
     type: 'str',

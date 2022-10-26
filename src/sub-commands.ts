@@ -20,6 +20,7 @@ customCmdHandlers.set('kciaka', 'KerkoCiteItemAlsoKnownAs');
 customCmdHandlers.set('bibliography', 'getbib');
 customCmdHandlers.set('attach-note', 'attach_note');
 customCmdHandlers.set('db', 'manageLocalDB');
+customCmdHandlers.set('resolve', 'resolvefunc');
 
 function getFuncName(subCmdName) {
   if (customCmdHandlers.has(subCmdName)) {
@@ -812,6 +813,26 @@ subParsersMap.set('db', function (subparsers, subCmdName) {
   argparser.add_argument('--lock-timeout', {
     action: 'store',
     help: 'Number of seconds to wait before resetting the lock',
+  });
+});
+
+subParsersMap.set('resolve', function (subparsers, subCmdName) {
+  const argparser = subparsers.add_parser(subCmdName, {
+    help: 'Resolve a Zotero Select link (zotero://...) to a key.',
+  });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
+  argparser.add_argument('--file', {
+    action: 'store',
+    help: 'The database path',
+  });
+  argparser.add_argument('--groupid', {
+    action: 'store',
+    help: 'The group id',
+  });
+  // add array of keys
+  argparser.add_argument('--keys', {
+    nargs: '*',
+    help: 'The keys to resolve',
   });
 });
 

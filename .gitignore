@@ -5,6 +5,7 @@ node_modules
 node_modules/*
 .env
 temp/*
+.vscode/*
 build/*
 BaCkUp
 BaCkUp/*
@@ -16,7 +17,7 @@ BaCkUp/*
 docs-out
 test.js
 backup.json
-backup1.json
+backup5.json
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/node

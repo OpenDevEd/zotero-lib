@@ -169,6 +169,8 @@ export function getAllCollections({ database }) {
   });
 }
 
+// get alsoKnownAs for a group and item
+
 export function saveZoteroItems({
   allFetchedItems,
   database,

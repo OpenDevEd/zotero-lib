@@ -7,6 +7,7 @@ import cron from 'node-cron';
 
 import processExtraField from './utils/processExtraField';
 import newVanityDOI from './utils/newVanityDOI';
+
 import { createHttpClient } from './http.client';
 import {
   as_array,
@@ -1820,6 +1821,90 @@ class Zotero {
         console.log(itemsAsJSON);
       }
     }
+  }
+  public async resolvefunc(args: any) {
+    let result = {};
+    let { keys, file } = args;
+    let group_id = args.groupid;
+    // check if file exists using fs
+    if (file) {
+      if (!fs.existsSync(file)) {
+        logger.error(`File ${file} does not exist`);
+        return null;
+      }
+
+      if (keys) {
+        const db = require('better-sqlite3')(file);
+        for (let key of keys) {
+          let type;
+          let data = [];
+          let groupid;
+          let itemid;
+          // check if the key is 8 characters long and all uppercase and all letters btween A and Z
+          if (key.length === 8 && key == key.toUpperCase() ) {
+            groupid = group_id;
+            itemid = key;
+            key = `${groupid}:${itemid}`;
+          } else [groupid, itemid] = key.split(':');
+
+          // split key into groupid and itemid
+          if (!groupid || !itemid) {
+            type = 'invalid_syntax';
+            data = [];
+            result[key] = { type, data };
+            continue;
+          }
+          let sql;
+          if (group_id)
+            sql = `SELECT alsoKnownAs,item_id,group_id  FROM alsoKnownAs where group_id =${group_id} and alsoKnownAs like '%${groupid.toString()}:${itemid}%';`;
+          else
+            sql = `SELECT alsoKnownAs,item_id,group_id  FROM alsoKnownAs where alsoKnownAs like '%${groupid.toString()}:${itemid}%';`;
+          let rows;
+          try {
+            rows = await db.prepare(sql).all();
+          } catch (error) {
+            logger.error(error);
+            return null;
+          }
+
+          //async (err, rows) => {
+          //     if (err) {
+          //       logger.error(err);
+          //     } else {
+          if (rows) {
+            if (rows.length > 1) type = 'redirect_ambiguous';
+            else if (rows.length == 1) type = 'redirect';
+            else {
+              let sqlitem = `SELECT *  FROM items where group_id =${groupid} and id='${itemid}';`;
+              let rowsitem;
+              try {
+                rowsitem = await db.prepare(sqlitem).all();
+              } catch (error) {
+                logger.error(error);
+                return null;
+              }
+              if (rowsitem.length == 1) type = 'valid';
+              else type = 'unknown';
+            }
+            for (const row of rows) {
+              data.push(row.group_id + ':' + row.item_id);
+              //console.log(kerkoLine);
+            }
+            result[key] = { type, data };
+          } else {
+            console.log(`No data found for key ${key}`);
+          }
+        }
+
+        console.log(JSON.stringify(result, null, 2));
+
+        await db.close();
+        return null;
+      }
+    } else {
+      logger.error(`please provide a file to resolve`);
+    }
+    return null;
   }
 
   /**
