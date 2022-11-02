@@ -18,6 +18,7 @@ docs-out
 test.js
 backup.json
 backup5.json
+attachments/*
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/node

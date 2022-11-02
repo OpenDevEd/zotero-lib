@@ -207,7 +207,12 @@ class Zotero {
 
   public showConfig() {
     logger.info('showConfig=' + JSON.stringify(this.config, null, 2));
+    //@ts-ignore
+
     return this.config;
+  }
+  public changeConfig(args) {
+    args.group_id ? (this.config.group_id = args.group_id) : null;
   }
 
   private message(stat = 0, msg = 'None', data = null) {
@@ -852,22 +857,20 @@ class Zotero {
     const output = [];
 
     // TODO: args parsing code
-    const my_key = this.extractKeyAndSetGroup(args.key);
-    args.key = my_key;
-
-    if (args.filter) {
-      args.filter = JSON.parse(args.filter);
-    }
-    if (!args.key) {
-      args.key = args.filter.itemKey;
-    }
-    // TODO: Need to implement filter as a command line option --filter="{...}"
-    if (!args.key && !(args.filter && args.filter.itemKey)) {
+    if (!args.key && !(args.filter && args.filter['itemKey'])) {
       return this.message(
         0,
         'Unable to extract group/key from the string provided.',
       );
     }
+
+    if (args.filter) {
+      args.filter = JSON.parse(args.filter);
+    }
+    if (!args.key) args.key = args.filter.itemKey;
+    else args.key = this.extractKeyAndSetGroup(args.key);
+
+    // TODO: Need to implement filter as a command line option --filter="{...}"
 
     var item;
     if (args.key) {
@@ -1841,7 +1844,7 @@ class Zotero {
           let groupid;
           let itemid;
           // check if the key is 8 characters long and all uppercase and all letters btween A and Z
-          if (key.length === 8 && key == key.toUpperCase() ) {
+          if (key.length === 8 && key == key.toUpperCase()) {
             groupid = group_id;
             itemid = key;
             key = `${groupid}:${itemid}`;
@@ -1867,10 +1870,6 @@ class Zotero {
             return null;
           }
 
-          //async (err, rows) => {
-          //     if (err) {
-          //       logger.error(err);
-          //     } else {
           if (rows) {
             if (rows.length > 1) type = 'redirect_ambiguous';
             else if (rows.length == 1) type = 'redirect';
@@ -2472,11 +2471,14 @@ class Zotero {
     // process.exit(1)
     // TODO: Read from --file
     // ACTION: run code
+
     const notefiletext = args.notefile ? fs.readFileSync(args.notefile) : '';
+    const notetext = args.notetext ? args.notetext : '';
     const data = await this.attachNoteToItem(args.key, {
-      content: args.notetext + notefiletext,
+      content: notetext + notefiletext,
       tags: args.tags,
     });
+
     // ACTION: return values
     return this.message(0, 'exit status', data);
   }
@@ -2610,7 +2612,7 @@ async function syncToLocalDB(args: any) {
     // convert id: version map to array of ids, chuncked by 50 items max
     const chunckedItemsByGroup = changedItemsForGroups.map((item, index) => ({
       group: changedGroupsArray[index],
-      itemIds: _.chunk(Object.keys(item), 50),
+      itemIds: _.chunk(Object.keys(item), 80),
     }));
 
     // console.log('chuncked items by group: ', printJSON(chunckedItemsByGroup));
@@ -2633,6 +2635,8 @@ async function syncToLocalDB(args: any) {
         // console.log(itemIds);
         // @ts-ignore
         try {
+          console.log('fetching items: ', itemIds);
+          
           const res = await axios.get(
             `https://api.zotero.org/groups/${group.group}/items/?itemKey=${itemIds}`,
             {
@@ -2643,7 +2647,40 @@ async function syncToLocalDB(args: any) {
           itemsLastModifiedVersion[group.group] =
             res.headers['last-modified-version'];
 
-          await res.data.forEach((item) => {
+          await res.data.forEach(async (item) => {
+            if (typeof item.links['attachment'] !== 'undefined') {
+              if (!fs.existsSync(`./attachments/`))
+                fs.mkdirSync(`./attachments/`);
+              if (
+                !fs.existsSync(`./attachments/${args.database}-${group.group}`)
+              )
+                fs.mkdirSync(`./attachments/${args.database}-${group.group}`);
+              const attachments = await axios.get(
+                `https://api.zotero.org/groups/${group.group}/items/${item.key}/children`,
+                {
+                  headers: { Authorization: `Bearer ${args.api_key}` },
+                },
+              );
+
+              for (const attachment of attachments.data.filter(
+                (i) => i.data.itemType === 'attachment',
+              )) {
+                try {
+                  const response = await axios({
+                    url: `https://api.zotero.org/groups/${group.group}/items/${attachment.key}/file`,
+                    method: 'GET',
+                    responseType: 'stream',
+                    headers: { Authorization: `Bearer ${args.api_key}` },
+                  });
+                  const filepath = `./attachments/${args.database}-${group.group}/${attachment.key}:${group.group} | ${attachment.data.filename}`;
+                  const file = fs.createWriteStream(filepath);
+                  response.data.pipe(file);
+                  file.on('finish', () => {
+                    file.close();
+                  });
+                } catch (error) {}
+              }
+            }
             // get children
             if (item.data.parentItem) {
               childrenMap[item.data.parentItem] = [
@@ -2670,6 +2707,7 @@ async function syncToLocalDB(args: any) {
                 });
             }
           });
+
           // console.log('res', res);
           // @ts-ignore
           await allItems.push(res.data);
@@ -2684,9 +2722,6 @@ async function syncToLocalDB(args: any) {
     }
     let allFetchedItems = allItems.map(async (groupItems) =>
       groupItems.map(async (chunkedItem) => {
-        // resolve promises
-        //console.log('chunkedItems', chunkedItem);
-
         chunkedItem.children = childrenMap[chunkedItem.key];
         chunkedItem.referencedBy = [...new Set(referenceMap[chunkedItem.key])];
 
@@ -2700,69 +2735,13 @@ async function syncToLocalDB(args: any) {
     );
     if (allFetchedItems.length) {
       console.log('itemsVersion: ', itemsLastModifiedVersion);
-      // console.log('allfetchedItems: ', printJSON(allFetchedItems));
+
       await saveZoteroItems({
         allFetchedItems,
         database: args.database,
         lastModifiedVersion: itemsLastModifiedVersion,
       }).then(() => console.log('items saved to db'));
     }
-
-    //save to json file using fs
-
-    // let allFetchedItems = await Promise.all(
-    //   chunckedItemsByGroup.map(
-    //     async ({ group, itemIds }) =>
-    //       await itemIds.map((chunk) =>
-    //         axios
-    //           .get(
-    //             `https://api.zotero.org/groups/${group}/items/?itemKey=${chunk}`,
-    //             {
-    //               headers: { Authorization: `Bearer ygGpGCx7vwkEICx05kLXxpKD` },
-    //             },
-    //           )
-    //           .then((res) => {
-    //             itemsLastModifiedVersion[group] =
-    //               res.headers['last-modified-version'];
-
-    //             res.data.forEach((item) => {
-    //               // get children
-    //               if (item.data.parentItem) {
-    //                 childrenMap[item.data.parentItem] = [
-    //                   ...(childrenMap[item.data.parentItem] || []),
-    //                   item.key,
-    //                 ];
-    //               }
-    //               // get references
-    //               if (
-    //                 (item.data.extra || '').includes(
-    //                   'KerkoCite.ItemAlsoKnownAs:',
-    //                 )
-    //               ) {
-    //                 const kerkoLine = item.data.extra
-    //                   .split('\n')
-    //                   .find((i) => i.startsWith('KerkoCite'));
-    //                 const [, ...refs] = kerkoLine.split(' ');
-    //                 refs
-    //                   .filter((i) => !i.includes('zenodo') && i.includes(':'))
-    //                   .forEach((ref) => {
-    //                     const srcKey = ref.split(':')[1];
-    //                     referenceMap[srcKey] = [
-    //                       ...(referenceMap[srcKey] || []),
-    //                       srcKey,
-    //                     ];
-    //                   });
-    //               }
-    //             });
-    //             return res.data;
-    //           }),
-    //       ),
-    //   ),
-    // );
-
-    // console.log(allFetchedItems);
-    // console.log(childrenMap);
-    // console.log(referenceMap);
   } else {
     console.log('Everything already synced!!! Hurray!!!');
   }

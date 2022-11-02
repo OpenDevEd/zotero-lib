@@ -77,7 +77,6 @@ subParsersMap.set('item', function (subparsers, subCmdName) {
   argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--key', {
     action: 'store',
-    required: true,
     help: 'The key of the item. You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
   });
   argparser.add_argument('--xmp', {
@@ -576,12 +575,10 @@ subParsersMap.set('attach-note', function (subparsers, subCmdName) {
       }); */
   argparser.add_argument('--notetext', {
     action: 'store',
-    nargs: 1,
     help: 'The text of the note',
   });
   argparser.add_argument('--notefile', {
     action: 'store',
-    nargs: 1,
     help: 'The text of the note',
   });
   argparser.add_argument('--tags', {
