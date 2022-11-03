@@ -857,17 +857,17 @@ class Zotero {
     const output = [];
 
     // TODO: args parsing code
+
+    if (args.filter) {
+      args.filter = JSON.parse(args.filter);
+    }
     if (!args.key && !(args.filter && args.filter['itemKey'])) {
       return this.message(
         0,
         'Unable to extract group/key from the string provided.',
       );
     }
-
-    if (args.filter) {
-      args.filter = JSON.parse(args.filter);
-    }
-    if (!args.key) args.key = args.filter.itemKey;
+    if (!args.key) args.key = '';
     else args.key = this.extractKeyAndSetGroup(args.key);
 
     // TODO: Need to implement filter as a command line option --filter="{...}"
@@ -1138,11 +1138,7 @@ class Zotero {
         args.addtags ||
         args.filter
       ) {
-        result = await this.http.get(
-          `/items/${args.key}`,
-          { params },
-          this.config,
-        );
+        result = await this.http.get(`/items`, { params }, this.config);
       } else {
         // Nothing about the item has changed:
         result = item;
@@ -2636,7 +2632,7 @@ async function syncToLocalDB(args: any) {
         // @ts-ignore
         try {
           console.log('fetching items: ', itemIds);
-          
+
           const res = await axios.get(
             `https://api.zotero.org/groups/${group.group}/items/?itemKey=${itemIds}`,
             {
