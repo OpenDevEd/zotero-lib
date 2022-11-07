@@ -867,8 +867,7 @@ class Zotero {
         'Unable to extract group/key from the string provided.',
       );
     }
-    if (!args.key) args.key = '';
-    else args.key = this.extractKeyAndSetGroup(args.key);
+    if (!args.key) args.key = this.extractKeyAndSetGroup(args.key);
 
     // TODO: Need to implement filter as a command line option --filter="{...}"
 

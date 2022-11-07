@@ -219,7 +219,6 @@ export function saveZoteroItems({
           await Promise.resolve(groupItems).then(async (items) => {
             items.forEach(async (item) => {
               await Promise.resolve(item).then(async (i) => {
-                //
                 if (i.data.collections) {
                   i.data.collections.forEach(async (collection) => {
                     if (
