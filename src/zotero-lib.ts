@@ -858,16 +858,17 @@ class Zotero {
 
     // TODO: args parsing code
 
-    if (args.filter) {
+    if (typeof args.filter == 'string') {
       args.filter = JSON.parse(args.filter);
     }
+
     if (!args.key && !(args.filter && args.filter['itemKey'])) {
       return this.message(
         0,
         'Unable to extract group/key from the string provided.',
       );
     }
-    if (!args.key) args.key = this.extractKeyAndSetGroup(args.key);
+    if (args.key) args.key = this.extractKeyAndSetGroup(args.key);
 
     // TODO: Need to implement filter as a command line option --filter="{...}"
 
@@ -1830,7 +1831,7 @@ class Zotero {
         logger.error(`File ${file} does not exist`);
         return null;
       }
-
+      //TODO: use one query to get all items from file
       if (keys) {
         const db = require('better-sqlite3')(file);
         for (let key of keys) {
@@ -1890,10 +1891,8 @@ class Zotero {
           }
         }
 
-        console.log(JSON.stringify(result, null, 2));
-
         await db.close();
-        return null;
+        return result;
       }
     } else {
       logger.error(`please provide a file to resolve`);
@@ -2630,8 +2629,6 @@ async function syncToLocalDB(args: any) {
         // console.log(itemIds);
         // @ts-ignore
         try {
-          console.log('fetching items: ', itemIds);
-
           const res = await axios.get(
             `https://api.zotero.org/groups/${group.group}/items/?itemKey=${itemIds}`,
             {
@@ -2643,13 +2640,13 @@ async function syncToLocalDB(args: any) {
             res.headers['last-modified-version'];
 
           await res.data.forEach(async (item) => {
-            if (typeof item.links['attachment'] !== 'undefined') {
+            if (
+              typeof item.links['attachment'] !== 'undefined' &&
+              args.attachement
+            ) {
               if (!fs.existsSync(`./attachments/`))
                 fs.mkdirSync(`./attachments/`);
-              if (
-                !fs.existsSync(`./attachments/${args.database}-${group.group}`)
-              )
-                fs.mkdirSync(`./attachments/${args.database}-${group.group}`);
+
               const attachments = await axios.get(
                 `https://api.zotero.org/groups/${group.group}/items/${item.key}/children`,
                 {
@@ -2667,13 +2664,33 @@ async function syncToLocalDB(args: any) {
                     responseType: 'stream',
                     headers: { Authorization: `Bearer ${args.api_key}` },
                   });
-                  const filepath = `./attachments/${args.database}-${group.group}/${attachment.key}:${group.group} | ${attachment.data.filename}`;
-                  const file = fs.createWriteStream(filepath);
-                  response.data.pipe(file);
-                  file.on('finish', () => {
-                    file.close();
-                  });
-                } catch (error) {}
+                  if (
+                    !fs.existsSync(
+                      `./attachments/${group.group}-${attachment.key}`,
+                    )
+                  )
+                    fs.mkdirSync(
+                      `./attachments/${group.group}-${attachment.key}`,
+                    );
+                  if (
+                    !fs.existsSync(
+                      `./attachments/${group.group}-${attachment.key}/${attachment.data.md5}`,
+                    )
+                  )
+                    fs.mkdirSync(
+                      `./attachments/${group.group}-${attachment.key}/${attachment.data.md5}`,
+                    );
+                  const filepath = `./attachments/${group.group}-${attachment.key}/${attachment.data.md5}/${attachment.data.filename}`;
+                  if (!fs.existsSync(filepath)) {
+                    const file = fs.createWriteStream(filepath);
+                    response.data.pipe(file);
+                    file.on('finish', () => {
+                      file.close();
+                    });
+                  }
+                } catch (error) {
+                  console.log('error: ');
+                }
               }
             }
             // get children

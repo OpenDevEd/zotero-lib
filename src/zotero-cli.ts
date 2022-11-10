@@ -79,7 +79,7 @@ async function main() {
     if (!(args.func in zoteroLib)) {
       throw new Error(`No cmd handler defined for ${args.func}`);
     }
-   
+
     zoteroLib.changeConfig(args);
     let result = await zoteroLib[args.func](args);
     // This really just works for 'item'... should realy move those functions elsewhere
