@@ -1868,9 +1868,11 @@ class Zotero {
 
           if (rows) {
             if (rows.length > 1) type = 'redirect_ambiguous';
-            else if (rows.length == 1) type = 'redirect';
-            else {
-              let sqlitem = `SELECT *  FROM items where group_id =${groupid} and id='${itemid}';`;
+            else if (rows.length == 1) {
+              if (rows[0].item_id == itemid) type = 'valid';
+              else type = 'redirect';
+            } else {
+              let sqlitem = `SELECT *  FROM items where group_id =${group_id} and id='${itemid}';`;
               let rowsitem;
               try {
                 rowsitem = await db.prepare(sqlitem).all();
@@ -1881,10 +1883,13 @@ class Zotero {
               if (rowsitem.length == 1) type = 'valid';
               else type = 'unknown';
             }
-            for (const row of rows) {
-              data.push(row.group_id + ':' + row.item_id);
-              //console.log(kerkoLine);
-            }
+            if (type != 'valid')
+              for (const row of rows) {
+                if (row.item_id == itemid && group_id == row.group_id)
+                  type = 'valid_ambiguous';
+                data.push(row.group_id + ':' + row.item_id);
+                //console.log(kerkoLine);
+              }
             result[key] = { type, data };
           } else {
             console.log(`No data found for key ${key}`);
@@ -2689,7 +2694,7 @@ async function syncToLocalDB(args: any) {
                     });
                   }
                 } catch (error) {
-                  console.log('error: ');
+                  console.log('error: ', error);
                 }
               }
             }
