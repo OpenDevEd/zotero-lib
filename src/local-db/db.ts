@@ -183,22 +183,35 @@ export function saveZoteroItems({
   return new Promise(async (resolve, reject) => {
     const db = createDBConnection(database);
     // console.log('db save start: ', syncStart);
-    await db.all('SELECT id from items', async (err, rows) => {
+    await db.all('SELECT * from items', async (err, rows) => {
       if (err) {
         return reject(err);
       }
-      const existingItemIdsMap = rows.reduce(
-        (a, c) => ({ ...a, [c.id]: c }),
-        {},
-      );
-      const existingCollectionIdsMap = rows.reduce(
-        (a, c) => ({ ...a, [c.id]: c }),
-        {},
-      );
+      // get only value of id
+      const dbItems = rows.map(row => row.id);
+      // get all id of collections
+      const allCollections = await getAllCollections({ database });
+      //@ts-ignore
+      const allCollectionsIds = allCollections.map(collection => collection.id);
+      console.log('allCollectionsIds', allCollectionsIds.length);
+      
+      console.log('dbItems', dbItems.length);
+      
+
+
+      
+      // const existingItemIdsMap = rows.reduce(
+      //   (a, c) => ({ ...a, [c.id]: c }),
+      //   {},
+      // );
+      // const existingCollectionIdsMap = rows.reduce(
+      //   (a, c) => ({ ...a, [c.id]: c }),
+      //   {},
+      // );
       console.log('here');
       let collections = [];
       const insertSql = `INSERT into items (id,version,data,inconsistent,createdAt,updatedAt, group_id ) VALUES ($id, $version, $data, $inconsistent, datetime('now'), datetime('now'), $group_id)`;
-      const updateSql = `UPDATE  items SET version=$version, data=$data, inconsistent=$inconsistent, updatedAt=datetime('now'), group_id=$group_id WHERE id=$id`;
+      const updateSql = `UPDATE items SET version=$version, data=$data, inconsistent=$inconsistent, updatedAt=datetime('now') WHERE id=$id`;
       const itemsLastVersionSql = `UPDATE groups SET itemsVersion=$version, updatedAt=datetime('now') WHERE id=$id`;
       const insertCollectionSql = `INSERT into collections (id,createdAt,updatedAt) VALUES ($id, datetime('now'), datetime('now'))`;
       const insertItemCollectionSql = `INSERT into item_Collection (item_id,collection_id,createdAt,updatedAt) VALUES ($item_id, $collection_id, datetime('now'), datetime('now'))`;
@@ -220,9 +233,12 @@ export function saveZoteroItems({
             items.forEach(async (item) => {
               await Promise.resolve(item).then(async (i) => {
                 if (i.data.collections) {
+                  
+                  
                   i.data.collections.forEach(async (collection) => {
+                    console.log('collections', collection);
                     if (
-                      !existingCollectionIdsMap[collection] &&
+                      !allCollectionsIds.includes(collection) &&
                       !collections.includes(collection) &&
                       collection
                     ) {
@@ -242,7 +258,7 @@ export function saveZoteroItems({
                 }
 
                 // create or update item and check if it has a collection
-                if (!existingItemIdsMap[i.key]) {
+                if (!dbItems.includes(i.key)) {
                   await createStmt.run({
                     $id: i.key,
                     $version: i.version,
@@ -258,19 +274,20 @@ export function saveZoteroItems({
                     });
                   }
                 }
-                if (existingItemIdsMap[i.key]) {
+                if (dbItems.includes(i.key)) {
                   await updateStmt.run({
                     $id: i.key,
                     $version: i.version,
                     $data: JSON.stringify(i.data),
                     $inconsistent: i.inconsistent,
-                    $group_id: i.library.id,
                   });
                 }
                 // check if item has a collection
                 if (i.data.collections) {
                   i.data.collections.forEach(async (collection) => {
                     if (collection) {
+                      console.log(' item', i.key, 'collection', collection);
+                      
                       await insertItemCollectionStmt.run({
                         $item_id: i.key,
                         $collection_id: collection,
@@ -336,6 +353,8 @@ export function saveZoteroItems({
           db.close();
           resolve(true);
         });
+        // sleep for 1 second
+         await new Promise((resolve) => setTimeout(resolve, 2000));
       });
     });
   });

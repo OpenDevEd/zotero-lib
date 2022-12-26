@@ -1820,6 +1820,8 @@ class Zotero {
         console.log(itemsAsJSON);
       }
     }
+    sleep(1000);
+    process.exit(0);
   }
   public async resolvefunc(args: any) {
     let result = {};
@@ -2694,7 +2696,7 @@ async function syncToLocalDB(args: any) {
                     });
                   }
                 } catch (error) {
-                  console.log('error: ', error);
+                  
                 }
               }
             }
