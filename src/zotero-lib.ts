@@ -1882,8 +1882,26 @@ class Zotero {
                 logger.error(error);
                 return null;
               }
-              if (rowsitem.length == 1) type = 'valid';
-              else type = 'unknown';
+              if (rowsitem.length == 1) type = 'valid'; 
+              else
+              {
+                let sqlImportbleItem= `select * from alsoKnownAs where alsoKnownAs like '%${groupid.toString()}:${itemid}%';`;
+
+                let rowsImportbleItem;
+                try {
+                  rowsImportbleItem = await db.prepare(sqlImportbleItem).all();
+                  console.log(rowsImportbleItem);
+                  
+                }
+                catch (error) {
+                  logger.error(error);
+                  return null;
+                }
+                if (rowsImportbleItem.length == 1) type = 'importable_redirect';
+                else if (rowsImportbleItem.length > 1) type = 'importable_ambiguous';
+                else type = 'unknown';
+
+              } 
             }
             if (type != 'valid')
               for (const row of rows) {
