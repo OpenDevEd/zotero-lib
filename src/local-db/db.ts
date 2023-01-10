@@ -180,6 +180,8 @@ export function saveZoteroItems({
   // batch updates
   //fetch all keys from db first to see which items need to be created/updated
   // write one big query to insert and update all items at once
+  console.log(lastModifiedVersion);
+  
   return new Promise(async (resolve, reject) => {
     const db = createDBConnection(database);
     // console.log('db save start: ', syncStart);
@@ -193,9 +195,9 @@ export function saveZoteroItems({
       const allCollections = await getAllCollections({ database });
       //@ts-ignore
       const allCollectionsIds = allCollections.map(collection => collection.id);
-      console.log('allCollectionsIds', allCollectionsIds.length);
+     // console.log('allCollectionsIds', allCollectionsIds.length);
       
-      console.log('dbItems', dbItems.length);
+      // console.log('dbItems', dbItems.length);
       
 
 
@@ -208,7 +210,7 @@ export function saveZoteroItems({
       //   (a, c) => ({ ...a, [c.id]: c }),
       //   {},
       // );
-      console.log('here');
+    
       let collections = [];
       const insertSql = `INSERT into items (id,version,data,inconsistent,createdAt,updatedAt, group_id ) VALUES ($id, $version, $data, $inconsistent, datetime('now'), datetime('now'), $group_id)`;
       const updateSql = `UPDATE items SET version=$version, data=$data, inconsistent=$inconsistent, updatedAt=datetime('now') WHERE id=$id`;
@@ -229,6 +231,8 @@ export function saveZoteroItems({
         let insertAlsoKnownAsStmt = await db.prepare(insertAlsoKnownAsSql);
 
         await allFetchedItems.forEach(async (groupItems) => {
+          console.log('groupItems keys', Object.keys(groupItems));
+          
           await Promise.resolve(groupItems).then(async (items) => {
             items.forEach(async (item) => {
               await Promise.resolve(item).then(async (i) => {
@@ -236,7 +240,7 @@ export function saveZoteroItems({
                   
                   
                   i.data.collections.forEach(async (collection) => {
-                    console.log('collections', collection);
+                    //console.log('collections', collection);
                     if (
                       !allCollectionsIds.includes(collection) &&
                       !collections.includes(collection) &&
@@ -286,7 +290,7 @@ export function saveZoteroItems({
                 if (i.data.collections) {
                   i.data.collections.forEach(async (collection) => {
                     if (collection) {
-                      console.log(' item', i.key, 'collection', collection);
+                    //  console.log(' item', i.key, 'collection', collection);
                       
                       await insertItemCollectionStmt.run({
                         $item_id: i.key,
@@ -314,10 +318,15 @@ export function saveZoteroItems({
               //   });
               // }
             });
-            await itemsLastVersionUpdateStmt.run({
-              $id: groupItems.groupId,
-              $version: lastModifiedVersion,
-            });
+
+            // get key and value from last modified item and update group
+            
+
+          
+            // await itemsLastVersionUpdateStmt.run({
+            //   $id: groupItems.groupId,
+            //   $version: lastModifiedVersion,
+            // });
           });
           // groupItems.forEach((item) => {
           //   if (item.key in existingItemIdsMap) {
@@ -343,6 +352,13 @@ export function saveZoteroItems({
         await Object.entries(lastModifiedVersion).forEach(([group, version]) =>
           itemsLastVersionUpdateStmt.run({ $id: group, $version: version }),
         );
+        await Object.entries(lastModifiedVersion).forEach(([group, version]) =>
+         
+          console.log('group', group, 'version', version),
+          
+        );
+        console.log("itemsLastVersionUpdateStmt", itemsLastVersionUpdateStmt);
+        
         await insertCollectionStmt.finalize();
         await createStmt.finalize();
         await updateStmt.finalize();
