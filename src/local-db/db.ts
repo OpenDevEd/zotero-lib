@@ -180,8 +180,7 @@ export function saveZoteroItems({
   // batch updates
   //fetch all keys from db first to see which items need to be created/updated
   // write one big query to insert and update all items at once
-  console.log(lastModifiedVersion);
-  
+
   return new Promise(async (resolve, reject) => {
     const db = createDBConnection(database);
     // console.log('db save start: ', syncStart);
@@ -190,18 +189,17 @@ export function saveZoteroItems({
         return reject(err);
       }
       // get only value of id
-      const dbItems = rows.map(row => row.id);
+      const dbItems = rows.map((row) => row.id);
       // get all id of collections
       const allCollections = await getAllCollections({ database });
       //@ts-ignore
-      const allCollectionsIds = allCollections.map(collection => collection.id);
-     // console.log('allCollectionsIds', allCollectionsIds.length);
-      
+      const allCollectionsIds = allCollections.map(
+        (collection) => collection.id,
+      );
+      // console.log('allCollectionsIds', allCollectionsIds.length);
+
       // console.log('dbItems', dbItems.length);
-      
 
-
-      
       // const existingItemIdsMap = rows.reduce(
       //   (a, c) => ({ ...a, [c.id]: c }),
       //   {},
@@ -210,7 +208,7 @@ export function saveZoteroItems({
       //   (a, c) => ({ ...a, [c.id]: c }),
       //   {},
       // );
-    
+
       let collections = [];
       const insertSql = `INSERT into items (id,version,data,inconsistent,createdAt,updatedAt, group_id ) VALUES ($id, $version, $data, $inconsistent, datetime('now'), datetime('now'), $group_id)`;
       const updateSql = `UPDATE items SET version=$version, data=$data, inconsistent=$inconsistent, updatedAt=datetime('now') WHERE id=$id`;
@@ -231,14 +229,10 @@ export function saveZoteroItems({
         let insertAlsoKnownAsStmt = await db.prepare(insertAlsoKnownAsSql);
 
         await allFetchedItems.forEach(async (groupItems) => {
-          console.log('groupItems keys', Object.keys(groupItems));
-          
           await Promise.resolve(groupItems).then(async (items) => {
             items.forEach(async (item) => {
               await Promise.resolve(item).then(async (i) => {
                 if (i.data.collections) {
-                  
-                  
                   i.data.collections.forEach(async (collection) => {
                     //console.log('collections', collection);
                     if (
@@ -290,8 +284,8 @@ export function saveZoteroItems({
                 if (i.data.collections) {
                   i.data.collections.forEach(async (collection) => {
                     if (collection) {
-                    //  console.log(' item', i.key, 'collection', collection);
-                      
+                      //  console.log(' item', i.key, 'collection', collection);
+
                       await insertItemCollectionStmt.run({
                         $item_id: i.key,
                         $collection_id: collection,
@@ -320,9 +314,7 @@ export function saveZoteroItems({
             });
 
             // get key and value from last modified item and update group
-            
 
-          
             // await itemsLastVersionUpdateStmt.run({
             //   $id: groupItems.groupId,
             //   $version: lastModifiedVersion,
@@ -348,29 +340,35 @@ export function saveZoteroItems({
           //   }
           // });
         });
+        console.log(lastModifiedVersion);
 
-        await Object.entries(lastModifiedVersion).forEach(([group, version]) =>
-          itemsLastVersionUpdateStmt.run({ $id: group, $version: version }),
+        await Object.entries(lastModifiedVersion).forEach(
+          ([group, version]) => {
+            itemsLastVersionUpdateStmt.run({ $id: group, $version: version });
+          },
         );
         await Object.entries(lastModifiedVersion).forEach(([group, version]) =>
-         
           console.log('group', group, 'version', version),
-          
         );
-        console.log("itemsLastVersionUpdateStmt", itemsLastVersionUpdateStmt);
-        
+
         await insertCollectionStmt.finalize();
         await createStmt.finalize();
         await updateStmt.finalize();
         await itemsLastVersionUpdateStmt.finalize();
         await insertItemCollectionStmt.finalize();
         await insertAlsoKnownAsStmt.finalize();
-        await db.run('COMMIT', () => {
-          db.close();
-          resolve(true);
-        });
+
+        try {
+          await db.run('COMMIT', () => {
+            db.close();
+            resolve(true);
+          });
+        } catch (error) {
+          console.log('error', error);
+        }
+
         // sleep for 1 second
-         await new Promise((resolve) => setTimeout(resolve, 2000));
+        await new Promise((resolve) => setTimeout(resolve, 2000));
       });
     });
   });

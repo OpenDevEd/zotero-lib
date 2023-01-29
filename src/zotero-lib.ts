@@ -1890,13 +1890,15 @@ class Zotero {
                 let rowsImportbleItem;
                 try {
                   rowsImportbleItem = await db.prepare(sqlImportbleItem).all();
-                  console.log(rowsImportbleItem);
+                 
                   
                 }
                 catch (error) {
                   logger.error(error);
                   return null;
                 }
+                console.log(rowsImportbleItem);
+                
                 if (rowsImportbleItem.length == 1) type = 'importable_redirect';
                 else if (rowsImportbleItem.length > 1) type = 'importable_ambiguous';
                 else type = 'unknown';
@@ -2671,14 +2673,22 @@ async function syncToLocalDB(args: any) {
             ) {
               if (!fs.existsSync(`./attachments/`))
                 fs.mkdirSync(`./attachments/`);
+                let attachments = undefined;
+                try {
+                  attachments = await axios.get(
+                    `https://api.zotero.org/groups/${group.group}/items/${item.key}/children`,
+                    {
+                      headers: { Authorization: `Bearer ${args.api_key}` },
+                    },
+                  );
+                } catch (error) {
+                  console.log('error: ', error);
+                  
+                }
 
-              const attachments = await axios.get(
-                `https://api.zotero.org/groups/${group.group}/items/${item.key}/children`,
-                {
-                  headers: { Authorization: `Bearer ${args.api_key}` },
-                },
-              );
-
+              
+                if (attachments) {
+               //@ts-ignore
               for (const attachment of attachments.data.filter(
                 (i) => i.data.itemType === 'attachment',
               )) {
@@ -2717,6 +2727,7 @@ async function syncToLocalDB(args: any) {
                   
                 }
               }
+             }
             }
             // get children
             if (item.data.parentItem) {
