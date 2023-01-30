@@ -2633,7 +2633,7 @@ async function syncToLocalDB(args: any) {
     // convert id: version map to array of ids, chuncked by 50 items max
     const chunckedItemsByGroup = changedItemsForGroups.map((item, index) => ({
       group: changedGroupsArray[index],
-      itemIds: _.chunk(Object.keys(item), 80),
+      itemIds: _.chunk(Object.keys(item), 50),
     }));
 
     // console.log('chuncked items by group: ', printJSON(chunckedItemsByGroup));
@@ -2724,6 +2724,7 @@ async function syncToLocalDB(args: any) {
                     });
                   }
                 } catch (error) {
+                  console.log(attachment.key);
                   
                 }
               }

@@ -1,3 +1,4 @@
+import sleep from '../utils/sleep';
 import { ZoteroGroup } from './types';
 
 const sqlite3 = require('sqlite3').verbose();
@@ -54,6 +55,7 @@ export function createDBConnection(database) {
   //TODO: if database is not string, it means it could be an initilized connection? so just use it? we need to make this check more rigours, it will execute even if database is not string but also not a valid conection
   if (typeof database !== 'string') {
     console.log('connection already opened');
+    
     return database;
   }
 
@@ -192,6 +194,7 @@ export function saveZoteroItems({
       const dbItems = rows.map((row) => row.id);
       // get all id of collections
       const allCollections = await getAllCollections({ database });
+      //const allGroups= await getAllGroups({ database });
       //@ts-ignore
       const allCollectionsIds = allCollections.map(
         (collection) => collection.id,
@@ -210,7 +213,8 @@ export function saveZoteroItems({
       // );
 
       let collections = [];
-      const insertSql = `INSERT into items (id,version,data,inconsistent,createdAt,updatedAt, group_id ) VALUES ($id, $version, $data, $inconsistent, datetime('now'), datetime('now'), $group_id)`;
+      //const insertGroupSql = `INSERT into groups (id,version,data,createdAt,updatedAt) VALUES ($id, $version, $data, datetime('now'), datetime('now'))`;
+      const insertSql = `INSERT into items (id,version,synced,data,inconsistent,createdAt,updatedAt, group_id ) VALUES ($id, $version,true, $data, $inconsistent, datetime('now'), datetime('now'), $group_id)`;
       const updateSql = `UPDATE items SET version=$version, data=$data, inconsistent=$inconsistent, updatedAt=datetime('now') WHERE id=$id`;
       const itemsLastVersionSql = `UPDATE groups SET itemsVersion=$version, updatedAt=datetime('now') WHERE id=$id`;
       const insertCollectionSql = `INSERT into collections (id,createdAt,updatedAt) VALUES ($id, datetime('now'), datetime('now'))`;
@@ -219,6 +223,7 @@ export function saveZoteroItems({
 
       await db.serialize(async function () {
         await db.run('BEGIN');
+      //  let insertGroupStmt = await db.prepare(insertGroupSql);
         let createStmt = await db.prepare(insertSql);
         let updateStmt = await db.prepare(updateSql);
         let itemsLastVersionUpdateStmt = await db.prepare(itemsLastVersionSql);
@@ -227,9 +232,28 @@ export function saveZoteroItems({
           insertItemCollectionSql,
         );
         let insertAlsoKnownAsStmt = await db.prepare(insertAlsoKnownAsSql);
-
+        console.log(dbItems,dbItems.length);
+        
         await allFetchedItems.forEach(async (groupItems) => {
           await Promise.resolve(groupItems).then(async (items) => {
+          
+            // if (allGroups.includes(groupItems.group_id)) {
+            //   await itemsLastVersionUpdateStmt.run({
+            //     $id: groupItems.group_id,
+            //     $version: lastModifiedVersion,
+            //   });
+            // } else {
+            //   console.log(groupItems);
+              
+            //   await insertGroupStmt.run({
+            //     $id: groupItems.group_id,
+            //     $version: lastModifiedVersion,
+            //     $data: JSON.stringify(groupItems),
+            //   });
+              
+            // }
+            console.log('items', items.length);
+            
             items.forEach(async (item) => {
               await Promise.resolve(item).then(async (i) => {
                 if (i.data.collections) {
@@ -254,8 +278,10 @@ export function saveZoteroItems({
                     }
                   });
                 }
-
+                
                 // create or update item and check if it has a collection
+                //console.log(!dbItems.includes(i.key));
+                
                 if (!dbItems.includes(i.key)) {
                   await createStmt.run({
                     $id: i.key,
@@ -264,6 +290,29 @@ export function saveZoteroItems({
                     $inconsistent: i.inconsistent,
                     $group_id: i.library.id,
                   });
+                  // await db.run(
+                  //   `INSERT into items (id,version,synced,data,inconsistent,createdAt,updatedAt, group_id ) VALUES ($id, $version,true, $data, $inconsistent, datetime('now'), datetime('now'), $group_id)`,
+                  //   {
+                  //     $id: i.key,
+                  //     $version: i.version,
+                  //     $data: JSON.stringify(i.data),
+                  //     $inconsistent: i.inconsistent,
+                  //     $group_id: i.library.id,
+                  //   },
+                  //   function (err) {
+                  //     if (err) {
+                  //       return console.log(err.message);
+                  //     }
+
+                  //     // get the last insert id
+                  //     console.log(`A row has been inserted with rowid ${this.lastID}`);
+                  //   }
+                  // );
+                  
+                  
+                  //console.log("id " ,i.key , "version " ,i.version , "data " ,JSON.stringify(i.data) , "inconsistent " ,i.inconsistent , "group_id " ,i.library.id);
+                  
+                  
                   if (i.data.extra) {
                     await insertAlsoKnownAsStmt.run({
                       $item_id: i.key,
@@ -340,7 +389,8 @@ export function saveZoteroItems({
           //   }
           // });
         });
-        console.log(lastModifiedVersion);
+       
+       
 
         await Object.entries(lastModifiedVersion).forEach(
           ([group, version]) => {
@@ -351,15 +401,20 @@ export function saveZoteroItems({
           console.log('group', group, 'version', version),
         );
 
-        await insertCollectionStmt.finalize();
+        await sleep(3000);
+
         await createStmt.finalize();
-        await updateStmt.finalize();
-        await itemsLastVersionUpdateStmt.finalize();
+        await insertCollectionStmt.finalize();
         await insertItemCollectionStmt.finalize();
         await insertAlsoKnownAsStmt.finalize();
+        await updateStmt.finalize();
+        await itemsLastVersionUpdateStmt.finalize();
 
         try {
-          await db.run('COMMIT', () => {
+          await db.run('COMMIT', (err) => {
+            if (err) {
+              return console.error(err.message);
+            }
             db.close();
             resolve(true);
           });
