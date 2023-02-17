@@ -8,6 +8,7 @@ import cron from 'node-cron';
 import processExtraField from './utils/processExtraField';
 import newVanityDOI from './utils/newVanityDOI';
 
+
 import { createHttpClient } from './http.client';
 import {
   as_array,
@@ -32,7 +33,8 @@ import {
   fetchAllItems,
   getAllGroups,
   saveGroup,
-  saveZoteroItems,
+ // saveZoteroItems,
+  test
 } from './local-db/db';
 import saveToFile from './local-db/saveToFile';
 import { checkForValidLockFile, removeLockFile } from './lock.utils';
@@ -48,7 +50,8 @@ const convert = require('xml-js');
 const fs = require('fs');
 const path = require('path');
 const LinkHeader = require('http-link-header');
-
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 const ajv = new Ajv();
 
 class Zotero {
@@ -858,17 +861,17 @@ class Zotero {
 
     // TODO: args parsing code
 
-    if (args.filter) {
+    if (typeof args.filter == 'string') {
       args.filter = JSON.parse(args.filter);
     }
+
     if (!args.key && !(args.filter && args.filter['itemKey'])) {
       return this.message(
         0,
         'Unable to extract group/key from the string provided.',
       );
     }
-    if (!args.key) args.key = '';
-    else args.key = this.extractKeyAndSetGroup(args.key);
+    if (args.key) args.key = this.extractKeyAndSetGroup(args.key);
 
     // TODO: Need to implement filter as a command line option --filter="{...}"
 
@@ -1804,7 +1807,7 @@ class Zotero {
     });
 
     const itemsAsJSON = JSON.stringify(
-      allItems.map((item) => JSON.parse(item.data)),
+      allItems.map((item) => item.data),
       null,
       2,
     );
@@ -1820,20 +1823,19 @@ class Zotero {
         console.log(itemsAsJSON);
       }
     }
+    sleep(1000);
+    process.exit(0);
   }
   public async resolvefunc(args: any) {
+    
     let result = {};
-    let { keys, file } = args;
+    let { keys } = args;
     let group_id = args.groupid;
     // check if file exists using fs
-    if (file) {
-      if (!fs.existsSync(file)) {
-        logger.error(`File ${file} does not exist`);
-        return null;
-      }
-
+   
+      //TODO: use one query to get all items from file
       if (keys) {
-        const db = require('better-sqlite3')(file);
+        
         for (let key of keys) {
           let type;
           let data = [];
@@ -1853,14 +1855,41 @@ class Zotero {
             result[key] = { type, data };
             continue;
           }
-          let sql;
-          if (group_id)
-            sql = `SELECT alsoKnownAs,item_id,group_id  FROM alsoKnownAs where group_id =${group_id} and alsoKnownAs like '%${groupid.toString()}:${itemid}%';`;
-          else
-            sql = `SELECT alsoKnownAs,item_id,group_id  FROM alsoKnownAs where alsoKnownAs like '%${groupid.toString()}:${itemid}%';`;
           let rows;
+          
+          
           try {
-            rows = await db.prepare(sql).all();
+            if (group_id)
+            rows = await prisma.alsoKnownAs.findMany({
+             
+              where: {
+                group_id: parseInt(group_id),
+                data: {
+                  contains: `${groupid.toString()}:${itemid}`,
+                },
+                isDeleted : false
+              },
+              select : {
+                data : true,
+                item_id : true,
+                group_id : true
+              },
+            });
+            else
+            rows = await prisma.alsoKnownAs.findMany({
+              where: {
+                data: {
+                  contains: `${groupid.toString()}:${itemid}`,
+                },
+                isDeleted : false
+              },
+              select : {
+                data : true,
+                item_id : true,
+                group_id : true
+              },
+            });
+           
           } catch (error) {
             logger.error(error);
             return null;
@@ -1868,37 +1897,95 @@ class Zotero {
 
           if (rows) {
             if (rows.length > 1) type = 'redirect_ambiguous';
-            else if (rows.length == 1) type = 'redirect';
-            else {
-              let sqlitem = `SELECT *  FROM items where group_id =${groupid} and id='${itemid}';`;
+            else if (rows.length == 1) {
+              if (rows[0].item_id == itemid) type = 'valid';
+              else type = 'redirect';
+            } else {
+          //    let sqlitem = `SELECT *  FROM items where group_id =${group_id} and id='${itemid}';`;
               let rowsitem;
               try {
-                rowsitem = await db.prepare(sqlitem).all();
+               
+                rowsitem = await prisma.items.findMany({
+                  where: {
+                    group_id: parseInt(group_id),
+                    id: itemid,
+                    isDeleted : false
+                  },
+                  
+                  });
               } catch (error) {
                 logger.error(error);
                 return null;
               }
-              if (rowsitem.length == 1) type = 'valid';
-              else type = 'unknown';
+              if (rowsitem.length == 1) type = 'valid'; 
+              else
+              {
+
+                let rowsImportbleItem;
+                try {
+                  rowsImportbleItem = await prisma.items.findMany({
+                    where: {
+                      group_id: parseInt(group_id),
+                      id: itemid,
+                      isDeleted : false
+                    },
+                    });
+
+                 
+                  
+                }
+                catch (error) {
+                  logger.error(error);
+                  return null;
+                }
+                
+                
+                if (rowsImportbleItem.length == 1) type = 'importable_redirect';
+                else if (rowsImportbleItem.length > 1) type = 'importable_ambiguous';
+                else 
+                {
+                  let rowsImportbleAlsoKnownAs;
+                  try {
+                    rowsImportbleAlsoKnownAs = await prisma.alsoKnownAs.findMany({
+                      where: {
+                        data: {
+                          contains: `${groupid.toString()}:${itemid}`,
+                        },
+                        isDeleted : false
+                      },
+                      select : {
+                        data : true,
+                        item_id : true,
+                        group_id : true
+                      },
+                    });
+                  }
+                  catch (error) {
+                    logger.error(error);
+                    return null;
+                  }
+                  if (rowsImportbleAlsoKnownAs.length == 1) type = 'importable_redirect';
+                  else if (rowsImportbleAlsoKnownAs.length > 1) type = 'importable_ambiguous';
+                  else type = 'unknown';
+                }
+              } 
             }
-            for (const row of rows) {
-              data.push(row.group_id + ':' + row.item_id);
-              //console.log(kerkoLine);
-            }
+            if (type != 'valid')
+              for (const row of rows) {
+                if (row.item_id == itemid && group_id == row.group_id)
+                  type = 'valid_ambiguous';
+                data.push(row.group_id + ':' + row.item_id);
+                //console.log(kerkoLine);
+              }
             result[key] = { type, data };
           } else {
             console.log(`No data found for key ${key}`);
           }
         }
 
-        console.log(JSON.stringify(result, null, 2));
-
-        await db.close();
-        return null;
+        return result;
       }
-    } else {
-      logger.error(`please provide a file to resolve`);
-    }
+    
     return null;
   }
 
@@ -1918,7 +2005,7 @@ class Zotero {
       let update = false;
       let extra2 = '';
       if ('zenodoRecordID' in args) {
-        // logger.info("update_doi: " + `ZenodoArchiveID: ${args.zenodoRecordID}`)
+        // logger.info("update_doi: " + `ZenodoArchive`ID: ${args.zenodoRecordID}`)
         extra2 = `ZenodoArchiveID: ${args.zenodoRecordID}\n`;
         update = true;
       }
@@ -2521,6 +2608,7 @@ class Zotero {
 export = Zotero;
 
 async function syncToLocalDB(args: any) {
+  
   const syncStart = Date.now();
   console.log('syncing local db with online library');
 
@@ -2531,12 +2619,14 @@ async function syncToLocalDB(args: any) {
 
   args.user_id = userID;
   const { groupid } = args;
-  console.log(groupid);
+  
 
   // fetch groups version and check which are changed
   const onlineGroups = await fetchGroups({ ...args });
   // console.log('online groups: ', onlineGroups);
-  const offlineGroups = await getAllGroups({ ...args });
+  const offlineGroups = await getAllGroups();
+
+
   // console.log('offline groups: ', offlineGroups);
   const offlineItemsVersion = offlineGroups.reduce(
     (a, c) => ({ ...a, [c.id]: c.itemsVersion }),
@@ -2550,6 +2640,7 @@ async function syncToLocalDB(args: any) {
     );
 
     let res = [];
+    
 
     for (let group in online) {
       if (online[group] !== localGroupsMap[group]) {
@@ -2573,12 +2664,10 @@ async function syncToLocalDB(args: any) {
         fetchGroupData({ ...args, group_id: changedGroup }),
       ),
     );
+      //@ts-ignore
+    
     // console.log('allChangedGroupsData: ', printJSON(allChangedGroupsData));
-    await Promise.all(
-      allChangedGroupsData.map((groupData) =>
-        saveGroup({ database: args.database, group: groupData }),
-      ),
-    );
+    await saveGroup(allChangedGroupsData);
     // console.log('savedChangedGroups: ', printJSON(savedChangedGroups));
   }
 
@@ -2608,11 +2697,11 @@ async function syncToLocalDB(args: any) {
     // convert id: version map to array of ids, chuncked by 50 items max
     const chunckedItemsByGroup = changedItemsForGroups.map((item, index) => ({
       group: changedGroupsArray[index],
-      itemIds: _.chunk(Object.keys(item), 80),
+      itemIds: _.chunk(Object.keys(item), 100),
     }));
 
     // console.log('chuncked items by group: ', printJSON(chunckedItemsByGroup));
-    const itemsLastModifiedVersion = {};
+    let itemsLastModifiedVersion = {};
 
     // item children map
     const childrenMap = {};
@@ -2625,16 +2714,27 @@ async function syncToLocalDB(args: any) {
     // @ts-ignore
     let allItems = [];
     let counter = 0;
+    // let Zoterolib = new Zotero({group_id:2259720});
+    // const options =  {"count":false,"top":false,"validate":false}
+    // const result = await Zoterolib.items(options);
+    // console.log('result: ', result.length);
+
     for (let group of chunckedItemsByGroup) {
       console.log('group length: ', group.itemIds.length);
+      
+    
+     
+      
+      
       for (let itemIds of group.itemIds) {
         // console.log(itemIds);
         // @ts-ignore
         try {
-          console.log('fetching items: ', itemIds);
+          //console.log('fetching items: ', itemIds);
 
           const res = await axios.get(
-            `https://api.zotero.org/groups/${group.group}/items/?itemKey=${itemIds}`,
+            `https://api.zotero.org/groups/${group.group}/items/?itemKey=${itemIds}&includeTrashed=1
+            `,
             {
               headers: { Authorization: `Bearer ${args.api_key}` },
             },
@@ -2642,7 +2742,9 @@ async function syncToLocalDB(args: any) {
 
           itemsLastModifiedVersion[group.group] =
             res.headers['last-modified-version'];
-
+          
+          
+          
           await res.data.forEach(async (item) => {
             if (typeof item.links['attachment'] !== 'undefined') {
               if (!fs.existsSync(`./attachments/`))
@@ -2651,31 +2753,31 @@ async function syncToLocalDB(args: any) {
                 !fs.existsSync(`./attachments/${args.database}-${group.group}`)
               )
                 fs.mkdirSync(`./attachments/${args.database}-${group.group}`);
-              const attachments = await axios.get(
-                `https://api.zotero.org/groups/${group.group}/items/${item.key}/children`,
-                {
-                  headers: { Authorization: `Bearer ${args.api_key}` },
-                },
-              );
+              // const attachments = await axios.get(
+              //   `https://api.zotero.org/groups/${group.group}/items/${item.key}/children`,
+              //   {
+              //     headers: { Authorization: `Bearer ${args.api_key}` },
+              //   },
+              // );
 
-              for (const attachment of attachments.data.filter(
-                (i) => i.data.itemType === 'attachment',
-              )) {
-                try {
-                  const response = await axios({
-                    url: `https://api.zotero.org/groups/${group.group}/items/${attachment.key}/file`,
-                    method: 'GET',
-                    responseType: 'stream',
-                    headers: { Authorization: `Bearer ${args.api_key}` },
-                  });
-                  const filepath = `./attachments/${args.database}-${group.group}/${attachment.key}:${group.group} | ${attachment.data.filename}`;
-                  const file = fs.createWriteStream(filepath);
-                  response.data.pipe(file);
-                  file.on('finish', () => {
-                    file.close();
-                  });
-                } catch (error) {}
-              }
+              // for (const attachment of attachments.data.filter(
+              //   (i) => i.data.itemType === 'attachment',
+              // )) {
+              //   try {
+              //     const response = await axios({
+              //       url: `https://api.zotero.org/groups/${group.group}/items/${attachment.key}/file`,
+              //       method: 'GET',
+              //       responseType: 'stream',
+              //       headers: { Authorization: `Bearer ${args.api_key}` },
+              //     });
+              //     const filepath = `./attachments/${args.database}-${group.group}/${attachment.key}:${group.group} | ${attachment.data.filename}`;
+              //     const file = fs.createWriteStream(filepath);
+              //     response.data.pipe(file);
+              //     file.on('finish', () => {
+              //       file.close();
+              //     });
+              //   } catch (error) {}
+              // }
             }
             // get children
             if (item.data.parentItem) {
@@ -2715,8 +2817,7 @@ async function syncToLocalDB(args: any) {
           console.log('error', error);
         }
       }
-    }
-    let allFetchedItems = allItems.map(async (groupItems) =>
+      let allFetchedItems = allItems.map(async (groupItems) =>
       groupItems.map(async (chunkedItem) => {
         chunkedItem.children = childrenMap[chunkedItem.key];
         chunkedItem.referencedBy = [...new Set(referenceMap[chunkedItem.key])];
@@ -2729,18 +2830,28 @@ async function syncToLocalDB(args: any) {
         return chunkedItem;
       }),
     );
+   
+    
     if (allFetchedItems.length) {
       console.log('itemsVersion: ', itemsLastModifiedVersion);
 
-      await saveZoteroItems({
-        allFetchedItems,
-        database: args.database,
-        lastModifiedVersion: itemsLastModifiedVersion,
-      }).then(() => console.log('items saved to db'));
+      await test(allFetchedItems,itemsLastModifiedVersion,group.group).then(() => console.log('group saved into db ', group.group));
     }
+    // sleep for 1 second
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    allItems = [];
+    allFetchedItems = [];
+    itemsLastModifiedVersion={};
+
+    
+
+    }
+   
   } else {
     console.log('Everything already synced!!! Hurray!!!');
   }
+ 
   const syncEnd = Date.now();
   console.log(`Time taken: ${(syncEnd - syncStart) / 1000}s`);
 }
