@@ -5,6 +5,7 @@ node_modules
 node_modules/*
 .env
 temp/*
+.vscode/*
 build/*
 BaCkUp
 BaCkUp/*
@@ -14,7 +15,12 @@ BaCkUp/*
 */*/*~
 .vs/*
 docs-out
-
+test.js
+backup.json
+backup5.json
+attachments/*
+src/local-db/db copy.ts
+src/zotero-lib copy.ts
 
 # Created by https://www.toptal.com/developers/gitignore/api/node
 # Edit at https://www.toptal.com/developers/gitignore?templates=node
