@@ -7,6 +7,8 @@ import cron from 'node-cron';
 
 import processExtraField from './utils/processExtraField';
 import newVanityDOI from './utils/newVanityDOI';
+
+
 import { createHttpClient } from './http.client';
 import {
   as_array,
@@ -24,17 +26,19 @@ import {
   fetchCurrentKey,
   fetchGroupData,
   fetchGroups,
-  fetchItemsByIds,
+  //fetchItemsByIds,
   getChangedItemsForGroup,
 } from './local-db/api';
 import {
   fetchAllItems,
   getAllGroups,
   saveGroup,
-  saveZoteroItems,
+ // saveZoteroItems,
+  test
 } from './local-db/db';
 import saveToFile from './local-db/saveToFile';
 import { checkForValidLockFile, removeLockFile } from './lock.utils';
+import axios from 'axios';
 // import printJSON from './utils/printJSON';
 
 require('dotenv').config();
@@ -46,7 +50,8 @@ const convert = require('xml-js');
 const fs = require('fs');
 const path = require('path');
 const LinkHeader = require('http-link-header');
-
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 const ajv = new Ajv();
 
 class Zotero {
@@ -205,7 +210,12 @@ class Zotero {
 
   public showConfig() {
     logger.info('showConfig=' + JSON.stringify(this.config, null, 2));
+    //@ts-ignore
+
     return this.config;
+  }
+  public changeConfig(args) {
+    args.group_id ? (this.config.group_id = args.group_id) : null;
   }
 
   private message(stat = 0, msg = 'None', data = null) {
@@ -850,23 +860,20 @@ class Zotero {
     const output = [];
 
     // TODO: args parsing code
-    const my_key = this.extractKeyAndSetGroup(args.key);
-    args.key = my_key;
-    
-    if (args.filter) {
+
+    if (typeof args.filter == 'string') {
       args.filter = JSON.parse(args.filter);
-  }
-    if(!args.key)
-    {
-      args.key = args.filter.itemKey;
     }
-    // TODO: Need to implement filter as a command line option --filter="{...}"
-    if (!args.key && !(args.filter && args.filter.itemKey)) {
+
+    if (!args.key && !(args.filter && args.filter['itemKey'])) {
       return this.message(
         0,
         'Unable to extract group/key from the string provided.',
       );
     }
+    if (args.key) args.key = this.extractKeyAndSetGroup(args.key);
+
+    // TODO: Need to implement filter as a command line option --filter="{...}"
 
     var item;
     if (args.key) {
@@ -1134,11 +1141,7 @@ class Zotero {
         args.addtags ||
         args.filter
       ) {
-        result = await this.http.get(
-          `/items/${args.key}`,
-          { params },
-          this.config,
-        );
+        result = await this.http.get(`/items`, { params }, this.config);
       } else {
         // Nothing about the item has changed:
         result = item;
@@ -1804,7 +1807,7 @@ class Zotero {
     });
 
     const itemsAsJSON = JSON.stringify(
-      allItems.map((item) => JSON.parse(item.data)),
+      allItems.map((item) => item.data),
       null,
       2,
     );
@@ -1820,6 +1823,170 @@ class Zotero {
         console.log(itemsAsJSON);
       }
     }
+    sleep(1000);
+    process.exit(0);
+  }
+  public async resolvefunc(args: any) {
+    
+    let result = {};
+    let { keys } = args;
+    let group_id = args.groupid;
+    // check if file exists using fs
+   
+      //TODO: use one query to get all items from file
+      if (keys) {
+        
+        for (let key of keys) {
+          let type;
+          let data = [];
+          let groupid;
+          let itemid;
+          // check if the key is 8 characters long and all uppercase and all letters btween A and Z
+          if (key.length === 8 && key == key.toUpperCase()) {
+            groupid = group_id;
+            itemid = key;
+            key = `${groupid}:${itemid}`;
+          } else [groupid, itemid] = key.split(':');
+
+          // split key into groupid and itemid
+          if (!groupid || !itemid) {
+            type = 'invalid_syntax';
+            data = [];
+            result[key] = { type, data };
+            continue;
+          }
+          let rows;
+          
+          
+          try {
+            if (group_id)
+            rows = await prisma.alsoKnownAs.findMany({
+             
+              where: {
+                group_id: parseInt(group_id),
+                data: {
+                  contains: `${groupid.toString()}:${itemid}`,
+                },
+                isDeleted : false
+              },
+              select : {
+                data : true,
+                item_id : true,
+                group_id : true
+              },
+            });
+            else
+            rows = await prisma.alsoKnownAs.findMany({
+              where: {
+                data: {
+                  contains: `${groupid.toString()}:${itemid}`,
+                },
+                isDeleted : false
+              },
+              select : {
+                data : true,
+                item_id : true,
+                group_id : true
+              },
+            });
+           
+          } catch (error) {
+            logger.error(error);
+            return null;
+          }
+
+          if (rows) {
+            if (rows.length > 1) type = 'redirect_ambiguous';
+            else if (rows.length == 1) {
+              if (rows[0].item_id == itemid) type = 'valid';
+              else type = 'redirect';
+            } else {
+          //    let sqlitem = `SELECT *  FROM items where group_id =${group_id} and id='${itemid}';`;
+              let rowsitem;
+              try {
+               
+                rowsitem = await prisma.items.findMany({
+                  where: {
+                    group_id: parseInt(group_id),
+                    id: itemid,
+                    isDeleted : false
+                  },
+                  
+                  });
+              } catch (error) {
+                logger.error(error);
+                return null;
+              }
+              if (rowsitem.length == 1) type = 'valid'; 
+              else
+              {
+
+                let rowsImportbleItem;
+                try {
+                  rowsImportbleItem = await prisma.items.findMany({
+                    where: {
+                      group_id: parseInt(group_id),
+                      id: itemid,
+                      isDeleted : false
+                    },
+                    });
+
+                 
+                  
+                }
+                catch (error) {
+                  logger.error(error);
+                  return null;
+                }
+                
+                
+                if (rowsImportbleItem.length == 1) type = 'importable_redirect';
+                else if (rowsImportbleItem.length > 1) type = 'importable_ambiguous';
+                else 
+                {
+                  let rowsImportbleAlsoKnownAs;
+                  try {
+                    rowsImportbleAlsoKnownAs = await prisma.alsoKnownAs.findMany({
+                      where: {
+                        data: {
+                          contains: `${groupid.toString()}:${itemid}`,
+                        },
+                        isDeleted : false
+                      },
+                      select : {
+                        data : true,
+                        item_id : true,
+                        group_id : true
+                      },
+                    });
+                  }
+                  catch (error) {
+                    logger.error(error);
+                    return null;
+                  }
+                  if (rowsImportbleAlsoKnownAs.length == 1) type = 'importable_redirect';
+                  else if (rowsImportbleAlsoKnownAs.length > 1) type = 'importable_ambiguous';
+                  else type = 'unknown';
+                }
+              } 
+            }
+            if (type != 'valid')
+              for (const row of rows) {
+                if (row.item_id == itemid && group_id == row.group_id)
+                  type = 'valid_ambiguous';
+                data.push(row.group_id + ':' + row.item_id);
+                //console.log(kerkoLine);
+              }
+            result[key] = { type, data };
+          } else {
+            console.log(`No data found for key ${key}`);
+          }
+        }
+
+        return result;
+      }
+    
+    return null;
   }
 
   /**
@@ -1838,7 +2005,7 @@ class Zotero {
       let update = false;
       let extra2 = '';
       if ('zenodoRecordID' in args) {
-        // logger.info("update_doi: " + `ZenodoArchiveID: ${args.zenodoRecordID}`)
+        // logger.info("update_doi: " + `ZenodoArchive`ID: ${args.zenodoRecordID}`)
         extra2 = `ZenodoArchiveID: ${args.zenodoRecordID}\n`;
         update = true;
       }
@@ -2387,11 +2554,14 @@ class Zotero {
     // process.exit(1)
     // TODO: Read from --file
     // ACTION: run code
+
     const notefiletext = args.notefile ? fs.readFileSync(args.notefile) : '';
+    const notetext = args.notetext ? args.notetext : '';
     const data = await this.attachNoteToItem(args.key, {
-      content: args.notetext + notefiletext,
+      content: notetext + notefiletext,
       tags: args.tags,
     });
+
     // ACTION: return values
     return this.message(0, 'exit status', data);
   }
@@ -2438,6 +2608,7 @@ class Zotero {
 export = Zotero;
 
 async function syncToLocalDB(args: any) {
+  
   const syncStart = Date.now();
   console.log('syncing local db with online library');
 
@@ -2447,11 +2618,15 @@ async function syncToLocalDB(args: any) {
   const { userID } = keyCheck;
 
   args.user_id = userID;
+  const { groupid } = args;
+  
 
   // fetch groups version and check which are changed
   const onlineGroups = await fetchGroups({ ...args });
   // console.log('online groups: ', onlineGroups);
-  const offlineGroups = await getAllGroups({ ...args });
+  const offlineGroups = await getAllGroups();
+
+
   // console.log('offline groups: ', offlineGroups);
   const offlineItemsVersion = offlineGroups.reduce(
     (a, c) => ({ ...a, [c.id]: c.itemsVersion }),
@@ -2465,6 +2640,7 @@ async function syncToLocalDB(args: any) {
     );
 
     let res = [];
+    
 
     for (let group in online) {
       if (online[group] !== localGroupsMap[group]) {
@@ -2474,8 +2650,9 @@ async function syncToLocalDB(args: any) {
 
     return res;
   }
-
-  const changedGroups = getChangedGroups(onlineGroups, offlineGroups);
+  let changedGroups;
+  if (!groupid) changedGroups = getChangedGroups(onlineGroups, offlineGroups);
+  else changedGroups = [groupid];
 
   if (changedGroups.length === 0) {
     console.log('found no changed group, so not fetching group data');
@@ -2487,16 +2664,17 @@ async function syncToLocalDB(args: any) {
         fetchGroupData({ ...args, group_id: changedGroup }),
       ),
     );
+      //@ts-ignore
+    
     // console.log('allChangedGroupsData: ', printJSON(allChangedGroupsData));
-    await Promise.all(
-      allChangedGroupsData.map((groupData) =>
-        saveGroup({ database: args.database, group: groupData }),
-      ),
-    );
+    await saveGroup(allChangedGroupsData);
     // console.log('savedChangedGroups: ', printJSON(savedChangedGroups));
   }
 
-  const changedGroupsArray = Object.keys(onlineGroups);
+  let changedGroupsArray;
+  if (groupid) changedGroupsArray = [groupid];
+  else changedGroupsArray = Object.keys(onlineGroups);
+
   //TODO: push local changes
   // get remote changes
   const changedItemsForGroups = await Promise.all(
@@ -2519,11 +2697,11 @@ async function syncToLocalDB(args: any) {
     // convert id: version map to array of ids, chuncked by 50 items max
     const chunckedItemsByGroup = changedItemsForGroups.map((item, index) => ({
       group: changedGroupsArray[index],
-      itemIds: _.chunk(Object.keys(item), 50),
+      itemIds: _.chunk(Object.keys(item), 100),
     }));
 
     // console.log('chuncked items by group: ', printJSON(chunckedItemsByGroup));
-    const itemsLastModifiedVersion = {};
+    let itemsLastModifiedVersion = {};
 
     // item children map
     const childrenMap = {};
@@ -2531,85 +2709,149 @@ async function syncToLocalDB(args: any) {
     const referenceMap = {};
 
     // for each group fetch all items with given ids, in batch of 50
-    let allFetchedItems = await Promise.all(
-      chunckedItemsByGroup.map(({ group, itemIds }) =>
-        Promise.all(
-          itemIds.map((chunk) =>
-            fetchItemsByIds({
-              ...args,
-              itemIds: chunk,
-              group,
-            }).then((res) => {
-              itemsLastModifiedVersion[group] =
-                res.headers['last-modified-version'];
+    // 👇️ ts-ignore ignores any ts errors on the next line
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    let allItems = [];
+    let counter = 0;
+    // let Zoterolib = new Zotero({group_id:2259720});
+    // const options =  {"count":false,"top":false,"validate":false}
+    // const result = await Zoterolib.items(options);
+    // console.log('result: ', result.length);
 
-              res.data.forEach((item) => {
-                // get children
-                if (item.data.parentItem) {
-                  childrenMap[item.data.parentItem] = [
-                    ...(childrenMap[item.data.parentItem] || []),
-                    item.key,
-                  ];
-                }
-                // get references
-                if (
-                  (item.data.extra || '').includes('KerkoCite.ItemAlsoKnownAs:')
-                ) {
-                  const kerkoLine = item.data.extra
-                    .split('\n')
-                    .find((i) => i.startsWith('KerkoCite'));
-                  const [, ...refs] = kerkoLine.split(' ');
-                  refs
-                    .filter((i) => !i.includes('zenodo') && i.includes(':'))
-                    .forEach((ref) => {
-                      const srcKey = ref.split(':')[1];
-                      referenceMap[srcKey] = [
-                        ...(referenceMap[srcKey] || []),
-                        srcKey,
-                      ];
-                    });
-                }
-              });
-              return res.data;
-            }),
-          ),
-        ),
-      ),
-    );
+    for (let group of chunckedItemsByGroup) {
+      console.log('group length: ', group.itemIds.length);
+      
+    
+     
+      
+      
+      for (let itemIds of group.itemIds) {
+        // console.log(itemIds);
+        // @ts-ignore
+        try {
+          //console.log('fetching items: ', itemIds);
 
-    allFetchedItems = allFetchedItems.map((groupItems) =>
-      groupItems.flatMap((chunkedItems) => {
-        return chunkedItems.map((chunkedItem) => {
-          chunkedItem.children = childrenMap[chunkedItem.key];
-          chunkedItem.referencedBy = [
-            ...new Set(referenceMap[chunkedItem.key]),
-          ];
-
-          chunkedItem.inconsistent = Boolean(
-            (chunkedItem.children || []).length &&
-              (chunkedItem.referencedBy || []).length,
+          const res = await axios.get(
+            `https://api.zotero.org/groups/${group.group}/items/?itemKey=${itemIds}&includeTrashed=1
+            `,
+            {
+              headers: { Authorization: `Bearer ${args.api_key}` },
+            },
           );
 
-          return chunkedItem;
-        });
+          itemsLastModifiedVersion[group.group] =
+            res.headers['last-modified-version'];
+          
+          
+          
+          await res.data.forEach(async (item) => {
+            if (typeof item.links['attachment'] !== 'undefined') {
+              if (!fs.existsSync(`./attachments/`))
+                fs.mkdirSync(`./attachments/`);
+              if (
+                !fs.existsSync(`./attachments/${args.database}-${group.group}`)
+              )
+                fs.mkdirSync(`./attachments/${args.database}-${group.group}`);
+              // const attachments = await axios.get(
+              //   `https://api.zotero.org/groups/${group.group}/items/${item.key}/children`,
+              //   {
+              //     headers: { Authorization: `Bearer ${args.api_key}` },
+              //   },
+              // );
+
+              // for (const attachment of attachments.data.filter(
+              //   (i) => i.data.itemType === 'attachment',
+              // )) {
+              //   try {
+              //     const response = await axios({
+              //       url: `https://api.zotero.org/groups/${group.group}/items/${attachment.key}/file`,
+              //       method: 'GET',
+              //       responseType: 'stream',
+              //       headers: { Authorization: `Bearer ${args.api_key}` },
+              //     });
+              //     const filepath = `./attachments/${args.database}-${group.group}/${attachment.key}:${group.group} | ${attachment.data.filename}`;
+              //     const file = fs.createWriteStream(filepath);
+              //     response.data.pipe(file);
+              //     file.on('finish', () => {
+              //       file.close();
+              //     });
+              //   } catch (error) {}
+              // }
+            }
+            // get children
+            if (item.data.parentItem) {
+              childrenMap[item.data.parentItem] = [
+                ...(childrenMap[item.data.parentItem] || []),
+                item.key,
+              ];
+            }
+            // get references
+            if (
+              (item.data.extra || '').includes('KerkoCite.ItemAlsoKnownAs:')
+            ) {
+              const kerkoLine = item.data.extra
+                .split('\n')
+                .find((i) => i.startsWith('KerkoCite'));
+              const [, ...refs] = kerkoLine.split(' ');
+              refs
+                .filter((i) => !i.includes('zenodo') && i.includes(':'))
+                .forEach((ref) => {
+                  const srcKey = ref.split(':')[1];
+                  referenceMap[srcKey] = [
+                    ...(referenceMap[srcKey] || []),
+                    srcKey,
+                  ];
+                });
+            }
+          });
+
+          // console.log('res', res);
+          // @ts-ignore
+          await allItems.push(res.data);
+
+          if (++counter % 10 === 0) {
+            console.log('counter: ', counter);
+          }
+        } catch (error) {
+          console.log('error', error);
+        }
+      }
+      let allFetchedItems = allItems.map(async (groupItems) =>
+      groupItems.map(async (chunkedItem) => {
+        chunkedItem.children = childrenMap[chunkedItem.key];
+        chunkedItem.referencedBy = [...new Set(referenceMap[chunkedItem.key])];
+
+        chunkedItem.inconsistent = Boolean(
+          (chunkedItem.children || []).length &&
+            (chunkedItem.referencedBy || []).length,
+        );
+
+        return chunkedItem;
       }),
     );
-    // console.log(allFetchedItems);
-    // console.log(childrenMap);
-    // console.log(referenceMap);
-
+   
+    
     if (allFetchedItems.length) {
       console.log('itemsVersion: ', itemsLastModifiedVersion);
-      // console.log('allfetchedItems: ', printJSON(allFetchedItems));
-      await saveZoteroItems({
-        allFetchedItems,
-        database: args.database,
-        lastModifiedVersion: itemsLastModifiedVersion,
-      }).then(() => console.log('items saved to db'));
+
+      await test(allFetchedItems,itemsLastModifiedVersion,group.group).then(() => console.log('group saved into db ', group.group));
     }
+    // sleep for 1 second
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    allItems = [];
+    allFetchedItems = [];
+    itemsLastModifiedVersion={};
+
+    
+
+    }
+   
   } else {
     console.log('Everything already synced!!! Hurray!!!');
   }
+ 
   const syncEnd = Date.now();
   console.log(`Time taken: ${(syncEnd - syncStart) / 1000}s`);
 }

@@ -1,234 +1,77 @@
-import { ZoteroGroup } from './types';
+import { RequestArgs } from './types';
 
-const sqlite3 = require('sqlite3').verbose();
-const fs = require('fs');
+const axios = require('axios');
 
-export function initDB(dbName) {
-  let db = new sqlite3.Database(dbName);
-  db.exec(`CREATE TABLE IF NOT EXISTS groups (
-        id INT PRIMARY KEY NOT NULL,
-        version INT,
-        itemsVersion INT,
-        data TEXT,
-        createdAt TEXT NOT NULL,
-        updatedAt TEXT NOT NULL
-    );`);
-  db.exec(`CREATE TABLE IF NOT EXISTS items (
-        id TEXT PRIMARY KEY NOT NULL,
-        version INT,
-        synced BOOLEAN,
-        data TEXT,
-        inconsistent BOOLEAN,
-        createdAt TEXT NOT NULL,
-        updatedAt TEXT NOT NULL
-    );`);
+function getZoteroURL(subpath = '') {
+  const BASE_URL = 'https://api.zotero.org';
 
-  return db;
-}
-
-export function createDBConnection(database) {
-  //TODO: if database is not string, it means it could be an initilized connection? so just use it? we need to make this check more rigours, it will execute even if database is not string but also not a valid conection
-  if (typeof database !== 'string') {
-    console.log('connection already opened');
-    return database;
+  if (subpath.trim().length) {
+    return `${BASE_URL}/${subpath}`;
   }
 
-  if (!fs.existsSync(database)) {
-    return initDB(database);
-  }
-
-  return new sqlite3.Database(database);
+  return BASE_URL;
 }
 
-export function getAllGroups({ database }): Promise<Array<ZoteroGroup>> {
-  const db = createDBConnection(database);
-  const sql = 'SELECT * FROM groups';
+export async function fetchCurrentKey(options: RequestArgs = { api_key: '' }) {
+  const { api_key } = options;
 
-  return new Promise((resolve, reject) => {
-    db.all(sql, (err, rows) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(rows);
-      }
-      db.close();
-    });
+  const headers = { Authorization: `Bearer ${api_key}` };
+
+  return axios
+    .get(getZoteroURL('keys/current'), { headers })
+    .then((res) => res.data);
+}
+
+export async function fetchGroups(
+  options: RequestArgs = { api_key: '', user_id: '' },
+) {
+  const { api_key, user_id } = options;
+
+  const headers = { Authorization: `Bearer ${api_key}` };
+
+  return axios
+    .get(getZoteroURL(`users/${user_id}/groups/?format=versions`), { headers })
+    .then((res) => res.data);
+}
+
+export async function fetchGroupData(
+  options: RequestArgs = { api_key: '', user_id: '' },
+) {
+  const { api_key, group_id } = options;
+
+  const headers = { Authorization: `Bearer ${api_key}` };
+
+  const requestURL = getZoteroURL(`groups/${group_id}`);
+  return axios.get(requestURL, { headers }).then((res) => {
+    return res.data;
   });
 }
 
-export async function saveGroup(groupData) {
-  const { database, group } = groupData;
-  return new Promise((res, rej) => {
-    const db = createDBConnection(database);
-    db.get(
-      'SELECT * FROM groups WHERE id = $id',
-      { $id: group.id },
-      (err, row) => {
-        if (err) {
-          rej(err);
-          db.close();
-          return;
-        }
-        if (row) {
-          res(updateGroup({ database, group }));
-        } else {
-          res(createGroup({ database, group }));
-        }
-        db.close();
-      },
-    );
-  });
+export async function getChangedItemsForGroup(options) {
+  const { api_key, group, version = 0 } = options;
+  const headers = { Authorization: `Bearer ${api_key}` };
+
+  return axios
+    .get(
+      getZoteroURL(
+        `groups/${group}/items?since=${version}&format=versions&includeTrashed=1`,
+      ),
+      { headers },
+    )
+    .then((res) => res.data);
 }
 
-export async function createGroup(groupData) {
-  const { database, group } = groupData;
-  return new Promise((res, rej) => {
-    const db = createDBConnection(database);
-    db.run(
-      `INSERT into groups (id,version,data,createdAt,updatedAt) VALUES ($id, $version, $data, datetime('now'), datetime('now'))`,
-      {
-        $id: group.id,
-        $version: group.version,
-        $data: JSON.stringify(group),
-      },
-      (err, row) => {
-        if (err) {
-          rej(err);
-          db.close();
-          return;
-        }
-        res(row);
-        db.close();
-      },
-    );
-  });
-}
+const superagent = require('superagent');
 
-export async function updateGroup(groupData) {
-  const { database, group } = groupData;
-  return new Promise((res, rej) => {
-    const db = createDBConnection(database);
-    db.run(
-      `UPDATE  groups SET version=$version, data=$data, updatedAt=datetime('now') WHERE id=$id`,
-      {
-        id: group.id,
-        version: group.version,
-        data: JSON.stringify(group),
-      },
-      (err, row) => {
-        if (err) {
-          rej(err);
-          db.close();
-          return;
-        }
-        res(row);
-        db.close();
-      },
-    );
-  });
-}
+export async function fetchItemsByIds(options) {
+  const { api_key, group, itemIds } = options;
+  const headers = { Authorization: `Bearer ${api_key}` };
 
-export function saveZoteroItems({
-  allFetchedItems,
-  database,
-  lastModifiedVersion,
-}) {
-  //batch inserts
-  // batch updates
-  //fetch all keys from db first to see which items need to be created/updated
-  // write one big query to insert and update all items at once
-  return new Promise((resolve, reject) => {
-    const db = createDBConnection(database);
-    // console.log('db save start: ', syncStart);
-    db.all('SELECT id from items', (err, rows) => {
-      if (err) {
-        return reject(err);
-      }
-      const existingItemIdsMap = rows.reduce(
-        (a, c) => ({ ...a, [c.id]: c }),
-        {},
-      );
-      const insertSql = `INSERT into items (id,version,data,inconsistent,createdAt,updatedAt) VALUES ($id, $version, $data, $inconsistent, datetime('now'), datetime('now'))`;
-      const updateSql = `UPDATE items SET version=$version, data=$data, inconsistent=$inconsistent, updatedAt=datetime('now') WHERE id=$id`;
-      const itemsLastVersionSql = `UPDATE groups SET itemsVersion=$version, updatedAt=datetime('now') WHERE id=$id`;
+  return superagent
+    .get(getZoteroURL(`groups/${group}/items/?itemKey=${itemIds}`))
+    .set(headers);
 
-      db.serialize(function () {
-        db.run('BEGIN');
-        let createStmt = db.prepare(insertSql);
-        let updateStmt = db.prepare(updateSql);
-        let itemsLastVersionUpdateStmt = db.prepare(itemsLastVersionSql);
-        allFetchedItems.forEach((groupItems) =>
-          groupItems.forEach((item) => {
-            if (item.key in existingItemIdsMap) {
-              // console.log('updating: ', item.key);
-              updateStmt.run({
-                $id: item.key,
-                $version: item.version,
-                $inconsistent: item.inconsistent,
-                $data: JSON.stringify(item),
-              });
-            } else {
-              // console.log('creating: ', item.key);
-              createStmt.run({
-                $id: item.key,
-                $inconsistent: item.inconsistent,
-                $version: item.version,
-                $data: JSON.stringify(item),
-              });
-            }
-          }),
-        );
-
-        Object.entries(lastModifiedVersion).forEach(([group, version]) =>
-          itemsLastVersionUpdateStmt.run({ $id: group, $version: version }),
-        );
-        createStmt.finalize();
-        updateStmt.finalize();
-        itemsLastVersionUpdateStmt.finalize();
-        db.run('COMMIT', () => {
-          db.close();
-          resolve(true);
-        });
-      });
-    });
-  });
-}
-
-export function fetchAllItems({
-  database,
-  filters,
-}: {
-  database: string;
-  filters?: { keys: Array<string>; errors: boolean };
-}): Promise<Array<{ id: string; data: string }>> {
-  const { keys = [], errors = false } = filters || {};
-  console.log('filters: ', filters);
-  let whereClause = ``;
-  if (keys.length) {
-    const ids = keys.map((i) => `"${i}"`).join(',');
-    whereClause = `WHERE id in (${ids})`;
-  }
-
-  if (errors) {
-    if (whereClause.length) {
-      whereClause += `AND inconsistent = true`;
-    } else {
-      whereClause = `WHERE inconsistent = true`;
-    }
-  }
-
-  const db = createDBConnection(database);
-  return new Promise((res, rej) => {
-    const sql = `SELECT id, data FROM items ${whereClause}`;
-    console.log('given sql:', sql);
-    db.all(sql, (err, rows) => {
-      if (err) {
-        rej(err);
-      } else {
-        console.log(`total items found: ${rows.length}`);
-        res(rows);
-      }
-      db.close();
-    });
+  return axios.get(getZoteroURL(`groups/${group}/items/?itemKey=${itemIds}`), {
+    headers,
   });
 }
