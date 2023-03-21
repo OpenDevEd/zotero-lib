@@ -5,10 +5,11 @@ import logger from './logger';
 import sleep from './utils/sleep';
 import cron from 'node-cron';
 
+
 import processExtraField from './utils/processExtraField';
 import newVanityDOI from './utils/newVanityDOI';
 
-
+import compare from './utils/compareItems';
 import { createHttpClient } from './http.client';
 import {
   as_array,
@@ -46,12 +47,11 @@ require('dotenv').config();
 const _ = require('lodash');
 const he = require('he');
 const convert = require('xml-js');
-
+const { exec } = require("child_process");
 const fs = require('fs');
 const path = require('path');
 const LinkHeader = require('http-link-header');
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+
 const ajv = new Ajv();
 
 class Zotero {
@@ -312,7 +312,8 @@ class Zotero {
         this.config,
       );
       if (args.show) {
-        this.show(res);
+        //TODO: this.show(res);
+        //this.show(res);
       }
       out.push(res);
     }
@@ -1241,7 +1242,8 @@ class Zotero {
         },
         this.config,
       );
-      this.show(result);
+      //TODO: this.show(result);
+     // this.show(result);
       // logger.info("/"+result+"/")
       return result;
     }
@@ -1762,6 +1764,20 @@ class Zotero {
   public async manageLocalDB(args) {
     console.log('args: ', { ...args }, this.config);
 
+
+    process.env.DATABASE_URL_2=`file:${process.cwd()}/${args.database}`
+    console.log(process.env.DATABASE_URL_2);
+    
+
+    try {
+      await exec(`npx prisma migrate dev --schema=${process.cwd()}/prisma/schema2.prisma --name 'test2'`);
+    await exec(`npx prisma generate --schema=${process.cwd()}/prisma/schema2.prisma`);
+    } catch (error) {
+      
+      
+    }
+    
+
     if (args.sync) {
       const lockFileName = args.lockfile;
       const runSync = () => {
@@ -1826,7 +1842,119 @@ class Zotero {
     sleep(1000);
     process.exit(0);
   }
+
+  public async deduplicate_func(args:any){
+    const { PrismaClient } = require('@prisma/client');
+    //@ts-ignore
+    const prisma = new PrismaClient();
+    await prisma.$connect();
+    let group_id = args.group_id;
+    // get first item
+    // let item = await prisma.items.findFirst({
+    //   where: {
+    //     group_id,
+    //     id:'MAN2TFDG'
+    //   }});
+    // first is to get all items from the group
+    let allItems = await prisma.items.findMany({
+      where: {
+        group_id,
+        
+      },
+    });
+    // slip into object by item.data.data.itemType
+    let itemsByType = {};
+    for (let item of allItems) {
+      let itemType = item.data.data.itemType;
+      if (itemType in itemsByType) {
+        itemsByType[itemType].push(item);
+      } else {
+        itemsByType[itemType] = [item];
+      }
+    }
+
+    
+
+    // show length of each key
+    for (let key in itemsByType) {
+      console.log(key, itemsByType[key].length);
+    }
+
+    // find dubplicates in each type by item.data.data.title in lowercase
+    // create new object to put the duplicates in and after loop is done add the 
+    let duplicates = {};
+    for(let key in itemsByType){
+      
+      let items = itemsByType[key];
+      
+      let duplicatesInType = [];
+      
+      if(items){
+        for (let i = 0; i < items.length; i++) {
+          let isDuplicate = false;
+          let item = items[i].data.data;
+          // let title = item.title.toLowerCase();
+          // loop through all items and check if there is a duplicate item[j].data.data.title 
+          for (let j = i+1; j < items.length; j++) {
+            let item2 = items[j].data.data;
+            let result = await compare(item,item2)
+            // let title2 = item2.title.toLowerCase();
+            if (result.result && !duplicatesInType.includes(item2.key)) {
+              if(!duplicates[result.reason]) duplicates[result.reason] = {};
+              if(!duplicates[result.reason][item.key]) duplicates[result.reason][item.key] = [];
+              // keep old value inside item.key and add new value inside item.key
+              // duplicates[result.reason][item.key] = {
+              //   ...duplicates[result.reason][item.key],
+              //   "key":item2.key,"version":item2.version
+              // }
+              duplicates[result.reason][item.key].push({"key":item2.key,"version":item2.version});
+              
+              
+              duplicatesInType.push(item2.key);
+              isDuplicate = true;
+            }
+          }
+          if (isDuplicate) {
+  
+  
+            duplicatesInType.push(item.key);
+          }
+  
+          
+  
+  
+        }
+      }
+    
+      // console.log(duplicatesInType.length);
+      // console.log(duplicates);
+      
+      
+      
+      
+      
+      await prisma.$disconnect();
+    await fs.writeFileSync('duplicates.json',JSON.stringify(duplicates,null,2));
+
+
+      
+    
+    // show each item.data
+  
+    
+    
+    
+
+    }
+  } 
+
+
+
   public async resolvefunc(args: any) {
+
+
+    const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
     
     let result = {};
     let { keys } = args;
@@ -1894,7 +2022,8 @@ class Zotero {
             logger.error(error);
             return null;
           }
-
+          // remove rows item_id is the same as the itemid
+          rows = rows.filter((row) => row.item_id !== itemid);
           if (rows) {
             if (rows.length > 1) type = 'redirect_ambiguous';
             else if (rows.length == 1) {
@@ -1938,10 +2067,19 @@ class Zotero {
                   logger.error(error);
                   return null;
                 }
-                
-                
-                if (rowsImportbleItem.length == 1) type = 'importable_redirect';
-                else if (rowsImportbleItem.length > 1) type = 'importable_ambiguous';
+                if(rowsImportbleItem.length != 1) 
+                rowsImportbleItem=rowsImportbleItem.filter((row) => row.id !== itemid)
+
+                if (rowsImportbleItem.length == 1) {
+                  type = 'importable';
+                  data.push(`https://ref.opendeved.net/g/${rowsImportbleItem[0].group_id}/${rowsImportbleItem.id}?openin=zoteroapp`)
+                }
+                else if (rowsImportbleItem.length > 1) {
+                  type = 'importable_ambiguous';
+                  for (let row of rowsImportbleItem) {
+                    data.push(`${row.group_id}:${row.id}`);
+                  }
+                }
                 else 
                 {
                   let rowsImportbleAlsoKnownAs;
@@ -1951,8 +2089,13 @@ class Zotero {
                         data: {
                           contains: `${groupid.toString()}:${itemid}`,
                         },
-                        isDeleted : false
+                        isDeleted : false,
+                        // and item_id != ${itemid}
+                        
+
+
                       },
+
                       select : {
                         data : true,
                         item_id : true,
@@ -1964,8 +2107,23 @@ class Zotero {
                     logger.error(error);
                     return null;
                   }
-                  if (rowsImportbleAlsoKnownAs.length == 1) type = 'importable_redirect';
-                  else if (rowsImportbleAlsoKnownAs.length > 1) type = 'importable_ambiguous';
+                  // remove rows item_id is the same as the itemid 
+                  if(rowsImportbleAlsoKnownAs.length != 1)
+                  rowsImportbleAlsoKnownAs = rowsImportbleAlsoKnownAs.filter((row) => row.item_id !== itemid);
+                  if (rowsImportbleAlsoKnownAs.length == 1) {
+                    type = 'importable_redirect';
+                    data.push(`https://ref.opendeved.net/g/${rowsImportbleAlsoKnownAs[0].group_id}/${rowsImportbleAlsoKnownAs[0].item_id}?openin=zoteroapp`);
+                  }
+                  else if (rowsImportbleAlsoKnownAs.length > 1) {
+
+                    type = 'importable_ambiguous';
+                    for (const row of rowsImportbleAlsoKnownAs) {
+                      if (row.item_id == itemid && group_id == row.group_id)
+                        type = 'valid_ambiguous';
+                      data.push(`https://ref.opendeved.net/g/${row.group_id}/${row.item_id}?openin=zoteroapp`);
+                      //console.log(kerkoLine);
+                    }
+                  }
                   else type = 'unknown';
                 }
               } 
@@ -1974,7 +2132,7 @@ class Zotero {
               for (const row of rows) {
                 if (row.item_id == itemid && group_id == row.group_id)
                   type = 'valid_ambiguous';
-                data.push(row.group_id + ':' + row.item_id);
+                data.push(`https://ref.opendeved.net/g/${row.group_id}/${row.item_id}?openin=zoteroapp`);
                 //console.log(kerkoLine);
               }
             result[key] = { type, data };
@@ -2608,7 +2766,13 @@ class Zotero {
 export = Zotero;
 
 async function syncToLocalDB(args: any) {
-  
+  // print pwd
+
+ // const path = process.cwd() + '/' + args.database;
+
+
+  // excute shell command 
+
   const syncStart = Date.now();
   console.log('syncing local db with online library');
 
@@ -2624,7 +2788,7 @@ async function syncToLocalDB(args: any) {
   // fetch groups version and check which are changed
   const onlineGroups = await fetchGroups({ ...args });
   // console.log('online groups: ', onlineGroups);
-  const offlineGroups = await getAllGroups();
+  const offlineGroups = await getAllGroups(args);
 
 
   // console.log('offline groups: ', offlineGroups);
@@ -2834,7 +2998,7 @@ async function syncToLocalDB(args: any) {
     
     if (allFetchedItems.length) {
       console.log('itemsVersion: ', itemsLastModifiedVersion);
-
+      
       await test(allFetchedItems,itemsLastModifiedVersion,group.group).then(() => console.log('group saved into db ', group.group));
     }
     // sleep for 1 second

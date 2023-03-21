@@ -21,6 +21,7 @@ customCmdHandlers.set('bibliography', 'getbib');
 customCmdHandlers.set('attach-note', 'attach_note');
 customCmdHandlers.set('db', 'manageLocalDB');
 customCmdHandlers.set('resolve', 'resolvefunc');
+customCmdHandlers.set('deduplicate', 'deduplicate_func');
 
 function getFuncName(subCmdName) {
   if (customCmdHandlers.has(subCmdName)) {
@@ -831,6 +832,15 @@ subParsersMap.set('resolve', function (subparsers, subCmdName) {
     nargs: '*',
     help: 'The keys to resolve',
   });
+});
+
+
+subParsersMap.set('deduplicate', function (subparsers, subCmdName) {
+  const argparser = subparsers.add_parser(subCmdName, {
+    help: 'Deduplicate items in a collection.',
+  });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
+
 });
 
 export function configAllParsers(subparsers) {

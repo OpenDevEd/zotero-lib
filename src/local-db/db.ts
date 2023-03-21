@@ -65,8 +65,9 @@ export function createDBConnection(database) {
   return new sqlite3.Database(database);
 }
 
-export async function getAllGroups() {
+export async function getAllGroups(args) {
  
+  
   const groups = await prisma.groups.findMany();
   //await saveGroup();
   return groups; 
