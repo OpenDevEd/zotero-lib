@@ -174,3 +174,9 @@ dist
 #prisma migrations
 
 /prisma/migrations*
+
+/prisma/schema2.prisma
+
+duplicates.json
+
+#TODO: add task to notion

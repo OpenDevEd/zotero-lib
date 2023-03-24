@@ -229,9 +229,9 @@ export async function test(allFetchedItems, lastModifiedVersion , groupId) {
   for await (const items of allFetchedItems) {
     for await (const item of items) {
 
-      
+      if (item.data.deleted == 1) {
       if (!allItemsIds.includes(item.key)) {
-        if (item.data.deleted == 1) {
+       
           await prisma.items.create({
             data: {
               id: item.key,
@@ -245,7 +245,57 @@ export async function test(allFetchedItems, lastModifiedVersion , groupId) {
             },
           });
         }
-        else{
+       
+        
+      
+      else {
+        await prisma.items.update({
+          where: {
+            id: item.key,
+          },
+          data: {
+            version: item.version,
+            data: item,
+            updatedAt: new Date(),
+            isDeleted:true,
+          },
+        });
+      }
+
+      if (item.data.extra) {
+        if (
+          alsoKnownAs.some(
+            (i) => i.item_id === item.key && i.group_id === item.library.id,
+          )
+        ) {
+          await prisma.alsoKnownAs.updateMany({
+            where: {
+              item_id: item.key,
+              group_id: item.library.id,
+            },
+            data: {
+              data: item.data.extra,
+              updatedAt: new Date(),
+              isDeleted:true,
+            },
+          });
+        } else {
+          await prisma.alsoKnownAs.create({
+            data: {
+              item_id: item.key,
+              group_id: item.library.id,
+              data: item.data.extra,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              isDeleted:true,
+            },
+          });
+        }
+      }
+    }
+      else{
+        if (!allItemsIds.includes(item.key)) {
+       
           await prisma.items.create({
             data: {
               id: item.key,
@@ -255,11 +305,59 @@ export async function test(allFetchedItems, lastModifiedVersion , groupId) {
               group_id: item.library.id,
               createdAt: new Date(),
               updatedAt: new Date(),
+             
             },
           });
         }
+       
         
-      } 
+      
+      else {
+        await prisma.items.update({
+          where: {
+            id: item.key,
+          },
+          data: {
+            version: item.version,
+            data: item,
+            updatedAt: new Date(),
+           
+          },
+        });
+      }
+
+      if (item.data.extra) {
+        if (
+          alsoKnownAs.some(
+            (i) => i.item_id === item.key && i.group_id === item.library.id,
+          )
+        ) {
+          await prisma.alsoKnownAs.updateMany({
+            where: {
+              item_id: item.key,
+              group_id: item.library.id,
+            },
+            data: {
+              data: item.data.extra,
+              updatedAt: new Date(),
+              
+            },
+          });
+        } else {
+          await prisma.alsoKnownAs.create({
+            data: {
+              item_id: item.key,
+              group_id: item.library.id,
+              data: item.data.extra,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+             
+            },
+          });
+        }
+      }
+      }
+
       // else if (allItemsIds.includes(item.key) && item.data.deleted==1)
       // {
       //   await prisma.items.delete({
@@ -296,18 +394,7 @@ export async function test(allFetchedItems, lastModifiedVersion , groupId) {
       //   }
       //   );
      //  }
-      else {
-        await prisma.items.update({
-          where: {
-            id: item.key,
-          },
-          data: {
-            version: item.version,
-            data: item,
-            updatedAt: new Date(),
-          },
-        });
-      }
+    
       if (item.data.collections) {
         for await (const collection of item.data.collections) {
           if (!allCollectionsIds.includes(collection)) {
@@ -340,34 +427,7 @@ export async function test(allFetchedItems, lastModifiedVersion , groupId) {
           }
         }
       }
-      if (item.data.extra) {
-        if (
-          alsoKnownAs.some(
-            (i) => i.item_id === item.key && i.group_id === item.library.id,
-          )
-        ) {
-          await prisma.alsoKnownAs.updateMany({
-            where: {
-              item_id: item.key,
-              group_id: item.library.id,
-            },
-            data: {
-              data: item.data.extra,
-              updatedAt: new Date(),
-            },
-          });
-        } else {
-          await prisma.alsoKnownAs.create({
-            data: {
-              item_id: item.key,
-              group_id: item.library.id,
-              data: item.data.extra,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            },
-          });
-        }
-      }
+      
     }
   }
 
