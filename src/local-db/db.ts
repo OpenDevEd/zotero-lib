@@ -65,9 +65,8 @@ export function createDBConnection(database) {
   return new sqlite3.Database(database);
 }
 
-export async function getAllGroups(args) {
+export async function getAllGroups() {
  
-  
   const groups = await prisma.groups.findMany();
   //await saveGroup();
   return groups; 
@@ -205,7 +204,11 @@ export async function test(allFetchedItems, lastModifiedVersion , groupId) {
   const allItemsIds = allItems.map((item) => item.id);
   const allCollections = await prisma.collections.findMany();
   const allCollectionsIds = allCollections.map((collection) => collection.id);
-  const alsoKnownAs = await prisma.alsoKnownAs.findMany();
+  const alsoKnownAs = await prisma.alsoKnownAs.findMany({
+    where: {
+      group_id: parseInt(groupId),
+    },
+  });
   const allGroups = await prisma.groups.findMany();
   const allGroupsIds = allGroups.map((group) => group.id);
 
@@ -225,21 +228,136 @@ export async function test(allFetchedItems, lastModifiedVersion , groupId) {
 
   for await (const items of allFetchedItems) {
     for await (const item of items) {
-      console.log(item.data.deleted);
-      
+
+      if (item.data.deleted == 1) {
       if (!allItemsIds.includes(item.key)) {
-        await prisma.items.create({
-          data: {
+       
+          await prisma.items.create({
+            data: {
+              id: item.key,
+              version: item.version,
+              data: item,
+              inconsistent: item.inconsistent,
+              group_id: item.library.id,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              isDeleted:true,
+            },
+          });
+        }
+       
+        
+      
+      else {
+        await prisma.items.update({
+          where: {
             id: item.key,
+          },
+          data: {
             version: item.version,
             data: item,
-            inconsistent: item.inconsistent,
-            group_id: item.library.id,
-            createdAt: new Date(),
             updatedAt: new Date(),
+            isDeleted:true,
           },
         });
-      } 
+      }
+
+      if (item.data.extra) {
+        if (
+          alsoKnownAs.some(
+            (i) => i.item_id === item.key && i.group_id === item.library.id,
+          )
+        ) {
+          await prisma.alsoKnownAs.updateMany({
+            where: {
+              item_id: item.key,
+              group_id: item.library.id,
+            },
+            data: {
+              data: item.data.extra,
+              updatedAt: new Date(),
+              isDeleted:true,
+            },
+          });
+        } else {
+          await prisma.alsoKnownAs.create({
+            data: {
+              item_id: item.key,
+              group_id: item.library.id,
+              data: item.data.extra,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              isDeleted:true,
+            },
+          });
+        }
+      }
+    }
+      else{
+        if (!allItemsIds.includes(item.key)) {
+       
+          await prisma.items.create({
+            data: {
+              id: item.key,
+              version: item.version,
+              data: item,
+              inconsistent: item.inconsistent,
+              group_id: item.library.id,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+             
+            },
+          });
+        }
+       
+        
+      
+      else {
+        await prisma.items.update({
+          where: {
+            id: item.key,
+          },
+          data: {
+            version: item.version,
+            data: item,
+            updatedAt: new Date(),
+           
+          },
+        });
+      }
+
+      if (item.data.extra) {
+        if (
+          alsoKnownAs.some(
+            (i) => i.item_id === item.key && i.group_id === item.library.id,
+          )
+        ) {
+          await prisma.alsoKnownAs.updateMany({
+            where: {
+              item_id: item.key,
+              group_id: item.library.id,
+            },
+            data: {
+              data: item.data.extra,
+              updatedAt: new Date(),
+              
+            },
+          });
+        } else {
+          await prisma.alsoKnownAs.create({
+            data: {
+              item_id: item.key,
+              group_id: item.library.id,
+              data: item.data.extra,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+             
+            },
+          });
+        }
+      }
+      }
+
       // else if (allItemsIds.includes(item.key) && item.data.deleted==1)
       // {
       //   await prisma.items.delete({
@@ -276,18 +394,7 @@ export async function test(allFetchedItems, lastModifiedVersion , groupId) {
       //   }
       //   );
      //  }
-      else {
-        await prisma.items.update({
-          where: {
-            id: item.key,
-          },
-          data: {
-            version: item.version,
-            data: item,
-            updatedAt: new Date(),
-          },
-        });
-      }
+    
       if (item.data.collections) {
         for await (const collection of item.data.collections) {
           if (!allCollectionsIds.includes(collection)) {
@@ -320,34 +427,7 @@ export async function test(allFetchedItems, lastModifiedVersion , groupId) {
           }
         }
       }
-      if (item.data.extra) {
-        if (
-          alsoKnownAs.some(
-            (i) => i.item_id === item.key && i.group_id === item.library.id,
-          )
-        ) {
-          await prisma.alsoKnownAs.updateMany({
-            where: {
-              item_id: item.key,
-              group_id: item.library.id,
-            },
-            data: {
-              data: item.data.extra,
-              updatedAt: new Date(),
-            },
-          });
-        } else {
-          await prisma.alsoKnownAs.create({
-            data: {
-              item_id: item.key,
-              group_id: item.library.id,
-              data: item.data.extra,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            },
-          });
-        }
-      }
+      
     }
   }
 
@@ -373,7 +453,7 @@ export function saveZoteroItems({
   // batch updates
   //fetch all keys from db first to see which items need to be created/updated
   // write one big query to insert and update all items at once
-  console.log('test');
+
   return new Promise(async (resolve, reject) => {
     // get all items from prisma
     //const allItems = await prisma.items.findMany();

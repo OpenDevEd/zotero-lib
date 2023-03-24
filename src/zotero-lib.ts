@@ -37,7 +37,7 @@ import {
  // saveZoteroItems,
   test
 } from './local-db/db';
-import saveToFile from './local-db/saveToFile';
+//import saveToFile from './local-db/saveToFile';
 import { checkForValidLockFile, removeLockFile } from './lock.utils';
 import axios from 'axios';
 // import printJSON from './utils/printJSON';
@@ -1817,28 +1817,28 @@ class Zotero {
       filters = { errors: args.errors };
     }
 
-    const allItems = await fetchAllItems({
+    await fetchAllItems({
       database: args.database,
       filters,
     });
 
-    const itemsAsJSON = JSON.stringify(
-      allItems.map((item) => item.data),
-      null,
-      2,
-    );
-    if (args.export_json) {
-      console.log('exporting json into file: ', args.export_json);
-      let fileName = args.export_json;
-      if (!fileName.endsWith('.json')) {
-        fileName += '.json';
-      }
-      saveToFile(fileName, itemsAsJSON);
-    } else {
-      if (args.lookup || args.errors) {
-        console.log(itemsAsJSON);
-      }
-    }
+    // const itemsAsJSON = JSON.stringify(
+    //   allItems.map((item) => item.data),
+    //   null,
+    //   2,
+    // );
+    // if (args.export_json) {
+    //   console.log('exporting json into file: ', args.export_json);
+    //   let fileName = args.export_json;
+    //   if (!fileName.endsWith('.json')) {
+    //     fileName += '.json';
+    //   }
+    //   saveToFile(fileName, itemsAsJSON);
+    // } else {
+    //   if (args.lookup || args.errors) {
+    //     console.log(itemsAsJSON);
+    //   }
+    // }
     sleep(1000);
     process.exit(0);
   }
@@ -2788,7 +2788,7 @@ async function syncToLocalDB(args: any) {
   // fetch groups version and check which are changed
   const onlineGroups = await fetchGroups({ ...args });
   // console.log('online groups: ', onlineGroups);
-  const offlineGroups = await getAllGroups(args);
+  const offlineGroups = await getAllGroups();
 
 
   // console.log('offline groups: ', offlineGroups);
