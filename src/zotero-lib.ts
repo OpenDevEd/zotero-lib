@@ -1873,12 +1873,15 @@ class Zotero {
       }
     }
 
-    
+      
 
     // show length of each key
     for (let key in itemsByType) {
       console.log(key, itemsByType[key].length);
     }
+
+    // start timer
+    
 
     // find dubplicates in each type by item.data.data.title in lowercase
     // create new object to put the duplicates in and after loop is done add the 
@@ -1892,23 +1895,30 @@ class Zotero {
       if(items){
         for (let i = 0; i < items.length; i++) {
           let isDuplicate = false;
-          let item = items[i].data.data;
+          let item1 = items[i].data.data;
           // let title = item.title.toLowerCase();
           // loop through all items and check if there is a duplicate item[j].data.data.title 
           for (let j = i+1; j < items.length; j++) {
             let item2 = items[j].data.data;
-            let result = await compare(item,item2,args)
+            let result = await compare(item1,item2,args)
             // let title2 = item2.title.toLowerCase();
             if (result.result && !duplicatesInType.includes(item2.key)) {
               if(!duplicates[result.reason]) duplicates[result.reason] = {};
-              if(!duplicates[result.reason][item.key]) duplicates[result.reason][item.key] = [];
+              if(!duplicates[result.reason][item1.key]) duplicates[result.reason][item1.key] = [];
               // keep old value inside item.key and add new value inside item.key
               // duplicates[result.reason][item.key] = {
               //   ...duplicates[result.reason][item.key],
               //   "key":item2.key,"version":item2.version
               // }
-             
-              duplicates[result.reason][item.key].push({"key":item2.key,"version":item2.version});
+              if(result.reason==='identical')
+              {
+                this.item({
+                  key:item2.key,
+                  addtocollection:["7I6TFI8X"]
+
+                })
+              }
+              duplicates[result.reason][item1.key].push({"key":item2.key,"version":item2.version});
 
              
               
@@ -1918,9 +1928,14 @@ class Zotero {
             }
           }
           if (isDuplicate) {
+           
+               this.item({
+                key:item1.key,
+                addtocollection:["7I6TFI8X"]
+              })
+            
   
-  
-            duplicatesInType.push(item.key);
+            duplicatesInType.push(item1.key);
           }
   
           
@@ -1940,7 +1955,11 @@ class Zotero {
     
     await fs.writeFileSync('duplicates.json',JSON.stringify(duplicates,null,2));
 
+      // end timer and show time in seconds
+      
 
+     
+      
       
     
     // show each item.data
