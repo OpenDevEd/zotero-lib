@@ -1848,7 +1848,6 @@ class Zotero {
     //@ts-ignore
     const prisma = new PrismaClient();
     await prisma.$connect();
-    console.log(args.mode);
     let group_id = args.group_id;
     // get first item
     // let item = await prisma.items.findFirst({
@@ -1938,6 +1937,7 @@ class Zotero {
       
       
       await prisma.$disconnect();
+    
     await fs.writeFileSync('duplicates.json',JSON.stringify(duplicates,null,2));
 
 

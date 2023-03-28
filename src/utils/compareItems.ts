@@ -17,8 +17,8 @@ export default async function compare(
   // process.exit(0);
 
   // compare the two objects
-  if(args.mode ==='undefined'){
-
+  if(!args.mode){
+    
   if (
     (await CompareAllFields(temp, temp2)) &&
     (await compareCreators(temp.creators, temp2.creators))
