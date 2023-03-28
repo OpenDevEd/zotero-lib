@@ -77,7 +77,7 @@ export class HttpClient {
     }
     if (config.verbose) console.error('GET', uri);
     //TODO: remove this
-    //logger.info('get uri: %s', uri);
+    logger.info('get uri: %s', uri);
 
     const requestConfig: any = {
       method: 'get',

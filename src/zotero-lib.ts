@@ -37,7 +37,7 @@ import {
  // saveZoteroItems,
   test
 } from './local-db/db';
-//import saveToFile from './local-db/saveToFile';
+import saveToFile from './local-db/saveToFile';
 import { checkForValidLockFile, removeLockFile } from './lock.utils';
 import axios from 'axios';
 // import printJSON from './utils/printJSON';
@@ -312,7 +312,7 @@ class Zotero {
         this.config,
       );
       if (args.show) {
-        //TODO: this.show(res);
+        TODO: this.show(res);
         //this.show(res);
       }
       out.push(res);
@@ -1243,7 +1243,7 @@ class Zotero {
         this.config,
       );
       //TODO: this.show(result);
-     // this.show(result);
+      this.show(result);
       // logger.info("/"+result+"/")
       return result;
     }
@@ -1817,28 +1817,28 @@ class Zotero {
       filters = { errors: args.errors };
     }
 
-    await fetchAllItems({
+    const allItems = await fetchAllItems({
       database: args.database,
       filters,
     });
 
-    // const itemsAsJSON = JSON.stringify(
-    //   allItems.map((item) => item.data),
-    //   null,
-    //   2,
-    // );
-    // if (args.export_json) {
-    //   console.log('exporting json into file: ', args.export_json);
-    //   let fileName = args.export_json;
-    //   if (!fileName.endsWith('.json')) {
-    //     fileName += '.json';
-    //   }
-    //   saveToFile(fileName, itemsAsJSON);
-    // } else {
-    //   if (args.lookup || args.errors) {
-    //     console.log(itemsAsJSON);
-    //   }
-    // }
+    const itemsAsJSON = JSON.stringify(
+      allItems.map((item) => item.data),
+      null,
+      2,
+    );
+    if (args.export_json) {
+      console.log('exporting json into file: ', args.export_json);
+      let fileName = args.export_json;
+      if (!fileName.endsWith('.json')) {
+        fileName += '.json';
+      }
+      saveToFile(fileName, itemsAsJSON);
+    } else {
+      if (args.lookup || args.errors) {
+        console.log(itemsAsJSON);
+      }
+    }
     sleep(1000);
     process.exit(0);
   }
@@ -1848,6 +1848,7 @@ class Zotero {
     //@ts-ignore
     const prisma = new PrismaClient();
     await prisma.$connect();
+    console.log(args.mode);
     let group_id = args.group_id;
     // get first item
     // let item = await prisma.items.findFirst({
@@ -1897,7 +1898,7 @@ class Zotero {
           // loop through all items and check if there is a duplicate item[j].data.data.title 
           for (let j = i+1; j < items.length; j++) {
             let item2 = items[j].data.data;
-            let result = await compare(item,item2)
+            let result = await compare(item,item2,args)
             // let title2 = item2.title.toLowerCase();
             if (result.result && !duplicatesInType.includes(item2.key)) {
               if(!duplicates[result.reason]) duplicates[result.reason] = {};
@@ -1907,7 +1908,10 @@ class Zotero {
               //   ...duplicates[result.reason][item.key],
               //   "key":item2.key,"version":item2.version
               // }
+             
               duplicates[result.reason][item.key].push({"key":item2.key,"version":item2.version});
+
+             
               
               
               duplicatesInType.push(item2.key);

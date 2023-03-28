@@ -841,6 +841,9 @@ subParsersMap.set('deduplicate', function (subparsers, subCmdName) {
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
 
+  argparser.add_argument('--mode', {
+    choices:['identical','same_doi','identical_in_several_fields','identical_in_lowercase'],
+  });
 });
 
 export function configAllParsers(subparsers) {

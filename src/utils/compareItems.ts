@@ -6,6 +6,7 @@ interface deduplicate_func_result {
 export default async function compare(
   item,
   item2,
+  args
 ): Promise<deduplicate_func_result> {
   let temp = await DeleteExtra(item);
   let temp2 = await DeleteExtra(item2);
@@ -16,6 +17,7 @@ export default async function compare(
   // process.exit(0);
 
   // compare the two objects
+  if(args.mode ==='undefined'){
 
   if (
     (await CompareAllFields(temp, temp2)) &&
@@ -32,7 +34,30 @@ export default async function compare(
   else if (await comareDIO(temp, temp2))
     return { result: true, reason: 'same_doi_but_other_variations' };
 
-  return { result: false, reason: 'not_identical' };
+  
+}
+
+else
+{
+  if (
+    (await CompareAllFields(temp, temp2)) &&
+    (await compareCreators(temp.creators, temp2.creators)) &&
+    args.mode === 'identical'
+
+  )
+    return { result: true, reason: 'identical' };
+  else if (
+    (await CompareAllFieldsLowerCase(temp, temp2)) &&
+    (await compareCreators(temp.creators, temp2.creators))&&
+    args.mode === 'identical_in_lowercase'
+  )
+    return { result: true, reason: 'identical_in_lowercase' };
+  else if (await compareIdenticalInSeveralFields(temp, temp2) && args.mode === 'identical_in_several_fields')
+    return { result: true, reason: 'identical_in_several_fields' };
+  else if (await comareDIO(temp, temp2) && args.mode === 'same_doi')
+    return { result: true, reason: 'same_doi_but_other_variations' };
+}
+return { result: false, reason: 'not_identical' };
 }
 
 // write function to compare creators
@@ -70,6 +95,7 @@ async function DeleteExtra(item) {
   delete temp.dateAdded;
   delete temp.dateModified;
   delete temp.tags;
+  delete temp.version;
 
   return temp;
 }
