@@ -22,6 +22,8 @@ customCmdHandlers.set('attach-note', 'attach_note');
 customCmdHandlers.set('db', 'manageLocalDB');
 customCmdHandlers.set('resolve', 'resolvefunc');
 customCmdHandlers.set('deduplicate', 'deduplicate_func');
+customCmdHandlers.set('merge', 'merge_func');
+
 
 function getFuncName(subCmdName) {
   if (customCmdHandlers.has(subCmdName)) {
@@ -846,6 +848,23 @@ subParsersMap.set('deduplicate', function (subparsers, subCmdName) {
   });
 });
 
+subParsersMap.set('merge', function (subparsers, subCmdName) {
+  const argparser = subparsers.add_parser(subCmdName, {
+    help: 'Deduplicate items in a collection.',
+  });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
+
+  argparser.add_argument('--data', {
+    action: 'store',
+    help: 'The data to merge only accept json format',
+    required: true,
+  });
+  argparser.add_argument('--options', {
+    choices:['identical','same_doi','identical_in_several_fields','identical_in_lowercase'],
+    required: true,
+  });
+
+});
 export function configAllParsers(subparsers) {
   subParsersMap.forEach((subparserFn, key) => {
     subparserFn(subparsers, key);

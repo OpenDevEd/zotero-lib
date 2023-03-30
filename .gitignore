@@ -180,3 +180,8 @@ dist
 duplicates.json
 
 #TODO: add task to notion
+
+tests/test_loop.js
+
+after*.json
+item.json

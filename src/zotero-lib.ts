@@ -1730,6 +1730,9 @@ class Zotero {
     return this.message(0, 'Succes', output);
   }
 
+
+  
+
   /**
    * Get the DOI of the item provided.
    * @param args
@@ -1970,6 +1973,57 @@ class Zotero {
 
     }
   } 
+
+  public async merge_func(args:any){
+
+    // check if the file exists in absolute path and relative path if not show error message and exit
+    if (!fs.existsSync(args.data)) {
+      console.log('file not found');
+      process.exit(1);
+    }
+    else
+    {
+      // read the file and parse it to json
+      let data = await fs.readFileSync(args.data);
+      let items = JSON.parse(data);
+
+
+      for (const itemkey in items) {
+        //get all items from the items and put them in items_temp
+        let items_temp =[itemkey];
+       
+      for (const item in items['identical']) {
+        for (const iterator of items['identical'][item]) {
+          items_temp.push(iterator.key);
+        }
+      }
+
+        console.log(items_temp);
+        
+      }
+      
+
+
+
+    }
+    
+
+  }
+
+  private async getItems(items) {
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+   // get all items from the items 
+    let allItems = await prisma.items.findMany({
+      where: {
+        key: {
+          in: items,
+        },
+      },
+    });
+    return allItems;
+    // check if file exists using fs
+  }
 
 
 
