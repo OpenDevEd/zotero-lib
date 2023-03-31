@@ -2149,7 +2149,7 @@ const prisma = new PrismaClient();
 
                 if (rowsImportbleItem.length == 1) {
                   type = 'importable';
-                  data.push(`https://ref.opendeved.net/g/${rowsImportbleItem[0].group_id}/${rowsImportbleItem.id}?openin=zoteroapp`)
+                  data.push(`https://ref.opendeved.net/g/${rowsImportbleItem[0].group_id}/${rowsImportbleItem.id}/?openin=zoteroapp`)
                 }
                 else if (rowsImportbleItem.length > 1) {
                   type = 'importable_ambiguous';
@@ -2189,7 +2189,7 @@ const prisma = new PrismaClient();
                   rowsImportbleAlsoKnownAs = rowsImportbleAlsoKnownAs.filter((row) => row.item_id !== itemid);
                   if (rowsImportbleAlsoKnownAs.length == 1) {
                     type = 'importable_redirect';
-                    data.push(`https://ref.opendeved.net/g/${rowsImportbleAlsoKnownAs[0].group_id}/${rowsImportbleAlsoKnownAs[0].item_id}?openin=zoteroapp`);
+                    data.push(`https://ref.opendeved.net/g/${rowsImportbleAlsoKnownAs[0].group_id}/${rowsImportbleAlsoKnownAs[0].item_id}/?openin=zoteroapp`);
                   }
                   else if (rowsImportbleAlsoKnownAs.length > 1) {
 
@@ -2197,7 +2197,7 @@ const prisma = new PrismaClient();
                     for (const row of rowsImportbleAlsoKnownAs) {
                       if (row.item_id == itemid && group_id == row.group_id)
                         type = 'valid_ambiguous';
-                      data.push(`https://ref.opendeved.net/g/${row.group_id}/${row.item_id}?openin=zoteroapp`);
+                      data.push(`https://ref.opendeved.net/g/${row.group_id}/${row.item_id}/?openin=zoteroapp`);
                       //console.log(kerkoLine);
                     }
                   }
@@ -2209,7 +2209,7 @@ const prisma = new PrismaClient();
               for (const row of rows) {
                 if (row.item_id == itemid && group_id == row.group_id)
                   type = 'valid_ambiguous';
-                data.push(`https://ref.opendeved.net/g/${row.group_id}/${row.item_id}?openin=zoteroapp`);
+                data.push(`https://ref.opendeved.net/g/${row.group_id}/${row.item_id}/?openin=zoteroapp`);
                 //console.log(kerkoLine);
               }
             result[key] = { type, data };
