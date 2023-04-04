@@ -5,7 +5,6 @@ import logger from './logger';
 import sleep from './utils/sleep';
 import cron from 'node-cron';
 
-
 import processExtraField from './utils/processExtraField';
 import newVanityDOI from './utils/newVanityDOI';
 
@@ -34,8 +33,8 @@ import {
   fetchAllItems,
   getAllGroups,
   saveGroup,
- // saveZoteroItems,
-  test
+  // saveZoteroItems,
+  test,
 } from './local-db/db';
 import saveToFile from './local-db/saveToFile';
 import { checkForValidLockFile, removeLockFile } from './lock.utils';
@@ -47,7 +46,7 @@ require('dotenv').config();
 const _ = require('lodash');
 const he = require('he');
 const convert = require('xml-js');
-const { exec } = require("child_process");
+const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const LinkHeader = require('http-link-header');
@@ -1730,9 +1729,6 @@ class Zotero {
     return this.message(0, 'Succes', output);
   }
 
-
-  
-
   /**
    * Get the DOI of the item provided.
    * @param args
@@ -1767,19 +1763,17 @@ class Zotero {
   public async manageLocalDB(args) {
     console.log('args: ', { ...args }, this.config);
 
-
-    process.env.DATABASE_URL_2=`file:${process.cwd()}/${args.database}`
+    process.env.DATABASE_URL_2 = `file:${process.cwd()}/${args.database}`;
     console.log(process.env.DATABASE_URL_2);
-    
 
     try {
-      await exec(`npx prisma migrate dev --schema=${process.cwd()}/prisma/schema2.prisma --name 'test2'`);
-    await exec(`npx prisma generate --schema=${process.cwd()}/prisma/schema2.prisma`);
-    } catch (error) {
-      
-      
-    }
-    
+      await exec(
+        `npx prisma migrate dev --schema=${process.cwd()}/prisma/schema2.prisma --name 'test2'`,
+      );
+      await exec(
+        `npx prisma generate --schema=${process.cwd()}/prisma/schema2.prisma`,
+      );
+    } catch (error) {}
 
     if (args.sync) {
       const lockFileName = args.lockfile;
@@ -1846,7 +1840,7 @@ class Zotero {
     process.exit(0);
   }
 
-  public async deduplicate_func(args:any){
+  public async deduplicate_func(args: any) {
     const { PrismaClient } = require('@prisma/client');
     //@ts-ignore
     const prisma = new PrismaClient();
@@ -1862,7 +1856,6 @@ class Zotero {
     let allItems = await prisma.items.findMany({
       where: {
         group_id,
-        
       },
     });
     // slip into object by item.data.data.itemType
@@ -1876,147 +1869,126 @@ class Zotero {
       }
     }
 
-      
-
     // show length of each key
     for (let key in itemsByType) {
       console.log(key, itemsByType[key].length);
     }
 
     // start timer
-    
 
     // find dubplicates in each type by item.data.data.title in lowercase
-    // create new object to put the duplicates in and after loop is done add the 
+    // create new object to put the duplicates in and after loop is done add the
     let duplicates = {};
-    for(let key in itemsByType){
-      
+    for (let key in itemsByType) {
       let items = itemsByType[key];
-      
+
       let duplicatesInType = [];
-      
-      if(items){
+
+      if (items) {
         for (let i = 0; i < items.length; i++) {
           let isDuplicate = false;
           let item1 = items[i].data.data;
           // let title = item.title.toLowerCase();
-          // loop through all items and check if there is a duplicate item[j].data.data.title 
-          for (let j = i+1; j < items.length; j++) {
+          // loop through all items and check if there is a duplicate item[j].data.data.title
+          for (let j = i + 1; j < items.length; j++) {
             let item2 = items[j].data.data;
-            let result = await compare(item1,item2,args)
+            let result = await compare(item1, item2, args);
             // let title2 = item2.title.toLowerCase();
             if (result.result && !duplicatesInType.includes(item2.key)) {
-              if(!duplicates[result.reason]) duplicates[result.reason] = {};
-              if(!duplicates[result.reason][item1.key]) duplicates[result.reason][item1.key] = [];
+              if (!duplicates[result.reason]) duplicates[result.reason] = {};
+              if (!duplicates[result.reason][item1.key])
+                duplicates[result.reason][item1.key] = [];
               // keep old value inside item.key and add new value inside item.key
               // duplicates[result.reason][item.key] = {
               //   ...duplicates[result.reason][item.key],
               //   "key":item2.key,"version":item2.version
               // }
-              if(result.reason==='identical')
-              {
+              if (
+                result.reason === 'identical' &&
+                args.collection &&
+                Array.isArray(item2.collections)
+              ) {
                 this.item({
-                  key:item2.key,
-                  addtocollection:["7I6TFI8X"]
-
-                })
+                  key: item2.key,
+                  addtocollection: [args.collection],
+                });
               }
-              duplicates[result.reason][item1.key].push({"key":item2.key,"version":item2.version});
+              duplicates[result.reason][item1.key].push({
+                key: item2.key,
+                version: item2.version,
+              });
 
-             
-              
-              
               duplicatesInType.push(item2.key);
               isDuplicate = true;
             }
           }
           if (isDuplicate) {
-           
-               this.item({
-                key:item1.key,
-                addtocollection:["7I6TFI8X"]
-              })
-            
-  
+            if (Array.isArray(item1.collections) && args.collection)
+              this.item({
+                key: item1.key,
+                addtocollection: [args.collection],
+              });
+
             duplicatesInType.push(item1.key);
           }
-  
-          
-  
-  
         }
       }
-    
+
       // console.log(duplicatesInType.length);
       // console.log(duplicates);
-      
-      
-      
-      
-      
+
       await prisma.$disconnect();
-    
-    await fs.writeFileSync('duplicates.json',JSON.stringify(duplicates,null,2));
+
+      await fs.writeFileSync(
+        'duplicates.json',
+        JSON.stringify(duplicates, null, 2),
+      );
 
       // end timer and show time in seconds
-      
 
-     
-      
-      
-    
-    // show each item.data
-  
-    
-    
-    
-
+      // show each item.data
     }
-  } 
+  }
 
-  public async merge_func(args:any){
-
-    // check if the file exists in absolute path and relative path if not show error message and exit
+  public async merge_func(args: any) {
     if (!fs.existsSync(args.data)) {
       console.log('file not found');
       process.exit(1);
-    }
-    else
-    {
-      // read the file and parse it to json
+    } else {
       let data = await fs.readFileSync(args.data);
       let items = JSON.parse(data);
 
+        let itemList = []
 
-      for (const itemkey in items) {
-        //get all items from the items and put them in items_temp
-        let items_temp =[itemkey];
-       
-      for (const item in items['identical']) {
-        for (const iterator of items['identical'][item]) {
-          items_temp.push(iterator.key);
+        for (const item in items[args.options]) {
+          
+          //@ts-ignore
+          let tempList = []
+          for (const iterator of items[args.options][item]) {
+            tempList.push(iterator.key)
+            
+            
+          }
+          tempList.push(item)
+          itemList.push(tempList)
+          
         }
-      }
-
-        console.log(items_temp);
+       
         
-      }
+        // let itemData = await this.getItems(itemList);
+        console.log(itemList);
+        
       
-
-
-
     }
-    
-
   }
-
+  //@ts-ignore
   private async getItems(items) {
     const { PrismaClient } = require('@prisma/client');
     const prisma = new PrismaClient();
-   // get all items from the items 
-    let allItems = await prisma.items.findMany({
+    // get all items from the items
+    let allItems = await prisma.items.count({
       where: {
-        key: {
+        id: {
           in: items,
         },
       },
@@ -2025,202 +1997,188 @@ class Zotero {
     // check if file exists using fs
   }
 
-
-
   public async resolvefunc(args: any) {
-
-
     const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
-    
+    const prisma = new PrismaClient();
+
     let result = {};
     let { keys } = args;
     let group_id = args.groupid;
     // check if file exists using fs
-   
-      //TODO: use one query to get all items from file
-      if (keys) {
-        
-        for (let key of keys) {
-          let type;
-          let data = [];
-          let groupid;
-          let itemid;
-          // check if the key is 8 characters long and all uppercase and all letters btween A and Z
-          if (key.length === 8 && key == key.toUpperCase()) {
-            groupid = group_id;
-            itemid = key;
-            key = `${groupid}:${itemid}`;
-          } else [groupid, itemid] = key.split(':');
 
-          // split key into groupid and itemid
-          if (!groupid || !itemid) {
-            type = 'invalid_syntax';
-            data = [];
-            result[key] = { type, data };
-            continue;
-          }
-          let rows;
-          
-          
-          try {
-            if (group_id)
+    //TODO: use one query to get all items from file
+    if (keys) {
+      for (let key of keys) {
+        let type;
+        let data = [];
+        let groupid;
+        let itemid;
+        // check if the key is 8 characters long and all uppercase and all letters btween A and Z
+        if (key.length === 8 && key == key.toUpperCase()) {
+          groupid = group_id;
+          itemid = key;
+          key = `${groupid}:${itemid}`;
+        } else [groupid, itemid] = key.split(':');
+
+        // split key into groupid and itemid
+        if (!groupid || !itemid) {
+          type = 'invalid_syntax';
+          data = [];
+          result[key] = { type, data };
+          continue;
+        }
+        let rows;
+
+        try {
+          if (group_id)
             rows = await prisma.alsoKnownAs.findMany({
-             
               where: {
                 group_id: parseInt(group_id),
                 data: {
                   contains: `${groupid.toString()}:${itemid}`,
                 },
-                isDeleted : false
+                isDeleted: false,
               },
-              select : {
-                data : true,
-                item_id : true,
-                group_id : true
+              select: {
+                data: true,
+                item_id: true,
+                group_id: true,
               },
             });
-            else
+          else
             rows = await prisma.alsoKnownAs.findMany({
               where: {
                 data: {
                   contains: `${groupid.toString()}:${itemid}`,
                 },
-                isDeleted : false
+                isDeleted: false,
               },
-              select : {
-                data : true,
-                item_id : true,
-                group_id : true
+              select: {
+                data: true,
+                item_id: true,
+                group_id: true,
               },
             });
-           
-          } catch (error) {
-            logger.error(error);
-            return null;
-          }
-          // remove rows item_id is the same as the itemid
-          rows = rows.filter((row) => row.item_id !== itemid);
-          if (rows) {
-            if (rows.length > 1) type = 'redirect_ambiguous';
-            else if (rows.length == 1) {
-              if (rows[0].item_id == itemid) type = 'valid';
-              else type = 'redirect';
-            } else {
-          //    let sqlitem = `SELECT *  FROM items where group_id =${group_id} and id='${itemid}';`;
-              let rowsitem;
+        } catch (error) {
+          logger.error(error);
+          return null;
+        }
+        // remove rows item_id is the same as the itemid
+        rows = rows.filter((row) => row.item_id !== itemid);
+        if (rows) {
+          if (rows.length > 1) type = 'redirect_ambiguous';
+          else if (rows.length == 1) {
+            if (rows[0].item_id == itemid) type = 'valid';
+            else type = 'redirect';
+          } else {
+            //    let sqlitem = `SELECT *  FROM items where group_id =${group_id} and id='${itemid}';`;
+            let rowsitem;
+            try {
+              rowsitem = await prisma.items.findMany({
+                where: {
+                  group_id: parseInt(group_id),
+                  id: itemid,
+                  isDeleted: false,
+                },
+              });
+            } catch (error) {
+              logger.error(error);
+              return null;
+            }
+            if (rowsitem.length == 1) type = 'valid';
+            else {
+              let rowsImportbleItem;
               try {
-               
-                rowsitem = await prisma.items.findMany({
+                rowsImportbleItem = await prisma.items.findMany({
                   where: {
                     group_id: parseInt(group_id),
                     id: itemid,
-                    isDeleted : false
+                    isDeleted: false,
                   },
-                  
-                  });
+                });
               } catch (error) {
                 logger.error(error);
                 return null;
               }
-              if (rowsitem.length == 1) type = 'valid'; 
-              else
-              {
+              if (rowsImportbleItem.length != 1)
+                rowsImportbleItem = rowsImportbleItem.filter(
+                  (row) => row.id !== itemid,
+                );
 
-                let rowsImportbleItem;
-                try {
-                  rowsImportbleItem = await prisma.items.findMany({
-                    where: {
-                      group_id: parseInt(group_id),
-                      id: itemid,
-                      isDeleted : false
-                    },
-                    });
-
-                 
-                  
+              if (rowsImportbleItem.length == 1) {
+                type = 'importable';
+                data.push(
+                  `https://ref.opendeved.net/g/${rowsImportbleItem[0].group_id}/${rowsImportbleItem.id}/?openin=zoteroapp`,
+                );
+              } else if (rowsImportbleItem.length > 1) {
+                type = 'importable_ambiguous';
+                for (let row of rowsImportbleItem) {
+                  data.push(`${row.group_id}:${row.id}`);
                 }
-                catch (error) {
+              } else {
+                let rowsImportbleAlsoKnownAs;
+                try {
+                  rowsImportbleAlsoKnownAs = await prisma.alsoKnownAs.findMany({
+                    where: {
+                      data: {
+                        contains: `${groupid.toString()}:${itemid}`,
+                      },
+                      isDeleted: false,
+                      // and item_id != ${itemid}
+                    },
+
+                    select: {
+                      data: true,
+                      item_id: true,
+                      group_id: true,
+                    },
+                  });
+                } catch (error) {
                   logger.error(error);
                   return null;
                 }
-                if(rowsImportbleItem.length != 1) 
-                rowsImportbleItem=rowsImportbleItem.filter((row) => row.id !== itemid)
-
-                if (rowsImportbleItem.length == 1) {
-                  type = 'importable';
-                  data.push(`https://ref.opendeved.net/g/${rowsImportbleItem[0].group_id}/${rowsImportbleItem.id}/?openin=zoteroapp`)
-                }
-                else if (rowsImportbleItem.length > 1) {
+                // remove rows item_id is the same as the itemid
+                if (rowsImportbleAlsoKnownAs.length != 1)
+                  rowsImportbleAlsoKnownAs = rowsImportbleAlsoKnownAs.filter(
+                    (row) => row.item_id !== itemid,
+                  );
+                if (rowsImportbleAlsoKnownAs.length == 1) {
+                  type = 'importable_redirect';
+                  data.push(
+                    `https://ref.opendeved.net/g/${rowsImportbleAlsoKnownAs[0].group_id}/${rowsImportbleAlsoKnownAs[0].item_id}/?openin=zoteroapp`,
+                  );
+                } else if (rowsImportbleAlsoKnownAs.length > 1) {
                   type = 'importable_ambiguous';
-                  for (let row of rowsImportbleItem) {
-                    data.push(`${row.group_id}:${row.id}`);
+                  for (const row of rowsImportbleAlsoKnownAs) {
+                    if (row.item_id == itemid && group_id == row.group_id)
+                      type = 'valid_ambiguous';
+                    data.push(
+                      `https://ref.opendeved.net/g/${row.group_id}/${row.item_id}/?openin=zoteroapp`,
+                    );
+                    //console.log(kerkoLine);
                   }
-                }
-                else 
-                {
-                  let rowsImportbleAlsoKnownAs;
-                  try {
-                    rowsImportbleAlsoKnownAs = await prisma.alsoKnownAs.findMany({
-                      where: {
-                        data: {
-                          contains: `${groupid.toString()}:${itemid}`,
-                        },
-                        isDeleted : false,
-                        // and item_id != ${itemid}
-                        
-
-
-                      },
-
-                      select : {
-                        data : true,
-                        item_id : true,
-                        group_id : true
-                      },
-                    });
-                  }
-                  catch (error) {
-                    logger.error(error);
-                    return null;
-                  }
-                  // remove rows item_id is the same as the itemid 
-                  if(rowsImportbleAlsoKnownAs.length != 1)
-                  rowsImportbleAlsoKnownAs = rowsImportbleAlsoKnownAs.filter((row) => row.item_id !== itemid);
-                  if (rowsImportbleAlsoKnownAs.length == 1) {
-                    type = 'importable_redirect';
-                    data.push(`https://ref.opendeved.net/g/${rowsImportbleAlsoKnownAs[0].group_id}/${rowsImportbleAlsoKnownAs[0].item_id}/?openin=zoteroapp`);
-                  }
-                  else if (rowsImportbleAlsoKnownAs.length > 1) {
-
-                    type = 'importable_ambiguous';
-                    for (const row of rowsImportbleAlsoKnownAs) {
-                      if (row.item_id == itemid && group_id == row.group_id)
-                        type = 'valid_ambiguous';
-                      data.push(`https://ref.opendeved.net/g/${row.group_id}/${row.item_id}/?openin=zoteroapp`);
-                      //console.log(kerkoLine);
-                    }
-                  }
-                  else type = 'unknown';
-                }
-              } 
-            }
-            if (type != 'valid')
-              for (const row of rows) {
-                if (row.item_id == itemid && group_id == row.group_id)
-                  type = 'valid_ambiguous';
-                data.push(`https://ref.opendeved.net/g/${row.group_id}/${row.item_id}/?openin=zoteroapp`);
-                //console.log(kerkoLine);
+                } else type = 'unknown';
               }
-            result[key] = { type, data };
-          } else {
-            console.log(`No data found for key ${key}`);
+            }
           }
+          if (type != 'valid')
+            for (const row of rows) {
+              if (row.item_id == itemid && group_id == row.group_id)
+                type = 'valid_ambiguous';
+              data.push(
+                `https://ref.opendeved.net/g/${row.group_id}/${row.item_id}/?openin=zoteroapp`,
+              );
+              //console.log(kerkoLine);
+            }
+          result[key] = { type, data };
+        } else {
+          console.log(`No data found for key ${key}`);
         }
-
-        return result;
       }
-    
+
+      return result;
+    }
+
     return null;
   }
 
@@ -2845,10 +2803,9 @@ export = Zotero;
 async function syncToLocalDB(args: any) {
   // print pwd
 
- // const path = process.cwd() + '/' + args.database;
+  // const path = process.cwd() + '/' + args.database;
 
-
-  // excute shell command 
+  // excute shell command
 
   const syncStart = Date.now();
   console.log('syncing local db with online library');
@@ -2860,13 +2817,11 @@ async function syncToLocalDB(args: any) {
 
   args.user_id = userID;
   const { groupid } = args;
-  
 
   // fetch groups version and check which are changed
   const onlineGroups = await fetchGroups({ ...args });
   // console.log('online groups: ', onlineGroups);
   const offlineGroups = await getAllGroups();
-
 
   // console.log('offline groups: ', offlineGroups);
   const offlineItemsVersion = offlineGroups.reduce(
@@ -2881,7 +2836,6 @@ async function syncToLocalDB(args: any) {
     );
 
     let res = [];
-    
 
     for (let group in online) {
       if (online[group] !== localGroupsMap[group]) {
@@ -2905,8 +2859,8 @@ async function syncToLocalDB(args: any) {
         fetchGroupData({ ...args, group_id: changedGroup }),
       ),
     );
-      //@ts-ignore
-    
+    //@ts-ignore
+
     // console.log('allChangedGroupsData: ', printJSON(allChangedGroupsData));
     await saveGroup(allChangedGroupsData);
     // console.log('savedChangedGroups: ', printJSON(savedChangedGroups));
@@ -2962,11 +2916,7 @@ async function syncToLocalDB(args: any) {
 
     for (let group of chunckedItemsByGroup) {
       console.log('group length: ', group.itemIds.length);
-      
-    
-     
-      
-      
+
       for (let itemIds of group.itemIds) {
         // console.log(itemIds);
         // @ts-ignore
@@ -2983,9 +2933,7 @@ async function syncToLocalDB(args: any) {
 
           itemsLastModifiedVersion[group.group] =
             res.headers['last-modified-version'];
-          
-          
-          
+
           await res.data.forEach(async (item) => {
             if (typeof item.links['attachment'] !== 'undefined') {
               if (!fs.existsSync(`./attachments/`))
@@ -3059,40 +3007,39 @@ async function syncToLocalDB(args: any) {
         }
       }
       let allFetchedItems = allItems.map(async (groupItems) =>
-      groupItems.map(async (chunkedItem) => {
-        chunkedItem.children = childrenMap[chunkedItem.key];
-        chunkedItem.referencedBy = [...new Set(referenceMap[chunkedItem.key])];
+        groupItems.map(async (chunkedItem) => {
+          chunkedItem.children = childrenMap[chunkedItem.key];
+          chunkedItem.referencedBy = [
+            ...new Set(referenceMap[chunkedItem.key]),
+          ];
 
-        chunkedItem.inconsistent = Boolean(
-          (chunkedItem.children || []).length &&
-            (chunkedItem.referencedBy || []).length,
+          chunkedItem.inconsistent = Boolean(
+            (chunkedItem.children || []).length &&
+              (chunkedItem.referencedBy || []).length,
+          );
+
+          return chunkedItem;
+        }),
+      );
+
+      if (allFetchedItems.length) {
+        console.log('itemsVersion: ', itemsLastModifiedVersion);
+
+        await test(allFetchedItems, itemsLastModifiedVersion, group.group).then(
+          () => console.log('group saved into db ', group.group),
         );
+      }
+      // sleep for 1 second
+      await new Promise((resolve) => setTimeout(resolve, 0));
 
-        return chunkedItem;
-      }),
-    );
-   
-    
-    if (allFetchedItems.length) {
-      console.log('itemsVersion: ', itemsLastModifiedVersion);
-      
-      await test(allFetchedItems,itemsLastModifiedVersion,group.group).then(() => console.log('group saved into db ', group.group));
+      allItems = [];
+      allFetchedItems = [];
+      itemsLastModifiedVersion = {};
     }
-    // sleep for 1 second
-    await new Promise((resolve) => setTimeout(resolve, 0));
-
-    allItems = [];
-    allFetchedItems = [];
-    itemsLastModifiedVersion={};
-
-    
-
-    }
-   
   } else {
     console.log('Everything already synced!!! Hurray!!!');
   }
- 
+
   const syncEnd = Date.now();
   console.log(`Time taken: ${(syncEnd - syncStart) / 1000}s`);
 }

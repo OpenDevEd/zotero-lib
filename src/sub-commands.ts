@@ -846,6 +846,11 @@ subParsersMap.set('deduplicate', function (subparsers, subCmdName) {
   argparser.add_argument('--mode', {
     choices:['identical','same_doi','identical_in_several_fields','identical_in_lowercase'],
   });
+  argparser.add_argument('--collection', {
+    action: 'store',
+    help: 'The collection to deduplicate',
+    
+  });
 });
 
 subParsersMap.set('merge', function (subparsers, subCmdName) {
