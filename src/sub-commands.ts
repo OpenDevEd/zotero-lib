@@ -163,8 +163,8 @@ subParsersMap.set('item', function (subparsers, subCmdName) {
     help: 'json-schema file for all itemtypes, or directory with schema files, one per itemtype.',
   });
   argparser.add_argument('--fullresponse', {
-    choices:['true', 'false'],
-    help: 'Supply a json file with authors database, enabling extra author information to be added for crossref. If --crossref or --zenodo are specified without --author-data, default settings in your configuration director are checked: ~/.config/zotero-cli/author-data.json',
+    action: 'store_true',
+    help: 'Return the full response from the Zotero API.',
   });
 });
 
