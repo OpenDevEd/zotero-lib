@@ -10,13 +10,26 @@ const Zotero = require('../build/zotero-lib');
   // get all types
   let types = await zotero.types();
   let result=[];
+  let list = [];
   console.log("------------------");
   for (let i = 0; i < types.length; i++) {
     const element = types[i];
     let temp = await zotero.create_item({template: element.itemType});
-    result.push(temp);
-    // get all keys
+    //get all keys 
     let keys = Object.keys(temp);
+    // add unique keys to keys array
+    if(element.itemType ==='report')
+    for (let j = 0; j < keys.length; j++) {
+      const key = keys[j];
+      if (list.indexOf(key) === -1) {
+        list.push(key);
+      }
+    }
+
+   
+    
+    // get all keys
+     keys = Object.keys(temp);
     // search inside each key in keys for arg0 with indexOf
     console.log("---------",element.itemType,"------");
     if(element.itemType ==='email')
@@ -37,5 +50,7 @@ const Zotero = require('../build/zotero-lib');
     
     
   }
-  //console.log(result);
+  const fs = require('fs');
+  // save list to file
+  fs.writeFileSync("keys2.txt" , list.join(",\r"));
 })();

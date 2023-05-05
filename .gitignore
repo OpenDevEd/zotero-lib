@@ -185,3 +185,5 @@ tests/test_loop.js
 
 after*.json
 item.json
+before*.json
+keys*.txt

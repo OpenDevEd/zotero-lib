@@ -45,6 +45,8 @@ model collections {
   collection_items collection_items[]
 }
 
+
+
 model collection_items {
   id       Int      @id @default(autoincrement())
   createdAt DateTime 
