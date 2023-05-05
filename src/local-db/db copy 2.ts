@@ -1,5 +1,6 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+
+
+
 
 const sqlite3 = require('sqlite3').verbose();
 const fs = require('fs');
@@ -52,6 +53,7 @@ export function initDB(dbName) {
 }
 
 export function createDBConnection(database) {
+  
   //TODO: if database is not string, it means it could be an initilized connection? so just use it? we need to make this check more rigours, it will execute even if database is not string but also not a valid conection
   if (typeof database !== 'string') {
     console.log('connection already opened');
@@ -65,17 +67,33 @@ export function createDBConnection(database) {
   return new sqlite3.Database(database);
 }
 
-export async function getAllGroups() {
+export async function getAllGroups(args) {
+  const { PrismaClient } = require('../../prisma/generated/client2/index.js');
+const prisma = new PrismaClient();
  
-  const groups = await prisma.groups.findMany();
+  try {
+    const groups = await prisma.groups.findMany();
+    return groups; 
+  } catch (error) {
+    
+    
+    if(error.code === 'P2021'){
+      console.log(`database were generated in ${process.cwd()}/${args.database}\nplease rerun the same command`);
+      
+    }
+    
+    process.exit(1);
+    
+  }
   //await saveGroup();
-  return groups; 
+  
 }
-5;
+
 
 export async function saveGroup(groupData) {
  
- 
+  const { PrismaClient } = require('../../prisma/generated/client2/index.js');
+  const prisma = new PrismaClient();
   const groups = await prisma.groups.findMany();
   const groupIds = groups.map((group) => group.id);
   for (const group of groupData) {
@@ -195,7 +213,8 @@ export function getAllCollections({ database }) {
 // get alsoKnownAs for a group and item
 
 export async function test(allFetchedItems, lastModifiedVersion , groupId) {
- 
+  const { PrismaClient } = require('../../prisma/generated/client2/index.js');
+  const prisma = new PrismaClient();
   const allItems = await prisma.items.findMany({
     where: {
       group_id: parseInt(groupId),
@@ -204,11 +223,7 @@ export async function test(allFetchedItems, lastModifiedVersion , groupId) {
   const allItemsIds = allItems.map((item) => item.id);
   const allCollections = await prisma.collections.findMany();
   const allCollectionsIds = allCollections.map((collection) => collection.id);
-  const alsoKnownAs = await prisma.alsoKnownAs.findMany({
-    where: {
-      group_id: parseInt(groupId),
-    },
-  });
+  const alsoKnownAs = await prisma.alsoKnownAs.findMany();
   const allGroups = await prisma.groups.findMany();
   const allGroupsIds = allGroups.map((group) => group.id);
 
@@ -228,136 +243,20 @@ export async function test(allFetchedItems, lastModifiedVersion , groupId) {
 
   for await (const items of allFetchedItems) {
     for await (const item of items) {
-
-      if (item.data.deleted == 1) {
+      
       if (!allItemsIds.includes(item.key)) {
-       
-          await prisma.items.create({
-            data: {
-              id: item.key,
-              version: item.version,
-              data: item,
-              inconsistent: item.inconsistent,
-              group_id: item.library.id,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-              isDeleted:true,
-            },
-          });
-        }
-       
-        
-      
-      else {
-        await prisma.items.update({
-          where: {
-            id: item.key,
-          },
+        await prisma.items.create({
           data: {
+            id: item.key,
             version: item.version,
-            data: item,
+            data: JSON.stringify(item),
+            inconsistent: item.inconsistent,
+            group_id: item.library.id,
+            createdAt: new Date(),
             updatedAt: new Date(),
-            isDeleted:true,
           },
         });
-      }
-
-      if (item.data.extra) {
-        if (
-          alsoKnownAs.some(
-            (i) => i.item_id === item.key && i.group_id === item.library.id,
-          )
-        ) {
-          await prisma.alsoKnownAs.updateMany({
-            where: {
-              item_id: item.key,
-              group_id: item.library.id,
-            },
-            data: {
-              data: item.data.extra,
-              updatedAt: new Date(),
-              isDeleted:true,
-            },
-          });
-        } else {
-          await prisma.alsoKnownAs.create({
-            data: {
-              item_id: item.key,
-              group_id: item.library.id,
-              data: item.data.extra,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-              isDeleted:true,
-            },
-          });
-        }
-      }
-    }
-      else{
-        if (!allItemsIds.includes(item.key)) {
-       
-          await prisma.items.create({
-            data: {
-              id: item.key,
-              version: item.version,
-              data: item,
-              inconsistent: item.inconsistent,
-              group_id: item.library.id,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-             
-            },
-          });
-        }
-       
-        
-      
-      else {
-        await prisma.items.update({
-          where: {
-            id: item.key,
-          },
-          data: {
-            version: item.version,
-            data: item,
-            updatedAt: new Date(),
-           
-          },
-        });
-      }
-
-      if (item.data.extra) {
-        if (
-          alsoKnownAs.some(
-            (i) => i.item_id === item.key && i.group_id === item.library.id,
-          )
-        ) {
-          await prisma.alsoKnownAs.updateMany({
-            where: {
-              item_id: item.key,
-              group_id: item.library.id,
-            },
-            data: {
-              data: item.data.extra,
-              updatedAt: new Date(),
-              
-            },
-          });
-        } else {
-          await prisma.alsoKnownAs.create({
-            data: {
-              item_id: item.key,
-              group_id: item.library.id,
-              data: item.data.extra,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-             
-            },
-          });
-        }
-      }
-      }
-
+      } 
       // else if (allItemsIds.includes(item.key) && item.data.deleted==1)
       // {
       //   await prisma.items.delete({
@@ -394,7 +293,18 @@ export async function test(allFetchedItems, lastModifiedVersion , groupId) {
       //   }
       //   );
      //  }
-    
+      else {
+        await prisma.items.update({
+          where: {
+            id: item.key,
+          },
+          data: {
+            version: item.version,
+            data: JSON.stringify(item),
+            updatedAt: new Date(),
+          },
+        });
+      }
       if (item.data.collections) {
         for await (const collection of item.data.collections) {
           if (!allCollectionsIds.includes(collection)) {
@@ -427,7 +337,34 @@ export async function test(allFetchedItems, lastModifiedVersion , groupId) {
           }
         }
       }
-      
+      if (item.data.extra) {
+        if (
+          alsoKnownAs.some(
+            (i) => i.item_id === item.key && i.group_id === item.library.id,
+          )
+        ) {
+          await prisma.alsoKnownAs.updateMany({
+            where: {
+              item_id: item.key,
+              group_id: item.library.id,
+            },
+            data: {
+              data: item.data.extra,
+              updatedAt: new Date(),
+            },
+          });
+        } else {
+          await prisma.alsoKnownAs.create({
+            data: {
+              item_id: item.key,
+              group_id: item.library.id,
+              data: item.data.extra,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          });
+        }
+      }
     }
   }
 
@@ -639,7 +576,8 @@ export async function fetchAllItems({
   database: string;
   filters?: { keys: Array<string>; errors: boolean };
 }): Promise<Array<{ id: string; data: string }>> {
- 
+  const { PrismaClient } = require('../../prisma/generated/client2/index.js');
+  const prisma = new PrismaClient();
  // get all items count from database
   const allItemsCount = await prisma.items.count();
 

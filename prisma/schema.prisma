@@ -5,9 +5,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
+
 datasource db {
   provider = "postgresql"
-  url      = "postgresql://postgres:1234@localhost:5432/test_backup1"
+  url      = env("DATABASE_URL_POST")
+  relationMode = "prisma"
 }
 
 model groups {
@@ -32,6 +34,8 @@ model items {
   isDeleted Boolean @default(false)
   collection_items collection_items[]
   alsoKnownAs alsoKnownAs[]
+
+  @@index([group_id])
 }
 
 model collections {
@@ -41,6 +45,8 @@ model collections {
   collection_items collection_items[]
 }
 
+
+
 model collection_items {
   id       Int      @id @default(autoincrement())
   createdAt DateTime 
@@ -49,6 +55,9 @@ model collection_items {
   collection collections @relation(fields: [collection_id], references: [id])
   item_id String
   item items @relation(fields: [item_id], references: [id])
+
+  @@index([collection_id])
+  @@index([item_id])
 }
 
 model alsoKnownAs {
@@ -61,4 +70,7 @@ model alsoKnownAs {
   updatedAt DateTime
   data String
   isDeleted Boolean @default(false)
+
+  @@index([item_id])
+  @@index([group_id])
 }
