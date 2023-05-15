@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+  <doi_batch version="4.4.2" xmlns="http://www.crossref.org/schema/4.4.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:jats="http://www.ncbi.nlm.nih.gov/JATS1" xsi:schemaLocation="http://www.crossref.org/schema/4.4.2 http://www.crossref.org/schema/deposit/crossref4.4.2.xsd">
+  <head>
+  <doi_batch_id>BATCH_20230515160105000</doi_batch_id>
+  <timestamp>20230515160105000</timestamp>
+  <depositor>
+    <depositor_name>bjoern@opendeved.net:odel</depositor_name> 
+    <email_address>bjoern@opendeved.net</email_address>
+  </depositor>
+  <registrant>zotero-lib</registrant> 
+  </head>
+  <body>
+    <report-paper>
+      <report-paper_metadata>
+        <contributors>
+        <person_name sequence='first' contributor_role='author'>
+      <given_name></given_name>
+      <surname>Jordan, Katy</surname>
+</person_name>
+<person_name sequence='additional' contributor_role='author'>
+      <given_name>Kalifa</given_name>
+      <surname>Damani</surname>
+</person_name>
+<person_name sequence='additional' contributor_role='author'>
+      <given_name>Christina</given_name>
+      <surname>Myers</surname>
+</person_name>
+<person_name sequence='additional' contributor_role='author'>
+      <given_name>Phoebe</given_name>
+      <surname>Khagame</surname>
+</person_name>
+<person_name sequence='additional' contributor_role='author'>
+      <given_name>Albina</given_name>
+      <surname>Mumbi</surname>
+</person_name>
+<person_name sequence='additional' contributor_role='author'>
+      <given_name>Lydia</given_name>
+      <surname>Njuguna</surname>
+</person_name>
+        </contributors>
+        <titles>
+         <title>Learners and Caregivers&apos; Barriers and Attitudes to SMS-based Mobile Learning in Kenya: Key findings from a telephone survey</title>
+        </titles>
+        <jats:abstract xml:lang='en'>
+        <jats:p>An output of the EdTech Hub, https://edtechhub.org</jats:p>
+        </jats:abstract>    
+        <publication_date media_type='online'>
+        <month>03</month>
+        <day>31</day>
+        <year>2023</year>
+        </publication_date>
+        <publisher>
+         <publisher_name>EdTech Hub</publisher_name>
+        </publisher>
+        <institution>
+         <institution_name>EdTech Hub</institution_name>
+        </institution>
+        <doi_data>
+         <doi>10.53832/edtechhub.0162</doi>
+         <resource>https://docs.edtechhub.org/lib/FQV2DUEH</resource>
+        </doi_data>
+    </report-paper_metadata>
+   </report-paper>
+  </body>
+  </doi_batch>
