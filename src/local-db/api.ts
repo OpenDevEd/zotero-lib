@@ -61,17 +61,17 @@ export async function getChangedItemsForGroup(options) {
     .then((res) => res.data);
 }
 
-const superagent = require('superagent');
+// const superagent = require('superagent');
 
-export async function fetchItemsByIds(options) {
-  const { api_key, group, itemIds } = options;
-  const headers = { Authorization: `Bearer ${api_key}` };
+// export async function fetchItemsByIds(options) {
+//   const { api_key, group, itemIds } = options;
+//   const headers = { Authorization: `Bearer ${api_key}` };
 
-  return superagent
-    .get(getZoteroURL(`groups/${group}/items/?itemKey=${itemIds}`))
-    .set(headers);
+//   return superagent
+//     .get(getZoteroURL(`groups/${group}/items/?itemKey=${itemIds}`))
+//     .set(headers);
 
-  return axios.get(getZoteroURL(`groups/${group}/items/?itemKey=${itemIds}`), {
-    headers,
-  });
-}
+//   return axios.get(getZoteroURL(`groups/${group}/items/?itemKey=${itemIds}`), {
+//     headers,
+//   });
+// }
