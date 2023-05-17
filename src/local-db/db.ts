@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+
 
 const sqlite3 = require('sqlite3').verbose();
 const fs = require('fs');
@@ -66,6 +65,9 @@ export function createDBConnection(database) {
 }
 
 export async function getAllGroups() {
+
+  const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
  
   const groups = await prisma.groups.findMany();
   //await saveGroup();
@@ -74,7 +76,8 @@ export async function getAllGroups() {
 5;
 
 export async function saveGroup(groupData) {
- 
+  const { PrismaClient } = require('@prisma/client');
+  const prisma = new PrismaClient();
  
   const groups = await prisma.groups.findMany();
   const groupIds = groups.map((group) => group.id);
@@ -195,6 +198,8 @@ export function getAllCollections({ database }) {
 // get alsoKnownAs for a group and item
 
 export async function test(allFetchedItems, lastModifiedVersion , groupId) {
+  const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
  
   const allItems = await prisma.items.findMany({
     where: {
@@ -639,7 +644,8 @@ export async function fetchAllItems({
   database: string;
   filters?: { keys: Array<string>; errors: boolean };
 }): Promise<Array<{ id: string; data: string }>> {
- 
+  const { PrismaClient } = require('@prisma/client');
+  const prisma = new PrismaClient();
  // get all items count from database
   const allItemsCount = await prisma.items.count();
 
