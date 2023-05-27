@@ -1856,23 +1856,27 @@ class Zotero {
     let allItems = await prisma.items.findMany({
       where: {
         group_id,
+        isDeleted: false,
       },
     });
     // slip into object by item.data.data.itemType
     let itemsByType = {};
     for (let item of allItems) {
       let itemType = item.data.data.itemType;
-      if (itemType in itemsByType) {
-        itemsByType[itemType].push(item);
-      } else {
-        itemsByType[itemType] = [item];
+      if(!['attachment', 'note'].includes(itemType)){
+        if (itemType in itemsByType ) {
+          itemsByType[itemType].push(item);
+        } else {
+          itemsByType[itemType] = [item];
+        }
       }
+     
     }
 
     // show length of each key
-    for (let key in itemsByType) {
-      console.log(key, itemsByType[key].length);
-    }
+    // for (let key in itemsByType) {
+    //   console.log(key, itemsByType[key].length);
+    // }
 
     // start timer
 
@@ -1884,7 +1888,7 @@ class Zotero {
 
       let duplicatesInType = [];
 
-      if (items) {
+      if (items && !['attachment', 'note'].includes(key)) {
         for (let i = 0; i < items.length; i++) {
           let isDuplicate = false;
           let item1 = items[i].data.data;
@@ -1933,7 +1937,8 @@ class Zotero {
           }
         }
       }
-
+      console.log(key, duplicatesInType.length);
+      
       // console.log(duplicatesInType.length);
       // console.log(duplicates);
 

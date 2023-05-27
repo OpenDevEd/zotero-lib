@@ -53,7 +53,7 @@ else
   )
     return { result: true, reason: 'identical_in_lowercase' };
   else if (await compareIdenticalInSeveralFields(temp, temp2) && args.mode === 'identical_in_several_fields')
-    return { result: true, reason: 'identical_in_several_fields' };
+    return { result: true, reason: 'identicalInTitleAndAuthors' };
   else if (await comareDIO(temp, temp2) && args.mode === 'same_doi')
     return { result: true, reason: 'same_doi_but_other_variations' };
 }
@@ -81,6 +81,7 @@ async function compareCreators(creators, creators2) {
         }
       }
     }
+    else return false;
   } catch (error) {
     console.log(error);
   }
@@ -96,6 +97,7 @@ async function DeleteExtra(item) {
   delete temp.dateModified;
   delete temp.tags;
   delete temp.version;
+  delete temp.collections;
 
   return temp;
 }
@@ -108,9 +110,14 @@ async function CompareAllFields(item, item2) {
   //TODO: compare date by convonerting to date and then compare
   let keys = Object.keys(item);
 
+  // compare creators
+  if (!(await compareCreators(item.creators, item2.creators))) return false;
+
   // remove creator key
   keys.splice(keys.indexOf('creators'), 1);
   keys.splice(keys.indexOf('key'), 1);
+  
+  
 
   for (let i = 0; i < keys.length; i++) {
     if (item[keys[i]] !== item2[keys[i]]) {
@@ -129,7 +136,7 @@ async function CompareAllFieldsLowerCase(item, item2) {
   keys.splice(keys.indexOf('creators'), 1);
   keys.splice(keys.indexOf('key'), 1);
 
-  if (keys) {
+  
     for (let i = 0; i < keys.length; i++) {
       // check the type of the value if it is string then convert to lowercase
       if (
@@ -149,7 +156,7 @@ async function CompareAllFieldsLowerCase(item, item2) {
         }
       }
     }
-  }
+  
 
   return true;
 }
@@ -158,9 +165,17 @@ async function compareIdenticalInSeveralFields(item, item2) {
   // compare the two objects
   // get all the keys of the object
   if (!['statute', 'note', 'email', 'case'].includes(item.itemType)) {
+    // console.log(item.key,item2.key,await compareCreators(item.creators, item2.creators));
+   
+    
     if (
+      //TODO : create a tag to ignore detecting the item _ignore-duplicate
+      //TODO : check for title, creators 
+      //TODO : change the category from indenticalInSeveralFields to identicalInTitleAndAuthors
+      //
       item.title.toLowerCase() === item2.title.toLowerCase() &&
-      item.itemType.toLowerCase() === item2.itemType.toLowerCase() &&
+      //TODO : remove itemTypes
+     // item.itemType.toLowerCase() === item2.itemType.toLowerCase() &&
       (await compareCreators(item.creators, item2.creators))
     )
       return true;
@@ -183,8 +198,13 @@ async function compareIdenticalInSeveralFields(item, item2) {
 
   return false;
 }
-//@ts-ignore
-var stringSimilarity = require('string-similarity');
+
+
+
+
+
+// //@ts-ignore
+// var stringSimilarity = require('string-similarity');
 async function comareDIO(item, item2) {
   // if(item.DOI && item2.DOI){
   //   var similarity = stringSimilarity.compareTwoStrings(item2.title, item.title);

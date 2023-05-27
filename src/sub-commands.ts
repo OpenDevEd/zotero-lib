@@ -22,7 +22,7 @@ customCmdHandlers.set('attach-note', 'attach_note');
 customCmdHandlers.set('db', 'manageLocalDB');
 customCmdHandlers.set('resolve', 'resolvefunc');
 customCmdHandlers.set('deduplicate', 'deduplicate_func');
-customCmdHandlers.set('merge', 'merge_func');
+customCmdHandlers.set('merge', 'merge_func'); 
 
 
 function getFuncName(subCmdName) {
