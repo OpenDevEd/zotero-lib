@@ -1883,12 +1883,15 @@ class Zotero {
     // find dubplicates in each type by item.data.data.title in lowercase
     // create new object to put the duplicates in and after loop is done add the
     let duplicates = {};
+    let items =[]
     for (let key in itemsByType) {
-      let items = itemsByType[key];
-
+      if(!['attachment', 'note'].includes(key))
+       items = [...items, ...itemsByType[key]]
+    }
+      
       let duplicatesInType = [];
 
-      if (items && !['attachment', 'note'].includes(key)) {
+      if (items ) {
         for (let i = 0; i < items.length; i++) {
           let isDuplicate = false;
           let item1 = items[i].data.data;
@@ -1936,8 +1939,8 @@ class Zotero {
             duplicatesInType.push(item1.key);
           }
         }
-      }
-      console.log(key, duplicatesInType.length);
+      
+      console.log(duplicatesInType.length);
       
       // console.log(duplicatesInType.length);
       // console.log(duplicates);
@@ -1953,6 +1956,194 @@ class Zotero {
 
       // show each item.data
     }
+  }
+
+  public async Move_deduplicate_to_collection(args: any) {
+    // read deduplicate json file
+
+    if (!fs.existsSync(args.file)) {
+      console.log('file not found');
+      process.exit(1);
+    }
+    let data = await fs.readFileSync(args.file);
+    let items = JSON.parse(data);
+    let keys = Object.keys(items);
+    if(!keys.length)
+    logger.info('no items found in file');
+
+   
+    
+
+    // get collection id from args
+
+    const {collection,group_id} = args;
+    console.log(collection);
+    
+
+    // check what category in deduplicate json file
+
+    const collectionData= await this.collection({
+      group_id,
+      key: collection,
+    });
+    if(!collectionData){
+      logger.info('collection not found');
+      process.exit(1);
+    }
+    // check if subcollection exists
+    let subCollectionToCreate = [];
+    let subCollectionData= await this.collections({
+      group_id,
+      key: collection,
+      terse: true,
+    });
+    console.log(subCollectionData);
+    
+    //check if key exists in subcollection
+    if(subCollectionData.length){
+      for(const key of keys){
+        let isExist = false;
+      for (const collection of subCollectionData) {
+       if(collection.name === key){
+        console.log(key,'key already exists in collection');
+        isExist = true;
+       }
+        
+      }
+      if(!isExist){
+        subCollectionToCreate.push(key);
+      console.log(key,'not found in subcollection');
+      }
+      
+    }
+    if(subCollectionToCreate.length)
+      await this.collections({
+        group_id,
+        key: collection,
+        create_child: subCollectionToCreate,
+      });
+    }
+
+    // add items to sub collection
+    console.log(items);
+    subCollectionData= await this.collections({
+      group_id,
+      key: collection,
+      terse: true,
+    });
+    console.log(subCollectionData);
+    
+    
+    for (const key of keys) {
+      let itemData = items[key];
+      let collection = await subCollectionData.find((collection) => {
+        return collection.name === key;
+      });
+      console.log(collection,key);
+      
+      for (const item in itemData) {
+        let finalName = item;
+        let collections = await this.collections({
+          group_id,
+          key:collection.key,
+          terse: true,
+        });
+        for (const iterator of itemData[item]) {
+          finalName = finalName + ' , ' + iterator.key;
+          
+        }
+        if(collections.length){
+          let isExist = false;
+          for (const collection of collections) {
+            if(collection.name === finalName){
+              isExist = true;
+              console.log('item already exists in collection');
+              await this.item({
+                key: item,
+                addtocollection: [collection.key],
+                verbose: true,
+              });
+              for (const iterator of itemData[item]) {
+                finalName = finalName + ' , ' + iterator.key;
+                await this.item({
+                  key: iterator.key,
+                  addtocollection: [collection.key],
+                  verbose: true,
+                });
+              }
+            }
+            
+          }
+          if(!isExist){
+          let collectionTemp =  await this.collections({
+              group_id,
+              create_child: [finalName],
+              key: collection.key,
+            });
+          
+
+            await this.item({
+              key: item,
+              addtocollection: [collectionTemp['0'].key],
+              verbose: true,
+            });
+            for (const iterator of itemData[item]) {
+              finalName = finalName + ' , ' + iterator.key;
+              await this.item({
+                key: iterator.key,
+                addtocollection: [collectionTemp['0'].key],
+                verbose: true,
+              });
+            }
+            
+          }
+         
+
+
+          
+          
+        }else{
+          let collectionTemp =  await this.collections({
+            group_id,
+            create_child: [finalName],
+            key: collection.key,
+          });
+        
+
+          await this.item({
+            key: item,
+            addtocollection: [collectionTemp['0'].key],
+            verbose: true,
+          });
+          for (const iterator of itemData[item]) {
+            finalName = finalName + ' , ' + iterator.key;
+            await this.item({
+              key: iterator.key,
+              addtocollection: [collectionTemp['0'].key],
+              verbose: true,
+            });
+          }
+        }
+
+       
+        
+        
+        
+
+        
+      }
+    }
+    
+    
+    
+    
+
+    
+
+
+
+
+
   }
 
   public async merge_func(args: any) {

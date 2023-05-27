@@ -30,7 +30,7 @@ export default async function compare(
   )
     return { result: true, reason: 'identical_in_lowercase' };
   else if (await compareIdenticalInSeveralFields(temp, temp2))
-    return { result: true, reason: 'identical_in_several_fields' };
+    return { result: true, reason: 'identicalInTitleAndAuthors' };
   else if (await comareDIO(temp, temp2))
     return { result: true, reason: 'same_doi_but_other_variations' };
 
@@ -69,8 +69,11 @@ async function compareCreators(creators, creators2) {
       (creators2 === undefined || creators2 === null)
     )
       return true;
+    if(creators === undefined || creators === null || creators2 === undefined || creators2 === null)
+      return false;
     if (creators.length === 0 && creators2.length === 0) return true;
 
+    
     if (creators.length === creators2.length) {
       for (let i = 0; i < creators.length; i++) {
         if (
@@ -111,6 +114,7 @@ async function CompareAllFields(item, item2) {
   let keys = Object.keys(item);
 
   // compare creators
+  
   if (!(await compareCreators(item.creators, item2.creators))) return false;
 
   // remove creator key
@@ -164,21 +168,27 @@ async function CompareAllFieldsLowerCase(item, item2) {
 async function compareIdenticalInSeveralFields(item, item2) {
   // compare the two objects
   // get all the keys of the object
-  if (!['statute', 'note', 'email', 'case'].includes(item.itemType)) {
+  if (!['statute', 'note', 'email', 'case','annotation'].includes(item.itemType)
+  && !['statute', 'note', 'email', 'case','annotation'].includes(item2.itemType)
+  ) {
     // console.log(item.key,item2.key,await compareCreators(item.creators, item2.creators));
-   
+    try {
+      if (
+        //TODO : create a tag to ignore detecting the item _ignore-duplicate
+        //TODO : check for title, creators 
+        //TODO : change the category from indenticalInSeveralFields to identicalInTitleAndAuthors
+        //
+        item.title.toLowerCase() === item2.title.toLowerCase() &&
+        //TODO : remove itemTypes
+       // item.itemType.toLowerCase() === item2.itemType.toLowerCase() &&
+        (await compareCreators(item.creators, item2.creators))
+      )
+        return true;
+    } catch (error) {
+      console.log(item2.itemType);
+      
+    }
     
-    if (
-      //TODO : create a tag to ignore detecting the item _ignore-duplicate
-      //TODO : check for title, creators 
-      //TODO : change the category from indenticalInSeveralFields to identicalInTitleAndAuthors
-      //
-      item.title.toLowerCase() === item2.title.toLowerCase() &&
-      //TODO : remove itemTypes
-     // item.itemType.toLowerCase() === item2.itemType.toLowerCase() &&
-      (await compareCreators(item.creators, item2.creators))
-    )
-      return true;
   }
 
   if (item.itemType === 'note' && item2.itemType === 'note') {
