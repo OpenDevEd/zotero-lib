@@ -1895,10 +1895,19 @@ class Zotero {
         for (let i = 0; i < items.length; i++) {
           let isDuplicate = false;
           let item1 = items[i].data.data;
+          let tags1 = item1.tags ? item1.tags.map((tag) => tag.tag) : [];
+          if(tags1.includes('_ignore-duplicate')) continue;
+
           // let title = item.title.toLowerCase();
           // loop through all items and check if there is a duplicate item[j].data.data.title
           for (let j = i + 1; j < items.length; j++) {
             let item2 = items[j].data.data;
+            
+            let tags2 =  item2.tags ? item2.tags.map((tag) => tag.tag) : [];
+            if(tags2.includes('_ignore-duplicate')) continue;
+            
+            // create array of tag objects from item1 and item2
+            
             let result = await compare(item1, item2, args);
             // let title2 = item2.title.toLowerCase();
             if (result.result && !duplicatesInType.includes(item2.key)) {
@@ -1940,7 +1949,13 @@ class Zotero {
           }
         }
       
-      console.log(duplicatesInType.length);
+      
+      console.log('number of total duplicates:', duplicatesInType.length);
+      // print length of duplicates in each type
+      for(let key in duplicates){
+        console.log(key, ":",Object.keys(duplicates[key]).length);
+      }
+      
       
       // console.log(duplicatesInType.length);
       // console.log(duplicates);

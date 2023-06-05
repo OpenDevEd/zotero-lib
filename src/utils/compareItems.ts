@@ -93,6 +93,7 @@ async function compareCreators(creators, creators2) {
 //@ts-ignore
 async function DeleteExtra(item) {
   let temp = item;
+  
   delete temp.accessDate;
   delete temp.extra;
   delete temp.relations;
@@ -165,52 +166,78 @@ async function CompareAllFieldsLowerCase(item, item2) {
   return true;
 }
 
+// async function compareIdenticalInSeveralFields(item, item2) {
+//   // compare the two objects
+//   // get all the keys of the object
+//   if (!['statute', 'note', 'email', 'case','annotation'].includes(item.itemType)
+//   && !['statute', 'note', 'email', 'case','annotation'].includes(item2.itemType)
+//   ) {
+//     // console.log(item.key,item2.key,await compareCreators(item.creators, item2.creators));
+//     try {
+//       if (
+//         //TODO : create a tag to ignore detecting the item _ignore-duplicate
+//         //TODO : check for title, creators 
+//         //TODO : change the category from indenticalInSeveralFields to identicalInTitleAndAuthors
+//         //
+//         item.title.toLowerCase() === item2.title.toLowerCase() &&
+//         //TODO : remove itemTypes
+//        // item.itemType.toLowerCase() === item2.itemType.toLowerCase() &&
+//         (await compareCreators(item.creators, item2.creators))
+//       )
+//         return true;
+//     } catch (error) {
+//       console.log(item2.itemType);
+      
+//     }
+    
+//   }
+
+//   if (item.itemType === 'note' && item2.itemType === 'note') {
+//     if (item.note.toLowerCase() === item2.note.toLowerCase()) return true;
+//   }
+//   if (item.itemType === 'email' && item2.itemType === 'email') {
+//     if (item.subject.toLowerCase() === item2.subject.toLowerCase()) return true;
+//   }
+//   if (item.itemType === 'statute' && item2.itemType === 'statute') {
+//     if (item.nameOfAct.toLowerCase() === item2.nameOfAct.toLowerCase())
+//       return true;
+//   }
+//   if (item.itemType === 'case' && item2.itemType === 'case') {
+//     if (item.caseName.toLowerCase() === item2.caseName.toLowerCase())
+//       return true;
+//   }
+
+//   return false;
+// }
+
+
 async function compareIdenticalInSeveralFields(item, item2) {
-  // compare the two objects
-  // get all the keys of the object
-  if (!['statute', 'note', 'email', 'case','annotation'].includes(item.itemType)
-  && !['statute', 'note', 'email', 'case','annotation'].includes(item2.itemType)
-  ) {
-    // console.log(item.key,item2.key,await compareCreators(item.creators, item2.creators));
-    try {
-      if (
-        //TODO : create a tag to ignore detecting the item _ignore-duplicate
-        //TODO : check for title, creators 
-        //TODO : change the category from indenticalInSeveralFields to identicalInTitleAndAuthors
-        //
-        item.title.toLowerCase() === item2.title.toLowerCase() &&
-        //TODO : remove itemTypes
-       // item.itemType.toLowerCase() === item2.itemType.toLowerCase() &&
-        (await compareCreators(item.creators, item2.creators))
-      )
-        return true;
-    } catch (error) {
-      console.log(item2.itemType);
+  const keys1 = Object.keys(item);
+  const keys2 = Object.keys(item2);
+
+
+  const keys = ['title', 'email', 'note', 'subject', 'statute', 'case', 'annotation'];
+
+
+  let score = 0;
+  for (const key1 of keys1) {
+    for (const key2 of keys2) {
+
+      if(keys.includes(key1) && keys.includes(key2))
+      {
+        if (item[key1].toLowerCase()  === item2[key2].toLowerCase() && item[key1] !== null && item2[key2] !== null && item[key1] !== undefined && item2[key2] !== undefined) {
+          score++;
+        }
+        if(compareCreators(item.creators, item2.creators))
+          score++;
+      }
+      
+      
       
     }
-    
   }
-
-  if (item.itemType === 'note' && item2.itemType === 'note') {
-    if (item.note.toLowerCase() === item2.note.toLowerCase()) return true;
-  }
-  if (item.itemType === 'email' && item2.itemType === 'email') {
-    if (item.subject.toLowerCase() === item2.subject.toLowerCase()) return true;
-  }
-  if (item.itemType === 'statute' && item2.itemType === 'statute') {
-    if (item.nameOfAct.toLowerCase() === item2.nameOfAct.toLowerCase())
-      return true;
-  }
-  if (item.itemType === 'case' && item2.itemType === 'case') {
-    if (item.caseName.toLowerCase() === item2.caseName.toLowerCase())
-      return true;
-  }
-
-  return false;
+  return score > 1;
 }
-
-
-
 
 
 // //@ts-ignore
