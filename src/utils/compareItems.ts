@@ -31,7 +31,7 @@ export default async function compare(
     return { result: true, reason: 'identical_in_lowercase' };
   else if (await compareIdenticalInSeveralFields(temp, temp2))
     return { result: true, reason: 'identicalInTitleAndAuthors' };
-  else if (await comareDIO(temp, temp2))
+  else if (await compareDIO(temp, temp2))
     return { result: true, reason: 'same_doi_but_other_variations' };
 
   
@@ -54,7 +54,7 @@ else
     return { result: true, reason: 'identical_in_lowercase' };
   else if (await compareIdenticalInSeveralFields(temp, temp2) && args.mode === 'identical_in_several_fields')
     return { result: true, reason: 'identicalInTitleAndAuthors' };
-  else if (await comareDIO(temp, temp2) && args.mode === 'same_doi')
+  else if (await compareDIO(temp, temp2) && args.mode === 'same_doi')
     return { result: true, reason: 'same_doi_but_other_variations' };
 }
 return { result: false, reason: 'not_identical' };
@@ -111,7 +111,7 @@ async function CompareAllFields(item, item2) {
   // compare the two objects
   // get all the keys of the object
 
-  //TODO: compare date by convonerting to date and then compare
+  //TODO: compare date by convert to date and then compare
   let keys = Object.keys(item);
 
   // compare creators
@@ -177,7 +177,7 @@ async function CompareAllFieldsLowerCase(item, item2) {
 //       if (
 //         //TODO : create a tag to ignore detecting the item _ignore-duplicate
 //         //TODO : check for title, creators 
-//         //TODO : change the category from indenticalInSeveralFields to identicalInTitleAndAuthors
+//         //TODO : change the category from identicalInSeveralFields to identicalInTitleAndAuthors
 //         //
 //         item.title.toLowerCase() === item2.title.toLowerCase() &&
 //         //TODO : remove itemTypes
@@ -211,38 +211,43 @@ async function CompareAllFieldsLowerCase(item, item2) {
 // }
 
 
-async function compareIdenticalInSeveralFields(item, item2) {
+async function compareIdenticalInSeveralFields(item: any, item2: any): Promise<boolean> {
   const keys1 = Object.keys(item);
   const keys2 = Object.keys(item2);
 
-
   const keys = ['title', 'email', 'note', 'subject', 'statute', 'case', 'annotation'];
-
 
   let score = 0;
   for (const key1 of keys1) {
-    for (const key2 of keys2) {
+    if (!keys.includes(key1)) {
+      continue;
+    }
 
-      if(keys.includes(key1) && keys.includes(key2))
-      {
-        if (item[key1].toLowerCase()  === item2[key2].toLowerCase() && item[key1] !== null && item2[key2] !== null && item[key1] !== undefined && item2[key2] !== undefined) {
-          score++;
-        }
-        if(compareCreators(item.creators, item2.creators))
-          score++;
+    for (const key2 of keys2) {
+      if (!keys.includes(key2)) {
+        continue;
       }
-      
-      
-      
+
+      const value1 = item[key1]?.toLowerCase()?.trim();
+      const value2 = item2[key2]?.toLowerCase()?.trim();
+
+      if (value1 && value2 && value1 === value2) {
+        score++;
+      }
     }
   }
+
+  if (await compareCreators(item.creators, item2.creators)) {
+    score++;
+  }
+
   return score > 1;
 }
 
 
 // //@ts-ignore
 // var stringSimilarity = require('string-similarity');
-async function comareDIO(item, item2) {
+async function compareDIO(item, item2) {
   // if(item.DOI && item2.DOI){
   //   var similarity = stringSimilarity.compareTwoStrings(item2.title, item.title);
   //   if(similarity > 0.73) {

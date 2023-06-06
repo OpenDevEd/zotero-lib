@@ -3,7 +3,7 @@
 import formatAsXMP from './utils/formatAsXMP';
 import formatAsCrossRefXML from './utils/formatAsCrossRefXML';
 import printJSON from './utils/printJSON';
-import Zotero from './zotero-lib';
+import {Zotero} from './zotero-lib';
 import { ArgumentParser } from 'argparse';
 import formatAsZenodoJson from './utils/formatAsZenodoJson';
 import logger from './logger';

@@ -39,6 +39,7 @@ import {
 import saveToFile from './local-db/saveToFile';
 import { checkForValidLockFile, removeLockFile } from './lock.utils';
 import axios from 'axios';
+import { merge_items } from './utils/merge';
 // import printJSON from './utils/printJSON';
 
 require('dotenv').config();
@@ -53,7 +54,7 @@ const LinkHeader = require('http-link-header');
 
 const ajv = new Ajv();
 
-class Zotero {
+export class Zotero {
   // The following config keys are expected/allowed,
   // with both "-" and "_". The corresponding variables have _
   config_keys = [
@@ -2182,6 +2183,8 @@ class Zotero {
           }
           tempList.push(item)
           itemList.push(tempList)
+          await merge_items(args.group_id,tempList)
+          
           
         }
        
@@ -3009,7 +3012,7 @@ class Zotero {
   }
 }
 
-export = Zotero;
+
 
 async function syncToLocalDB(args: any) {
   // print pwd

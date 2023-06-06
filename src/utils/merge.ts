@@ -1,4 +1,4 @@
-import Zotero from '../zotero-lib';
+import {Zotero} from '../zotero-lib';
 
 async function getItems(items: string[]): Promise<{}> {
   const { PrismaClient } = require('@prisma/client');
@@ -147,7 +147,7 @@ async function mergeTwoItems(groupid, base, deleted) {
       key: deletedItem.result.key,
       json: {
         deleted: 1,
-        title: `deleted ${deletedItem.result.data.title}`,
+        // title: `deleted ${deletedItem.result.data.title}`,
       },
     });
     // update base item
