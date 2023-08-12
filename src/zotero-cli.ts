@@ -3,7 +3,7 @@
 import formatAsXMP from './utils/formatAsXMP';
 import formatAsCrossRefXML from './utils/formatAsCrossRefXML';
 import printJSON from './utils/printJSON';
-import {Zotero} from './zotero-lib';
+import { Zotero } from './zotero-lib';
 import { ArgumentParser } from 'argparse';
 import formatAsZenodoJson from './utils/formatAsZenodoJson';
 import logger from './logger';
@@ -59,9 +59,7 @@ async function main() {
   }
 
   if (args.dryrun) {
-    logger.info(
-      `API command:\n Zotero.${args.func}(${JSON.stringify(args, null, 2)})`,
-    );
+    logger.info(`API command:\n Zotero.${args.func}(${JSON.stringify(args, null, 2)})`);
     return;
   }
 
@@ -79,7 +77,6 @@ async function main() {
     if (!(args.func in zoteroLib)) {
       throw new Error(`No cmd handler defined for ${args.func}`);
     }
-   
     zoteroLib.changeConfig(args);
     let result = await zoteroLib[args.func](args);
     // This really just works for 'item'... should realy move those functions elsewhere
@@ -98,18 +95,12 @@ async function main() {
         result,
         output: zoteroLib.output,
       };
-      logger.info(
-        '{Result, output}=' +
-          JSON.stringify(myout, null, zoteroLib.config.indent),
-      );
+      logger.info('{Result, output}=' + JSON.stringify(myout, null, zoteroLib.config.indent));
     }
 
     if (args.out) {
       logger.info(`writing output to file ${args.out}`);
-      fs.writeFileSync(
-        args.out,
-        JSON.stringify(result, null, zoteroLib.config.indent),
-      );
+      fs.writeFileSync(args.out, JSON.stringify(result, null, zoteroLib.config.indent));
     } else {
       logger.info(`writing output to console`);
       logger.info(printJSON(result));
@@ -198,14 +189,9 @@ async function getZenodoJson(item, args: any) {
   // logger.info("getZenodoJson updateDoc="+JSON.stringify(    updateDoc        ,null,2))
 
   if (args.zenodoWriteFile) {
-    await fs.writeFile(
-      'updateDoc.json',
-      JSON.stringify(updateDoc),
-      'utf-8',
-      function (err) {
-        if (err) logger.info(err);
-      },
-    );
+    await fs.writeFile('updateDoc.json', JSON.stringify(updateDoc), 'utf-8', function (err) {
+      if (err) logger.info(err);
+    });
   }
   return updateDoc;
 }
