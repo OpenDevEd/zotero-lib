@@ -10,6 +10,7 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL_POST")
   relationMode = "prisma"
+  
 }
 
 model groups {

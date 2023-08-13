@@ -26,7 +26,7 @@ import {
   getAllGroups,
   saveGroup,
   // saveZoteroItems,
-  test,
+  saveZoteroItems2,
 } from './local-db/db';
 import saveToFile from './local-db/saveToFile';
 import { checkForValidLockFile, removeLockFile } from './lock.utils';
@@ -2923,7 +2923,7 @@ async function syncToLocalDB(args: any) {
       if (allFetchedItems.length) {
         console.log('itemsVersion: ', itemsLastModifiedVersion);
 
-        await test(allFetchedItems, itemsLastModifiedVersion, group.group).then(() =>
+        await saveZoteroItems2(allFetchedItems, itemsLastModifiedVersion, group.group).then(() =>
           console.log('group saved into db ', group.group),
         );
       }
