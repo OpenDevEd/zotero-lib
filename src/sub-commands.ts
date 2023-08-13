@@ -818,6 +818,10 @@ subParsersMap.set('db', function (subparsers, subCmdName) {
     action: 'store',
     help: 'Number of seconds to wait before resetting the lock',
   });
+  argparser.add_argument('--websocket', {
+    action: 'store_true',
+    help: 'Enable websocket for sync',
+  });
 });
 
 subParsersMap.set('resolve', function (subparsers, subCmdName) {

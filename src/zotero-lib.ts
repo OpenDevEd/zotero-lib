@@ -33,6 +33,7 @@ import {
 import { checkForValidLockFile, removeLockFile } from './lock.utils';
 import axios from 'axios';
 import { merge_items } from './utils/merge';
+import webSocket from 'ws';
 // import { log } from 'console';
 // import printJSON from './utils/printJSON';
 
@@ -1637,8 +1638,16 @@ export class Zotero {
       } else {
         await runSync();
       }
+      if (args.websocket) {
+        await websocket(args, this.config);
+      }
     } else {
       console.log('skipping syncing with online library');
+    }
+
+    if (!args.websocket) {
+      sleep(1000);
+      process.exit(0);
     }
 
     // if (args.errors) {
@@ -1667,8 +1676,6 @@ export class Zotero {
     //     console.log(itemsAsJSON);
     //   }
     // }
-    sleep(1000);
-    process.exit(0);
   }
 
   public async deduplicate_func(args: any) {
@@ -2857,3 +2864,44 @@ const syncToLocalDB = async (args: any) => {
   const syncEnd = Date.now();
   console.log(`Time taken: ${(syncEnd - syncStart) / 1000}s`);
 };
+async function websocket(args, config) {
+  console.log('starting websocket');
+  const groups = await getAllGroups();
+  const groupIds: string[] = groups.map((group) => `/groups/${group.id}`);
+  var ws: webSocket = new webSocket('wss://stream.zotero.org');
+  console.log(args);
+
+  ws.on('open', async () => {
+    console.log('WebSocket connection opened');
+    const groupChunks = _.chunk(groupIds, 2);
+    for (const groupChunk of groupChunks) {
+      await ws.send(
+        JSON.stringify({
+          action: 'createSubscriptions',
+          subscriptions: [
+            {
+              apiKey: config.api_key,
+              topics: groupChunk,
+            },
+          ],
+        }),
+      );
+    }
+  });
+
+  ws.on('message', async (data) => {
+    console.log('Received message:', data);
+    data = JSON.parse(data);
+    console.log(data.event);
+
+    if (['topicUpdated', 'topicAdded', 'topicRemoved'].includes(data.event)) {
+      await syncToLocalDB({ ...args, ...config });
+    }
+  });
+  ws.on('error', (err) => {
+    console.log('WebSocket error', err);
+  });
+  ws.on('close', () => {
+    console.log('WebSocket connection closed');
+  });
+}
