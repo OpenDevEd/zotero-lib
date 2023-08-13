@@ -73,7 +73,6 @@ export async function getAllGroups() {
   //await saveGroup();
   return groups;
 }
-5;
 
 export async function saveGroup(groupData) {
   const { PrismaClient } = require('@prisma/client');

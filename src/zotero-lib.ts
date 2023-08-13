@@ -292,7 +292,7 @@ export class Zotero {
     for (const uri of args.uri) {
       const res = await this.http.get(uri, { userOrGroupPrefix: !args.root }, this.config);
       if (args.show) {
-        TODO: this.show(res);
+        //TODO: this.show(res);
         //this.show(res);
       }
       out.push(res);
@@ -1124,43 +1124,50 @@ export class Zotero {
       return result;
     }
 
-    if (Array.isArray(args.files) && args.files.length > 0) {
+    if (Array.isArray(args.files)) {
       if (!args.files.length)
         return this.message(0, 'Need at least one item (args.items) to create or use args.template');
-      //  all items are read into a single structure:
-      const items = args.files.map((item) => JSON.parse(fs.readFileSync(item, 'utf-8')));
-      const itemsflat = items.flat(1);
-      let res = [];
-      const batchSize = 50;
-      if (itemsflat.length <= batchSize) {
-        const result = await this.http.post('/items', JSON.stringify(itemsflat), {}, this.config);
-        res.push(result);
-        this.show(res);
-      } else {
-        /* items.length = 151
+      else {
+        //  all items are read into a single structure:
+        const items = args.files.map((item) => JSON.parse(fs.readFileSync(item, 'utf-8')));
+        const itemsflat = items.flat(1);
+        let res = [];
+        const batchSize = 50;
+        if (itemsflat.length <= batchSize) {
+          const result = await this.http.post('/items', JSON.stringify(itemsflat), {}, this.config);
+          res.push(result);
+          this.show(res);
+        } else {
+          /* items.length = 151
         0..49 (end=50)
         50..99 (end=100)
         100..149 (end=150)
         150..150 (end=151)
         */
-        for (var start = 0; start < itemsflat.length; start += batchSize) {
-          const end = start + batchSize <= itemsflat.length ? start + batchSize : itemsflat.length + 1;
-          // Safety check - should always be true:
-          if (itemsflat.slice(start, end).length) {
-            logger.error(`Uploading objects ${start} to ${end}-1`);
-            logger.info(`Uploading objects ${start} to ${end}-1`);
-            logger.info(`${itemsflat.slice(start, end).length}`);
-            const result = await this.http.post('/items', JSON.stringify(itemsflat.slice(start, end)), {}, this.config);
-            res.push(result);
-          } else {
-            logger.error(`NOT Uploading objects ${start} to ${end}-1`);
-            logger.info(`NOT Uploading objects ${start} to ${end}-1`);
-            logger.info(`${itemsflat.slice(start, end).length}`);
+          for (var start = 0; start < itemsflat.length; start += batchSize) {
+            const end = start + batchSize <= itemsflat.length ? start + batchSize : itemsflat.length + 1;
+            // Safety check - should always be true:
+            if (itemsflat.slice(start, end).length) {
+              logger.error(`Uploading objects ${start} to ${end}-1`);
+              logger.info(`Uploading objects ${start} to ${end}-1`);
+              logger.info(`${itemsflat.slice(start, end).length}`);
+              const result = await this.http.post(
+                '/items',
+                JSON.stringify(itemsflat.slice(start, end)),
+                {},
+                this.config,
+              );
+              res.push(result);
+            } else {
+              logger.error(`NOT Uploading objects ${start} to ${end}-1`);
+              logger.info(`NOT Uploading objects ${start} to ${end}-1`);
+              logger.info(`${itemsflat.slice(start, end).length}`);
+            }
           }
         }
+        // TODO: see how to use pruneData
+        return res;
       }
-      // TODO: see how to use pruneData
-      return res;
     }
 
     if ('items' in args) {
@@ -1717,7 +1724,7 @@ export class Zotero {
 
     let duplicatesInType = [];
 
-    if (items) {
+    if (items.length > 0 && !args.files.length) {
       for (let i = 0; i < items.length; i++) {
         let isDuplicate = false;
         let item1 = items[i].data.data;
@@ -2361,8 +2368,8 @@ export class Zotero {
       //process.exit(1);
     }
     // ACTION: return values
-    const data = {};
-    return this.message(0, 'exist status', data);
+    // const data = {};
+    // return this.message(0, 'exist status', data);
   }
 
   // TODO: Implement
