@@ -2735,204 +2735,106 @@ export class Zotero {
   }
 }
 
-async function syncToLocalDB(args: any) {
-  // print pwd
+const API_URL = 'https://api.zotero.org';
+// const ATTACHMENT_PATH = './attachments/';
 
-  // const path = process.cwd() + '/' + args.database;
+// Utils
 
-  // excute shell command
+const fetchChangedGroups = async (onlineGroups, offlineGroups): Promise<string[]> => {
+  const localGroupsMap = offlineGroups.reduce((a, c) => ({ ...a, [c.id]: c.version }), {});
+  return Object.keys(onlineGroups).filter((group) => onlineGroups[group] !== localGroupsMap[group]);
+};
 
+const fetchGroupItems = async (group, itemIds, args) => {
+  try {
+    const res = await axios.get(`${API_URL}/groups/${group.group}/items/?itemKey=${itemIds}&includeTrashed=1`, {
+      headers: { Authorization: `Bearer ${args.api_key}` },
+    });
+    // Extend this as needed for further processing
+    return res;
+  } catch (error) {
+    console.log('Error fetching group items');
+    console.log('retrying in 2 seconds');
+    sleep(2000);
+    return await fetchGroupItems(group, itemIds, args);
+  }
+};
+
+// Main Function
+const syncToLocalDB = async (args: any) => {
   const syncStart = Date.now();
   console.log('syncing local db with online library');
 
-  // perform key check i.e. do we have valid key and we'll also get userId as a bonus
   const keyCheck = await fetchCurrentKey(args);
-  //TODO: here we can perform extra check that the key is still valid and has access to groups
   const { userID } = keyCheck;
 
   args.user_id = userID;
   const { groupid } = args;
 
-  // fetch groups version and check which are changed
   const onlineGroups = await fetchGroups({ ...args });
-  // console.log('online groups: ', onlineGroups);
   const offlineGroups = await getAllGroups();
 
-  // console.log('offline groups: ', offlineGroups);
   const offlineItemsVersion = offlineGroups.reduce((a, c) => ({ ...a, [c.id]: c.itemsVersion }), {});
 
-  function getChangedGroups(online, local) {
-    const localGroupsMap = local.reduce((a, c) => ({ ...a, [c.id]: c.version }), {});
-
-    let res = [];
-
-    for (let group in online) {
-      if (online[group] !== localGroupsMap[group]) {
-        res.push(group);
-      }
-    }
-
-    return res;
-  }
-  let changedGroups;
-  if (!groupid) changedGroups = getChangedGroups(onlineGroups, offlineGroups);
-  else changedGroups = [groupid];
+  const changedGroups: string[] = groupid ? [groupid] : await fetchChangedGroups(onlineGroups, offlineGroups);
 
   if (changedGroups.length === 0) {
     console.log('found no changed group, so not fetching group data');
   } else {
     console.log('changed group count: ', changedGroups.length);
-    console.log('changed  groups: ', changedGroups);
-    let allChangedGroupsData = await Promise.all(
+
+    const allChangedGroupsData = await Promise.all(
       changedGroups.map((changedGroup) => fetchGroupData({ ...args, group_id: changedGroup })),
     );
-    //@ts-ignore
-
-    // console.log('allChangedGroupsData: ', printJSON(allChangedGroupsData));
     await saveGroup(allChangedGroupsData);
-    // console.log('savedChangedGroups: ', printJSON(savedChangedGroups));
   }
 
-  let changedGroupsArray;
-  if (groupid) changedGroupsArray = [groupid];
-  else changedGroupsArray = Object.keys(onlineGroups);
+  const changedGroupsArray = groupid ? [groupid] : Object.keys(onlineGroups);
 
-  //TODO: push local changes
-  // get remote changes
   const changedItemsForGroups = await Promise.all(
     changedGroupsArray.map((group) =>
-      getChangedItemsForGroup({
-        ...args,
-        group,
-        version: offlineItemsVersion[group] || 0,
-      }),
+      getChangedItemsForGroup({ ...args, group, version: offlineItemsVersion[group] || 0 }),
     ),
   );
 
   const totalToBeSynced = changedItemsForGroups.reduce((a, c) => a + Object.keys(c).length, 0);
-  // console.log('changed items for groups: ', changedItemsForGroups);
   console.log('Total items to be synced: ', totalToBeSynced);
+
   if (totalToBeSynced > 0) {
-    // convert id: version map to array of ids, chuncked by 50 items max
     const chunckedItemsByGroup = changedItemsForGroups.map((item, index) => ({
       group: changedGroupsArray[index],
       itemIds: _.chunk(Object.keys(item), 100),
     }));
 
-    // console.log('chuncked items by group: ', printJSON(chunckedItemsByGroup));
-    let itemsLastModifiedVersion = {};
-
-    // item children map
-    const childrenMap = {};
-    // item referenced by map
-    const referenceMap = {};
-
-    // for each group fetch all items with given ids, in batch of 50
-    // 👇️ ts-ignore ignores any ts errors on the next line
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    let allItems = [];
-    // let counter = 0;
-    // let Zoterolib = new Zotero({group_id:2259720});
-    // const options =  {"count":false,"top":false,"validate":false}
-    // const result = await Zoterolib.items(options);
-    // console.log('result: ', result.length);
-
     for (let group of chunckedItemsByGroup) {
-      console.log('group length: ', group.itemIds.length);
-
-      const groupItems = await Promise.all(
+      console.log('group: ', group.group, 'item count: ', group.itemIds.length);
+      if (group.itemIds.length === 0) continue;
+      //@ts-ignore
+      const resItems = await Promise.all(
         group.itemIds.map(async (itemIds) => {
-          try {
-            const res = await axios.get(
-              `https://api.zotero.org/groups/${group.group}/items/?itemKey=${itemIds}&includeTrashed=1
-              `,
-              {
-                headers: { Authorization: `Bearer ${args.api_key}` },
-              },
-            );
+          //@ts-ignore
+          const { data, headers } = await fetchGroupItems(group, itemIds, args);
 
-            itemsLastModifiedVersion[group.group] = res.headers['last-modified-version'];
-
-            await res.data.forEach(async (item) => {
-              if (typeof item.links['attachment'] !== 'undefined') {
-                if (!fs.existsSync(`./attachments/`)) fs.mkdirSync(`./attachments/`);
-                if (!fs.existsSync(`./attachments/${args.database}-${group.group}`))
-                  fs.mkdirSync(`./attachments/${args.database}-${group.group}`);
-                // const attachments = await axios.get(
-                //   `https://api.zotero.org/groups/${group.group}/items/${item.key}/children`,
-                //   {
-                //     headers: { Authorization: `Bearer ${args.api_key}` },
-                //   },
-                // );
-
-                // for (const attachment of attachments.data.filter(
-                //   (i) => i.data.itemType === 'attachment',
-                // )) {
-                //   try {
-                //     const response = await axios({
-                //       url: `https://api.zotero.org/groups/${group.group}/items/${attachment.key}/file`,
-                //       method: 'GET',
-                //       responseType: 'stream',
-                //       headers: { Authorization: `Bearer ${args.api_key}` },
-                //     });
-                //     const filepath = `./attachments/${args.database}-${group.group}/${attachment.key}:${group.group} | ${attachment.data.filename}`;
-                //     const file = fs.createWriteStream(filepath);
-                //     response.data.pipe(file);
-                //     file.on('finish', () => {
-                //       file.close();
-                //     });
-                //   } catch (error) {}
-                // }
-              }
-              // get children
-              if (item.data.parentItem) {
-                childrenMap[item.data.parentItem] = [...(childrenMap[item.data.parentItem] || []), item.key];
-              }
-              // get references
-              if ((item.data.extra || '').includes('KerkoCite.ItemAlsoKnownAs:')) {
-                const kerkoLine = item.data.extra.split('\n').find((i) => i.startsWith('KerkoCite'));
-                const [, ...refs] = kerkoLine.split(' ');
-                refs
-                  .filter((i) => !i.includes('zenodo') && i.includes(':'))
-                  .forEach((ref) => {
-                    const srcKey = ref.split(':')[1];
-                    referenceMap[srcKey] = [...(referenceMap[srcKey] || []), srcKey];
-                  });
-              }
-            });
-
-            return res.data;
-          } catch (error) {
-            console.log('error', error);
-          }
+          return { data, headers };
         }),
       );
 
-      let allFetchedItems = groupItems.map(async (chunkedItem) =>
-        chunkedItem.map(async (item) => {
-          item.children = childrenMap[item.key];
-          item.referencedBy = [...new Set(referenceMap[item.key])];
+      //@ts-ignore
+      const lastModifiedVersion = resItems[resItems.length - 1].headers['last-modified-version'];
+      //@ts-ignore
+      const groupItems = resItems.map((item) => item.data);
 
-          item.inconsistent = Boolean((item.children || []).length && (item.referencedBy || []).length);
+      // console.log('group items fetched: ', Object.keys(resItems));
 
-          return item;
-        }),
-      );
+      const itemsLastModifiedVersion = {}; // Extend this as needed
+      //@ts-ignore
+      itemsLastModifiedVersion[group.group] = lastModifiedVersion;
 
-      if (allFetchedItems.length) {
-        console.log('itemsVersion: ', itemsLastModifiedVersion);
+      await saveZoteroItems2(groupItems, itemsLastModifiedVersion, group.group);
+      // Saving logic here...
+      console.log('group saved into db ', group.group);
 
-        await saveZoteroItems2(allFetchedItems, itemsLastModifiedVersion, group.group).then(() =>
-          console.log('group saved into db ', group.group),
-        );
-      }
-      // sleep for 1 second
-      await new Promise((resolve) => setTimeout(resolve, 0));
-
-      allItems = [];
-      allFetchedItems = [];
-      itemsLastModifiedVersion = {};
+      await sleep(1000); // Sleep for 1 second
     }
   } else {
     console.log('Everything already synced!!! Hurray!!!');
@@ -2940,4 +2842,4 @@ async function syncToLocalDB(args: any) {
 
   const syncEnd = Date.now();
   console.log(`Time taken: ${(syncEnd - syncStart) / 1000}s`);
-}
+};

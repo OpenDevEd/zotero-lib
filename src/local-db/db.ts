@@ -203,6 +203,7 @@ async function insertCollections(prisma) {
     data: collections,
     skipDuplicates: true,
   });
+  collections = [];
 }
 let newItems = [];
 //@ts-ignore
@@ -319,6 +320,8 @@ async function insertItemCollections(prisma) {
 export async function saveZoteroItems2(allFetchedItems, lastModifiedVersion, groupId) {
   const { PrismaClient } = require('@prisma/client');
   const prisma = new PrismaClient();
+  // console.log(lastModifiedVersion);
+
   await prisma.$connect();
 
   const allItems = await prisma.items.findMany({
@@ -406,7 +409,7 @@ function handleDeletedItem(item, allItemsIds, newItems, updatedItems) {
       id: item.key,
       version: item.version,
       data: item,
-      inconsistent: item.inconsistent,
+      // inconsistent: item.inconsistent,
       group_id: item.library.id,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -430,7 +433,7 @@ function handleUpdatedOrNewItem(item, allItemsIds, newItems, updatedItems) {
       id: item.key,
       version: item.version,
       data: item,
-      inconsistent: item.inconsistent,
+      // inconsistent: item.inconsistent,
       group_id: item.library.id,
       createdAt: new Date(),
       updatedAt: new Date(),
