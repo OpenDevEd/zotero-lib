@@ -18,20 +18,22 @@ import {
   fetchCurrentKey,
   fetchGroupData,
   fetchGroups,
-  //fetchItemsByIds,
+  //lookupItems,
   getChangedItemsForGroup,
 } from './local-db/api';
 import {
-  fetchAllItems,
+  // fetchAllItems,
   getAllGroups,
   saveGroup,
   // saveZoteroItems,
   saveZoteroItems2,
+  lookupItems,
 } from './local-db/db';
-import saveToFile from './local-db/saveToFile';
+// import saveToFile from './local-db/saveToFile';
 import { checkForValidLockFile, removeLockFile } from './lock.utils';
 import axios from 'axios';
 import { merge_items } from './utils/merge';
+// import { log } from 'console';
 // import printJSON from './utils/printJSON';
 
 require('dotenv').config();
@@ -39,7 +41,6 @@ require('dotenv').config();
 const _ = require('lodash');
 const he = require('he');
 const convert = require('xml-js');
-const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const LinkHeader = require('http-link-header');
@@ -1589,14 +1590,25 @@ export class Zotero {
 
   public async manageLocalDB(args) {
     console.log('args: ', { ...args }, this.config);
+    if (args.lookup && !args.keys) {
+      logger.error('You must provide keys to lookup');
+      process.exit(1);
+    }
 
-    process.env.DATABASE_URL_2 = `file:${process.cwd()}/${args.database}`;
-    console.log(process.env.DATABASE_URL_2);
+    // process.env.DATABASE_URL_2 = `file:${process.cwd()}/${args.database}`;
+    // console.log(process.env.DATABASE_URL_2);
 
-    try {
-      await exec(`npx prisma migrate dev --schema=${process.cwd()}/prisma/schema2.prisma --name 'test2'`);
-      await exec(`npx prisma generate --schema=${process.cwd()}/prisma/schema2.prisma`);
-    } catch (error) {}
+    // try {
+    //   await exec(`npx prisma migrate dev --schema=${process.cwd()}/prisma/schema2.prisma --name 'test2'`);
+    //   await exec(`npx prisma generate --schema=${process.cwd()}/prisma/schema2.prisma`);
+    // } catch (error) {}
+
+    if (args.lookup && Array.isArray(args.keys) && args.keys.length > 0) {
+      let keys = { keys: [...args.keys] };
+      let result = await lookupItems(keys);
+      if (args.verbose) logger.info('result: ', result);
+      return result;
+    }
 
     if (args.sync) {
       const lockFileName = args.lockfile;
@@ -1622,37 +1634,32 @@ export class Zotero {
       console.log('skipping syncing with online library');
     }
 
-    let filters = undefined;
-    if (args.lookup && Array.isArray(args.keys) && args.keys.length > 0) {
-      filters = { keys: [...args.keys] };
-    }
+    // if (args.errors) {
+    //   filters = { errors: args.errors };
+    // }
 
-    if (args.errors) {
-      filters = { errors: args.errors };
-    }
+    // const allItems = await fetchAllItems({
+    //   database: args.database,
+    //   filters,
+    // });
 
-    const allItems = await fetchAllItems({
-      database: args.database,
-      filters,
-    });
-
-    const itemsAsJSON = JSON.stringify(
-      allItems.map((item) => item.data),
-      null,
-      2,
-    );
-    if (args.export_json) {
-      console.log('exporting json into file: ', args.export_json);
-      let fileName = args.export_json;
-      if (!fileName.endsWith('.json')) {
-        fileName += '.json';
-      }
-      saveToFile(fileName, itemsAsJSON);
-    } else {
-      if (args.lookup || args.errors) {
-        console.log(itemsAsJSON);
-      }
-    }
+    // const itemsAsJSON = JSON.stringify(
+    //   allItems.map((item) => item.data),
+    //   null,
+    //   2,
+    // );
+    // if (args.export_json) {
+    //   console.log('exporting json into file: ', args.export_json);
+    //   let fileName = args.export_json;
+    //   if (!fileName.endsWith('.json')) {
+    //     fileName += '.json';
+    //   }
+    //   saveToFile(fileName, itemsAsJSON);
+    // } else {
+    //   if (args.lookup || args.errors) {
+    //     console.log(itemsAsJSON);
+    //   }
+    // }
     sleep(1000);
     process.exit(0);
   }

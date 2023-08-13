@@ -903,6 +903,20 @@ export function saveZoteroItems({ allFetchedItems, database, lastModifiedVersion
   });
 }
 
+export async function lookupItems(keys) {
+  const { PrismaClient } = require('@prisma/client');
+  const prisma = new PrismaClient();
+
+  const items = await prisma.items.findMany({
+    where: {
+      id: {
+        in: keys.keys,
+      },
+    },
+  });
+  return items;
+}
+
 export async function fetchAllItems({
   database,
   filters,
