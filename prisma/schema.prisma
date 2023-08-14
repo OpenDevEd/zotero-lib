@@ -12,13 +12,14 @@ datasource db {
 }
 
 model groups {
-  id           Int           @id
-  version      Int
-  itemsVersion Int
-  createdAt    DateTime
-  updatedAt    DateTime
-  items        items[]
-  alsoKnownAs  alsoKnownAs[]
+  id            Int             @id
+  version       Int
+  itemsVersion  Int
+  createdAt     DateTime
+  updatedAt     DateTime
+  items         items[]
+  alsoKnownAs   alsoKnownAs[]
+  items_archive items_archive[]
 }
 
 model items {
@@ -33,6 +34,21 @@ model items {
   isDeleted        Boolean            @default(false)
   collection_items collection_items[]
   alsoKnownAs      alsoKnownAs[]
+
+  @@index([group_id])
+}
+
+model items_archive {
+  row_id       Int      @id @default(autoincrement())
+  id           String
+  version      Int
+  data         Json
+  inconsistent Boolean?
+  group_id     Int
+  group        groups   @relation(fields: [group_id], references: [id])
+  createdAt    DateTime
+  updatedAt    DateTime
+  isDeleted    Boolean  @default(false)
 
   @@index([group_id])
 }

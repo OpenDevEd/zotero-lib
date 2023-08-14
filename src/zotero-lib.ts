@@ -2851,7 +2851,7 @@ const syncToLocalDB = async (args: any) => {
       //@ts-ignore
       itemsLastModifiedVersion[group.group] = lastModifiedVersion;
 
-      await saveZoteroItems2(groupItems, itemsLastModifiedVersion, group.group);
+      await saveZoteroItems2(groupItems, itemsLastModifiedVersion, group.group, args.no_archive);
       // Saving logic here...
       console.log('group saved into db ', group.group);
 

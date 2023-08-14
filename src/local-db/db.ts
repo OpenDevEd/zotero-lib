@@ -244,6 +244,34 @@ async function updateItems(prisma) {
     UpdatedItems = [];
   }
 }
+//@ts-ignore
+async function createArchiveItemsTrigger(prisma) {
+  console.log('creating archive_items_trigger');
+
+  await prisma.$executeRaw`CREATE OR REPLACE FUNCTION archive_items_function()
+  RETURNS TRIGGER AS $$
+  BEGIN
+  INSERT INTO items_archive (id, version, data, inconsistent, "group_id", "createdAt", "updatedAt", "isDeleted")
+VALUES (OLD.id, OLD.version, OLD.data, OLD.inconsistent, OLD."group_id", OLD."createdAt", OLD."updatedAt", OLD."isDeleted");
+RETURN NEW;
+  END;
+  $$ LANGUAGE plpgsql;`;
+  console.log('created archive_items_function');
+
+  await prisma.$executeRaw`
+    CREATE OR REPLACE TRIGGER archive_items
+    BEFORE UPDATE ON items
+    FOR EACH ROW
+    EXECUTE FUNCTION archive_items_function();
+  `;
+  console.log('created archive_items trigger');
+}
+//@ts-ignore
+async function removeArchiveItemsTrigger(prisma) {
+  await prisma.$executeRaw`
+    DROP TRIGGER IF EXISTS archive_items;
+  `;
+}
 
 let newAlsoKnownAs = [];
 //@ts-ignore
@@ -316,12 +344,22 @@ async function insertItemCollections(prisma) {
 //   }
 // }
 
-export async function saveZoteroItems2(allFetchedItems, lastModifiedVersion, groupId) {
+export async function saveZoteroItems2(
+  allFetchedItems,
+  lastModifiedVersion,
+  groupId: string,
+  isArchive: boolean = false,
+) {
   const { PrismaClient } = require('@prisma/client');
   const prisma = new PrismaClient();
   // console.log(lastModifiedVersion);
 
   await prisma.$connect();
+  console.log(isArchive);
+
+  if (isArchive) await createArchiveItemsTrigger(prisma);
+  else await removeArchiveItemsTrigger(prisma);
+  console.log('created trigger');
 
   const allItems = await prisma.items.findMany({
     where: {
@@ -329,6 +367,8 @@ export async function saveZoteroItems2(allFetchedItems, lastModifiedVersion, gro
     },
   });
   const allItemsIds = allItems.map((item) => item.id);
+  console.log('allItemsIds', allItemsIds.length);
+
   //@ts-ignore
   const allCollections = await prisma.collections.findMany();
   //@ts-ignore
@@ -341,7 +381,7 @@ export async function saveZoteroItems2(allFetchedItems, lastModifiedVersion, gro
   });
   const allGroups = await prisma.groups.findMany();
   const allGroupsIds = allGroups.map((group) => group.id);
-
+  console.log('allGroupsIds', allGroupsIds.length);
   Object.entries(lastModifiedVersion).forEach(async ([group]) => {
     if (!allGroupsIds.includes(parseInt(group))) {
       await prisma.groups.create({
