@@ -113,8 +113,7 @@ export class Zotero {
 
     // Check that not both are undefined:
     if (!result.user_id && !result.group_id) {
-      logger.info('result: ', result);
-      throw new Error('Both user/group are missing. You must provide exactly one of --user-id or --group-id');
+      return false;
     }
 
     // Check that one and only one is defined:
