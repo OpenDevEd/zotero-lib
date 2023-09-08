@@ -5,71 +5,84 @@ generator client {
   provider = "prisma-client-js"
 }
 
-
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL_POST")
+  provider     = "postgresql"
+  url          = env("DATABASE_URL_POST")
   relationMode = "prisma"
 }
 
 model groups {
-  id       Int      @id
-  version  Int      
+  id            Int             @id
+  version       Int
   itemsVersion  Int
-  createdAt DateTime 
-  updatedAt DateTime 
-  items items[]
-  alsoKnownAs alsoKnownAs[]
+  createdAt     DateTime
+  updatedAt     DateTime
+  items         items[]
+  alsoKnownAs   alsoKnownAs[]
+  items_archive items_archive[]
 }
 
 model items {
-  id       String      @id
-  version  Int      
-  data     Json
-  inconsistent Boolean
-  group_id Int
-  group groups @relation(fields: [group_id], references: [id])
-  createdAt DateTime 
-  updatedAt DateTime 
-  isDeleted Boolean @default(false)
+  id               String             @id
+  version          Int
+  data             Json
+  inconsistent     Boolean?
+  group_id         Int
+  group            groups             @relation(fields: [group_id], references: [id])
+  createdAt        DateTime
+  updatedAt        DateTime
+  isDeleted        Boolean            @default(false)
   collection_items collection_items[]
-  alsoKnownAs alsoKnownAs[]
+  alsoKnownAs      alsoKnownAs[]
+
+  @@index([group_id])
+}
+
+model items_archive {
+  row_id       Int      @id @default(autoincrement())
+  id           String
+  version      Int
+  data         Json
+  inconsistent Boolean?
+  group_id     Int
+  group        groups   @relation(fields: [group_id], references: [id])
+  createdAt    DateTime
+  updatedAt    DateTime
+  isDeleted    Boolean  @default(false)
 
   @@index([group_id])
 }
 
 model collections {
-  id       String      @id
-  createdAt DateTime 
-  updatedAt DateTime 
+  id               String             @id
+  createdAt        DateTime
+  updatedAt        DateTime
   collection_items collection_items[]
 }
 
-
-
 model collection_items {
-  id       Int      @id @default(autoincrement())
-  createdAt DateTime 
-  updatedAt DateTime 
+  id            Int         @id @default(autoincrement())
+  createdAt     DateTime
+  updatedAt     DateTime
   collection_id String
-  collection collections @relation(fields: [collection_id], references: [id])
-  item_id String
-  item items @relation(fields: [item_id], references: [id])
+  collection    collections @relation(fields: [collection_id], references: [id])
+  item_id       String
+  item          items       @relation(fields: [item_id], references: [id])
 
   @@index([collection_id])
   @@index([item_id])
 }
 
 model alsoKnownAs {
-  id       Int      @id @default(autoincrement())
-  item_id String
-  item items @relation(fields: [item_id], references: [id], onDelete: Cascade)
-  group_id Int
-  group groups @relation(fields: [group_id], references: [id])
+  id        Int      @id @default(autoincrement())
+  item_id   String
+  item      items    @relation(fields: [item_id], references: [id], onDelete: Cascade)
+  group_id  Int
+  group     groups   @relation(fields: [group_id], references: [id])
   createdAt DateTime
   updatedAt DateTime
-  data String
-  isDeleted Boolean @default(false)
+  data      String
+  isDeleted Boolean  @default(false)
 
   @@index([item_id])
   @@index([group_id])

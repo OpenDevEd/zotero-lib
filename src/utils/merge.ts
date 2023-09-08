@@ -1,4 +1,4 @@
-import Zotero from '../zotero-lib';
+import { Zotero } from '../zotero-lib';
 
 async function getItems(items: string[]): Promise<{}> {
   const { PrismaClient } = require('@prisma/client');
@@ -8,6 +8,7 @@ async function getItems(items: string[]): Promise<{}> {
       id: {
         in: items,
       },
+      //TODO: add isDeleted to the where clause
     },
   });
   await prisma.$disconnect();
@@ -59,13 +60,11 @@ export async function get_Newest_item(items: string[]) {
   ];
 }
 
-export async function merge_items(groupid,items: string[]) {
+export async function merge_items(groupid, items: string[]) {
   let itemarr = await get_oldest_item(items);
   let base = itemarr[0];
   let deleted = itemarr[1];
   await mergeMultipleItems(groupid, base, deleted);
-  
-  
 }
 
 async function changedParentItem(groupid, child, newParent) {
@@ -84,27 +83,20 @@ async function mergeTwoItems(groupid, base, deleted) {
   const zotero = new Zotero({ verbose: false, 'group-id': groupid });
   const deletedItem = await zotero.item({ key: deleted, fullresponse: true });
   const baseItem = await zotero.item({ key: base, fullresponse: true });
-  if (
-    noMergeType.includes(deletedItem.result.data.itemType) ||
-    noMergeType.includes(baseItem.result.data.itemType)
-  )
-    {
-      console.log('one of the items is not a note or attachment');
-      return 0;
-    }
-  if (deletedItem.result.data.itemType !== baseItem.result.data.itemType)
-    {
-      console.log('item types are not the same');
-      return 0;
-    }
-    
+  if (noMergeType.includes(deletedItem.result.data.itemType) || noMergeType.includes(baseItem.result.data.itemType)) {
+    console.log('one of the items is not a note or attachment');
+    return 0;
+  }
+  if (deletedItem.result.data.itemType !== baseItem.result.data.itemType) {
+    console.log('item types are not the same');
+    return 0;
+  }
+
   if (deletedItem.result.data.deleted || baseItem.result.data.deleted) {
     console.log(' one of the items is already deleted');
     return 0;
-    
   }
 
-  
   let children;
 
   let relations;
@@ -147,7 +139,7 @@ async function mergeTwoItems(groupid, base, deleted) {
       key: deletedItem.result.key,
       json: {
         deleted: 1,
-        title: `deleted ${deletedItem.result.data.title}`,
+        // title: `deleted ${deletedItem.result.data.title}`,
       },
     });
     // update base item
@@ -164,11 +156,7 @@ async function mergeTwoItems(groupid, base, deleted) {
         baseItem.result.meta,
         null,
         2,
-      )} and metadata of deleted is\n ${JSON.stringify(
-          deletedItem.result.meta,
-          null,
-          2,
-          )}`,
+      )} and metadata of deleted is\n ${JSON.stringify(deletedItem.result.meta, null, 2)}`,
       tags: ['merged', 'deleted'],
     });
 
@@ -187,9 +175,7 @@ async function mergeTwoItems(groupid, base, deleted) {
   } catch (error) {
     // revert changes
     console.log(error);
-    console.log(
-      `Error merging ${deletedItem.result.key} with ${baseItem.result.key}`,
-    );
+    console.log(`Error merging ${deletedItem.result.key} with ${baseItem.result.key}`);
     await zotero.update_item({
       key: deletedItem.result.key,
       json: {
@@ -217,27 +203,21 @@ async function mergeTwoItems(groupid, base, deleted) {
       }
     }
 
-    console.log(
-      `Reverting changes to ${deletedItem.result.key} and ${baseItem.result.key} done`,
-    );
+    console.log(`Reverting changes to ${deletedItem.result.key} and ${baseItem.result.key} done`);
 
     process.exit(1);
   }
-
 
   return 1;
 }
 //@ts-ignore
 async function mergeMultipleItems(groupid, base, deletedarr) {
-
   for (const deleted of deletedarr) {
     let result = await mergeTwoItems(groupid, base, deleted);
     if (result === 0) {
       console.log(`Error merging ${deleted} with ${base}`);
-      
-    }    
+    }
   }
 
-  
   return 0;
 }
