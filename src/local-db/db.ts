@@ -194,16 +194,16 @@ export function getAllCollections({ database }) {
   });
 }
 
-let collections = [];
+// let collections = [];
 //@ts-ignore
-async function insertCollections(prisma) {
-  // insert multiple rows of collections
-  await prisma.collections.createMany({
-    data: collections,
-    skipDuplicates: true,
-  });
-  collections = [];
-}
+// async function insertCollections(prisma) {
+//   // insert multiple rows of collections
+//   await prisma.collections.createMany({
+//     data: collections,
+//     skipDuplicates: true,
+//   });
+//   collections = [];
+// }
 let newItems = [];
 //@ts-ignore
 
@@ -268,9 +268,9 @@ RETURN NEW;
 }
 //@ts-ignore
 async function removeArchiveItemsTrigger(prisma) {
-  await prisma.$executeRaw`
-    DROP TRIGGER IF EXISTS archive_items;
-  `;
+  // await prisma.$executeRaw`
+  //   DROP TRIGGER IF EXISTS archive_items;
+  // `;
 }
 
 let newAlsoKnownAs = [];
@@ -311,19 +311,19 @@ async function updateAlsoknownAs(prisma) {
   }
 }
 
-let newItemCollections = [];
+// let newItemCollections = [];
 //@ts-ignore
 
-async function insertItemCollections(prisma) {
-  // insert multiple rows of items
-  if (newItemCollections.length > 0) {
-    await prisma.collection_items.createMany({
-      data: newItemCollections,
-      skipDuplicates: true,
-    });
-    newItemCollections = [];
-  }
-}
+// async function insertItemCollections(prisma) {
+//   // insert multiple rows of items
+//   if (newItemCollections.length > 0) {
+//     await prisma.collection_items.createMany({
+//       data: newItemCollections,
+//       skipDuplicates: true,
+//     });
+//     newItemCollections = [];
+//   }
+// }
 
 //@ts-ignore
 // async function updateGroupItemsVersion() {
@@ -355,11 +355,11 @@ export async function saveZoteroItems2(
   // console.log(lastModifiedVersion);
 
   await prisma.$connect();
-  console.log(isArchive);
+  // console.log(isArchive);
 
-  if (isArchive) await createArchiveItemsTrigger(prisma);
-  else await removeArchiveItemsTrigger(prisma);
-  console.log('created trigger');
+  // if (isArchive) await createArchiveItemsTrigger(prisma);
+  // else await removeArchiveItemsTrigger(prisma);
+  // console.log('created trigger');
 
   const allItems = await prisma.items.findMany({
     where: {
@@ -403,9 +403,6 @@ export async function saveZoteroItems2(
       } else {
         handleUpdatedOrNewItem(item, allItemsIds, newItems, UpdatedItems);
       }
-      if (item.data.collections) {
-        handleCollections(item, allCollectionsIds, collections, newItemCollections);
-      }
       if (item.data.extra) {
         handleAlsoKnownAs(item, alsoKnownAs, newAlsoKnownAs, updatedAlsoKnownAs);
       }
@@ -413,18 +410,18 @@ export async function saveZoteroItems2(
   }
 
   log('items', newItems.length);
-  log('collections', collections.length);
-  log('newItemCollections', newItemCollections.length);
+  // log('collections', collections.length);
+  // log('newItemCollections', newItemCollections.length);
   log('UpdatedItems', UpdatedItems.length);
   log('newAlsoKnownAs', newAlsoKnownAs.length);
   log('updatedAlsoKnownAs', updatedAlsoKnownAs.length);
 
-  await insertCollections(prisma);
+  // await insertCollections(prisma);
   await insertItems(prisma);
   await insertAlsoKnownAs(prisma);
   await updateAlsoknownAs(prisma);
 
-  await insertItemCollections(prisma);
+  // await insertItemCollections(prisma);
   await updateItems(prisma);
 
   Object.entries(lastModifiedVersion).forEach(async ([group, version]) => {
@@ -511,23 +508,23 @@ function handleAlsoKnownAs(item, alsoKnownAs, newAlsoKnownAs, updateAlsoKnownAs)
 }
 
 //@ts-ignore
-function handleCollections(item, allCollectionsIds, collections, newItemCollections) {
-  item.data.collections.forEach(async (collection) => {
-    if (!allCollectionsIds.includes(collection)) {
-      collections.push({
-        id: collection,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
-    }
-    newItemCollections.push({
-      item_id: item.key,
-      collection_id: collection,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-  });
-}
+// function handleCollections(item, allCollectionsIds, collections, newItemCollections) {
+//   item.data.collections.forEach(async (collection) => {
+//     if (!allCollectionsIds.includes(collection)) {
+//       collections.push({
+//         id: collection,
+//         createdAt: new Date(),
+//         updatedAt: new Date(),
+//       });
+//     }
+//     newItemCollections.push({
+//       item_id: item.key,
+//       collection_id: collection,
+//       createdAt: new Date(),
+//       updatedAt: new Date(),
+//     });
+//   });
+// }
 
 // get alsoKnownAs for a group and item
 
