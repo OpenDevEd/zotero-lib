@@ -90,6 +90,7 @@ interface ZoteroArgs extends ZoteroConfig {
   uri?: string[];
   root?: string;
   data?: {};
+  version?: string | number;
 }
 class Zotero {
   // The following config keys are expected/allowed,
@@ -357,7 +358,7 @@ class Zotero {
    * properties:
    * @returns an array of type `any[]`.
    */
-  public async get(args: ZoteroArgs): Promise<any[]> {
+  public async __get(args: ZoteroArgs): Promise<any[]> {
     const results: any[] = [];
 
     for (const uri of args.uri) {
@@ -385,7 +386,7 @@ class Zotero {
    * @param {ZoteroArgs} args - ZoteroArgs is a type that contains the following properties:
    * @returns The response from the HTTP post request is being returned.
    */
-  public async post(args: ZoteroArgs): Promise<any> {
+  public async __post(args: ZoteroArgs): Promise<any> {
     const response = await this.http.post(args.uri, args.data, {}, this.config);
     this.print(response);
     return response;
@@ -395,33 +396,54 @@ class Zotero {
    * Make a direct query to the API using
    * 'PUT uri [--data data]'.
    */
-  public async __put(args) {
-    const res = await this.http.put(args.uri, args.data, this.config);
-    this.print(res);
-    return res;
+  /**
+   * The function performs an HTTP PUT request with the provided arguments and prints the response.
+   * @param {ZoteroArgs} args - ZoteroArgs is a type that represents the arguments for the `__put`
+   * method. It likely contains the following properties:
+   * @returns The response from the HTTP PUT request is being returned.
+   */
+  public async __put(args: ZoteroArgs): Promise<any> {
+    const response = await this.http.put(args.uri, args.data, this.config);
+    this.print(response);
+    return response;
   }
 
   /**
    * Make a direct query to the API using
    * 'PATCH uri [--data data]'.
    */
-  public async __patch(args) {
-    const res = await this.http.patch(args.uri, args.data, args.version, this.config);
-    this.print(res);
-    return res;
+  /**
+   * The __patch function sends a PATCH request to a specified URI with the provided data and version,
+   * and then prints and returns the response.
+   * @param {ZoteroArgs} args - ZoteroArgs is a type that contains the following properties:
+   * @returns The response from the HTTP patch request is being returned.
+   */
+  public async __patch(args: ZoteroArgs): Promise<any> {
+    const response = await this.http.patch(args.uri, args.data, args.version, this.config);
+    this.print(response);
+    return response;
   }
 
   /**
    * Make a direct delete query to the API using
    * 'DELETE uri'.
    */
-  public async __delete(args) {
-    const output = [];
+  /**
+   * The function deletes resources specified by their URIs and returns an array of delete responses.
+   * @param {ZoteroArgs} args - ZoteroArgs - an object containing the arguments for the delete operation.
+   * It should have a property called "uri" which is an array of URIs representing the items to be
+   * deleted.
+   * @returns an array of any type.
+   */
+  public async __delete(args: ZoteroArgs): Promise<any[]> {
+    const output: any[] = [];
+
     for (const uri of args.uri) {
       const response = await this.http.get(uri, undefined, this.config);
       const deleteResponse = await this.http.delete(uri, response.version, this.config);
       output.push(deleteResponse);
     }
+
     return output;
   }
 
