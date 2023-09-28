@@ -53,7 +53,23 @@ const path = require('path');
 const LinkHeader = require('http-link-header');
 
 const ajv = new Ajv();
-
+interface ZoteroConfig {
+  'user-id'?: string;
+  'group-id'?: string;
+  group_id?: string;
+  'library-type'?: string;
+  'api-key'?: string;
+  api_key?: string;
+  indent?: number;
+  verbose?: boolean;
+  debug?: boolean;
+  config?: string;
+  'config-json'?: string;
+  'zotero-schema'?: string;
+  out?: boolean;
+  show?: boolean;
+  zotero_schema?: string;
+}
 class Zotero {
   // The following config keys are expected/allowed,
   // with both "-" and "_". The corresponding variables have _
@@ -70,7 +86,7 @@ class Zotero {
     'zotero-schema',
   ];
 
-  config: any;
+  config: ZoteroConfig;
 
   output: string = '';
 
