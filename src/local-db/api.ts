@@ -17,32 +17,26 @@ export async function fetchCurrentKey(options: RequestArgs = { api_key: '' }) {
 
   const headers = { Authorization: `Bearer ${api_key}` };
 
-  return axios
-    .get(getZoteroURL('keys/current'), { headers })
-    .then((res) => res.data);
+  return axios.get(getZoteroURL('keys/current'), { headers }).then(res => res.data);
 }
 
-export async function fetchGroups(
-  options: RequestArgs = { api_key: '', user_id: '' },
-) {
+export async function fetchGroups(options: RequestArgs = { api_key: '', user_id: '' }) {
   const { api_key, user_id } = options;
 
   const headers = { Authorization: `Bearer ${api_key}` };
 
   return axios
     .get(getZoteroURL(`users/${user_id}/groups/?format=versions`), { headers })
-    .then((res) => res.data);
+    .then(res => res.data);
 }
 
-export async function fetchGroupData(
-  options: RequestArgs = { api_key: '', user_id: '' },
-) {
+export async function fetchGroupData(options: RequestArgs = { api_key: '', user_id: '' }) {
   const { api_key, group_id } = options;
 
   const headers = { Authorization: `Bearer ${api_key}` };
 
   const requestURL = getZoteroURL(`groups/${group_id}`);
-  return axios.get(requestURL, { headers }).then((res) => {
+  return axios.get(requestURL, { headers }).then(res => {
     return res.data;
   });
 }
@@ -52,13 +46,10 @@ export async function getChangedItemsForGroup(options) {
   const headers = { Authorization: `Bearer ${api_key}` };
 
   return axios
-    .get(
-      getZoteroURL(
-        `groups/${group}/items?since=${version}&format=versions&includeTrashed=1`,
-      ),
-      { headers },
-    )
-    .then((res) => res.data);
+    .get(getZoteroURL(`groups/${group}/items?since=${version}&format=versions&includeTrashed=1`), {
+      headers,
+    })
+    .then(res => res.data);
 }
 
 // const superagent = require('superagent');

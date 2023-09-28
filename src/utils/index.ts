@@ -31,7 +31,7 @@ export function catchme(number, text, error, data) {
       data,
     },
     null,
-    2,
+    2
   );
 }
 
@@ -46,7 +46,7 @@ export function getCanonicalURL(args, element) {
   url =
     element.data.url != '' && !element.bib.match(element.data.url)
       ? ` Available from <a href="${he.encode(element.data.url)}">${he.encode(
-          element.data.url,
+          element.data.url
         )}</a>.`
       : '';
   url = element.data.url.match(/docs.edtechhub.org|docs.opendeved.net/)
@@ -57,7 +57,7 @@ export function getCanonicalURL(args, element) {
         element.key,
         args.zgroup,
         args.zkey,
-        args.openinzotero,
+        args.openinzotero
       ) +
       ')'
     : url;
@@ -70,7 +70,7 @@ export function urlify(
   elementKey,
   argsZGroup,
   argsZKey,
-  argsOpenInZotero,
+  argsOpenInZotero
 ) {
   return `<a href="https://ref.opendeved.net/zo/zg/${elementLibraryId}/7/${elementKey}/NA?${
     argsZGroup || argsZKey ? `src=${argsZGroup}:${argsZKey}&` : ''

@@ -18,7 +18,7 @@ describe('md5-file', () => {
   });
 
   afterEach(() => {
-    fs.unlink(testFileName, (err) => {
+    fs.unlink(testFileName, err => {
       if (err) throw err;
     });
   });

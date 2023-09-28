@@ -3,11 +3,7 @@ interface deduplicate_func_result {
   reason: string;
 }
 
-export default async function compare(
-  item,
-  item2,
-  args
-): Promise<deduplicate_func_result> {
+export default async function compare(item, item2, args): Promise<deduplicate_func_result> {
   let temp = await DeleteExtra(item);
   let temp2 = await DeleteExtra(item2);
   // console.log(temp);
@@ -17,47 +13,43 @@ export default async function compare(
   // process.exit(0);
 
   // compare the two objects
-  if(!args.mode){
-    
-  if (
-    (await CompareAllFields(temp, temp2)) &&
-    (await compareCreators(temp.creators, temp2.creators))
-  )
-    return { result: true, reason: 'identical' };
-  else if (
-    (await CompareAllFieldsLowerCase(temp, temp2)) &&
-    (await compareCreators(temp.creators, temp2.creators))
-  )
-    return { result: true, reason: 'identical_in_lowercase' };
-  else if (await compareIdenticalInSeveralFields(temp, temp2))
-    return { result: true, reason: 'identicalInTitleAndAuthors' };
-  else if (await compareDIO(temp, temp2))
-    return { result: true, reason: 'same_doi_but_other_variations' };
-
-  
-}
-
-else
-{
-  if (
-    (await CompareAllFields(temp, temp2)) &&
-    (await compareCreators(temp.creators, temp2.creators)) &&
-    args.mode === 'identical'
-
-  )
-    return { result: true, reason: 'identical' };
-  else if (
-    (await CompareAllFieldsLowerCase(temp, temp2)) &&
-    (await compareCreators(temp.creators, temp2.creators))&&
-    args.mode === 'identical_in_lowercase'
-  )
-    return { result: true, reason: 'identical_in_lowercase' };
-  else if (await compareIdenticalInSeveralFields(temp, temp2) && args.mode === 'identical_in_several_fields')
-    return { result: true, reason: 'identicalInTitleAndAuthors' };
-  else if (await compareDIO(temp, temp2) && args.mode === 'same_doi')
-    return { result: true, reason: 'same_doi_but_other_variations' };
-}
-return { result: false, reason: 'not_identical' };
+  if (!args.mode) {
+    if (
+      (await CompareAllFields(temp, temp2)) &&
+      (await compareCreators(temp.creators, temp2.creators))
+    )
+      return { result: true, reason: 'identical' };
+    else if (
+      (await CompareAllFieldsLowerCase(temp, temp2)) &&
+      (await compareCreators(temp.creators, temp2.creators))
+    )
+      return { result: true, reason: 'identical_in_lowercase' };
+    else if (await compareIdenticalInSeveralFields(temp, temp2))
+      return { result: true, reason: 'identicalInTitleAndAuthors' };
+    else if (await compareDIO(temp, temp2))
+      return { result: true, reason: 'same_doi_but_other_variations' };
+  } else {
+    if (
+      (await CompareAllFields(temp, temp2)) &&
+      (await compareCreators(temp.creators, temp2.creators)) &&
+      args.mode === 'identical'
+    )
+      return { result: true, reason: 'identical' };
+    else if (
+      (await CompareAllFieldsLowerCase(temp, temp2)) &&
+      (await compareCreators(temp.creators, temp2.creators)) &&
+      args.mode === 'identical_in_lowercase'
+    )
+      return { result: true, reason: 'identical_in_lowercase' };
+    else if (
+      (await compareIdenticalInSeveralFields(temp, temp2)) &&
+      args.mode === 'identical_in_several_fields'
+    )
+      return { result: true, reason: 'identicalInTitleAndAuthors' };
+    else if ((await compareDIO(temp, temp2)) && args.mode === 'same_doi')
+      return { result: true, reason: 'same_doi_but_other_variations' };
+  }
+  return { result: false, reason: 'not_identical' };
 }
 
 // write function to compare creators
@@ -69,11 +61,15 @@ async function compareCreators(creators, creators2) {
       (creators2 === undefined || creators2 === null)
     )
       return true;
-    if(creators === undefined || creators === null || creators2 === undefined || creators2 === null)
+    if (
+      creators === undefined ||
+      creators === null ||
+      creators2 === undefined ||
+      creators2 === null
+    )
       return false;
     if (creators.length === 0 && creators2.length === 0) return true;
 
-    
     if (creators.length === creators2.length) {
       for (let i = 0; i < creators.length; i++) {
         if (
@@ -83,8 +79,7 @@ async function compareCreators(creators, creators2) {
           return false;
         }
       }
-    }
-    else return false;
+    } else return false;
   } catch (error) {
     console.log(error);
   }
@@ -93,7 +88,7 @@ async function compareCreators(creators, creators2) {
 //@ts-ignore
 async function DeleteExtra(item) {
   let temp = item;
-  
+
   delete temp.accessDate;
   delete temp.extra;
   delete temp.relations;
@@ -115,14 +110,12 @@ async function CompareAllFields(item, item2) {
   let keys = Object.keys(item);
 
   // compare creators
-  
+
   if (!(await compareCreators(item.creators, item2.creators))) return false;
 
   // remove creator key
   keys.splice(keys.indexOf('creators'), 1);
   keys.splice(keys.indexOf('key'), 1);
-  
-  
 
   for (let i = 0; i < keys.length; i++) {
     if (item[keys[i]] !== item2[keys[i]]) {
@@ -141,27 +134,20 @@ async function CompareAllFieldsLowerCase(item, item2) {
   keys.splice(keys.indexOf('creators'), 1);
   keys.splice(keys.indexOf('key'), 1);
 
-  
-    for (let i = 0; i < keys.length; i++) {
-      // check the type of the value if it is string then convert to lowercase
-      if (
-        !((await isEmpty(item[keys[i]])) && (await isEmpty(item2[keys[i]])))
-      ) {
-        if (
-          typeof item[keys[i]] === 'string' &&
-          typeof item2[keys[i]] === 'string'
-        ) {
-          if (item[keys[i]].toLowerCase() !== item2[keys[i]].toLowerCase()) {
-            return false;
-          }
-        } else {
-          if (item[keys[i]] !== item2[keys[i]]) {
-            return false;
-          }
+  for (let i = 0; i < keys.length; i++) {
+    // check the type of the value if it is string then convert to lowercase
+    if (!((await isEmpty(item[keys[i]])) && (await isEmpty(item2[keys[i]])))) {
+      if (typeof item[keys[i]] === 'string' && typeof item2[keys[i]] === 'string') {
+        if (item[keys[i]].toLowerCase() !== item2[keys[i]].toLowerCase()) {
+          return false;
+        }
+      } else {
+        if (item[keys[i]] !== item2[keys[i]]) {
+          return false;
         }
       }
     }
-  
+  }
 
   return true;
 }
@@ -176,7 +162,7 @@ async function CompareAllFieldsLowerCase(item, item2) {
 //     try {
 //       if (
 //         //TODO : create a tag to ignore detecting the item _ignore-duplicate
-//         //TODO : check for title, creators 
+//         //TODO : check for title, creators
 //         //TODO : change the category from identicalInSeveralFields to identicalInTitleAndAuthors
 //         //
 //         item.title.toLowerCase() === item2.title.toLowerCase() &&
@@ -187,9 +173,9 @@ async function CompareAllFieldsLowerCase(item, item2) {
 //         return true;
 //     } catch (error) {
 //       console.log(item2.itemType);
-      
+
 //     }
-    
+
 //   }
 
 //   if (item.itemType === 'note' && item2.itemType === 'note') {
@@ -209,7 +195,6 @@ async function CompareAllFieldsLowerCase(item, item2) {
 
 //   return false;
 // }
-
 
 async function compareIdenticalInSeveralFields(item: any, item2: any): Promise<boolean> {
   const keys1 = Object.keys(item);
@@ -243,7 +228,6 @@ async function compareIdenticalInSeveralFields(item: any, item2: any): Promise<b
 
   return score > 1;
 }
-
 
 // //@ts-ignore
 // var stringSimilarity = require('string-similarity');

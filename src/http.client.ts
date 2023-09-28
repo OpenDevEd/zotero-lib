@@ -17,9 +17,7 @@ export class HttpClient {
   }
 
   async post(uri, data, headers = {}, config: any = {}) {
-    const prefix = config.user_id
-      ? `/users/${config.user_id}`
-      : `/groups/${config.group_id}`;
+    const prefix = config.user_id ? `/users/${config.user_id}` : `/groups/${config.group_id}`;
     if (!uri.startsWith('http')) {
       uri = `${base}${prefix}${uri}`;
     }
@@ -36,7 +34,7 @@ export class HttpClient {
         ...headers,
       },
       data,
-    }).then((res) => res.data);
+    }).then(res => res.data);
   }
 
   async get(
@@ -49,26 +47,23 @@ export class HttpClient {
       json?: boolean;
       arraybuffer?: boolean;
     } = {},
-    config: any = {},
+    config: any = {}
   ) {
-    if (typeof options.userOrGroupPrefix === 'undefined')
-      options.userOrGroupPrefix = true;
+    if (typeof options.userOrGroupPrefix === 'undefined') options.userOrGroupPrefix = true;
 
     if (typeof options.params === 'undefined') options.params = {};
     if (typeof options.json === 'undefined') options.json = true;
 
     let prefix = '';
     if (options.userOrGroupPrefix) {
-      prefix = config.user_id
-        ? `/users/${config.user_id}`
-        : `/groups/${config.group_id}`;
+      prefix = config.user_id ? `/users/${config.user_id}` : `/groups/${config.group_id}`;
     }
 
     const params = Object.keys(options.params)
-      .map((param) => {
+      .map(param => {
         let values = options.params[param];
         values = as_array(values);
-        return values.map((v) => `${param}=${encodeURI(v)}`).join('&');
+        return values.map(v => `${param}=${encodeURI(v)}`).join('&');
       })
       .join('&');
 
@@ -101,11 +96,9 @@ export class HttpClient {
           config: response.config,
         };
       })
-      .catch((error) => {
+      .catch(error => {
         if (config.verbose) {
-          console.log(
-            `Error in zotero.get = ${JSON.stringify(error, null, 2)}`,
-          );
+          console.log(`Error in zotero.get = ${JSON.stringify(error, null, 2)}`);
         }
         logger.error('error in zotero get %O', error);
         // console.log(`Error in zotero.get = ${JSON.stringify(error.error.data, null, 2)}`)
@@ -117,9 +110,7 @@ export class HttpClient {
           url: uri,
           json: options.json,
         };
-        console.log(
-          'Error in zotero.get = ' + JSON.stringify(shortError, null, 2),
-        );
+        console.log('Error in zotero.get = ' + JSON.stringify(shortError, null, 2));
         return error;
       });
     // console.log("all=" + JSON.stringify(res, null, 2))
@@ -132,9 +123,7 @@ export class HttpClient {
 
   // TODO: Add resolveWithFullResponse: options.resolveWithFullResponse,
   async put(uri, data, config) {
-    const prefix = config.user_id
-      ? `/users/${config.user_id}`
-      : `/groups/${config.group_id}`;
+    const prefix = config.user_id ? `/users/${config.user_id}` : `/groups/${config.group_id}`;
 
     uri = `${base}${prefix}${uri}`;
     if (config.verbose) console.error('PUT', uri);
@@ -145,7 +134,7 @@ export class HttpClient {
       headers: { ...this.headers, 'Content-Type': 'application/json' },
       data,
     })
-      .then((res) => {
+      .then(res => {
         return {
           body: res.data,
           status: res.status,
@@ -154,7 +143,7 @@ export class HttpClient {
           config: res.config,
         };
       })
-      .catch((error) => {
+      .catch(error => {
         console.log('PUT ERROR=' + JSON.stringify(error, null, 2));
         return error;
       });
@@ -163,9 +152,7 @@ export class HttpClient {
   // patch does not return any data.
   // TODO: Errors are not handled - add this to patch (below) but needs adding to others.
   async patch(uri, data, version?: number, config?: any) {
-    const prefix = config.user_id
-      ? `/users/${config.user_id}`
-      : `/groups/${config.group_id}`;
+    const prefix = config.user_id ? `/users/${config.user_id}` : `/groups/${config.group_id}`;
 
     const headers = { ...this.headers, 'Content-Type': 'application/json' };
     if (typeof version !== 'undefined') {
@@ -180,7 +167,7 @@ export class HttpClient {
       data,
       resolveWithFullResponse: true,
     })
-      .then((response) => {
+      .then(response => {
         return {
           body: response.data,
           statusCode: response.status,
@@ -189,7 +176,7 @@ export class HttpClient {
           config: response.config,
         };
       })
-      .catch((error) => {
+      .catch(error => {
         console.log('PAT ERROR=' + JSON.stringify(error, null, 2));
         return error;
       });
@@ -197,9 +184,7 @@ export class HttpClient {
 
   // TODO: Add resolveWithFullResponse: options.resolveWithFullResponse,
   async delete(uri, version?: number, config?: any) {
-    const prefix = config.user_id
-      ? `/users/${config.user_id}`
-      : `/groups/${config.group_id}`;
+    const prefix = config.user_id ? `/users/${config.user_id}` : `/groups/${config.group_id}`;
 
     const headers = { ...this.headers, 'Content-Type': 'application/json' };
     if (typeof version !== 'undefined') {
@@ -213,6 +198,6 @@ export class HttpClient {
       method: 'DELETE',
       url: uri,
       headers,
-    }).then((res) => res.data);
+    }).then(res => res.data);
   }
 }
