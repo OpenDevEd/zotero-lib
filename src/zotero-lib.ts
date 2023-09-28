@@ -303,7 +303,7 @@ class Zotero {
     for (const uri of args.uri) {
       const res = await this.http.get(uri, { userOrGroupPrefix: !args.root }, this.config);
       if (args.show) {
-        TODO: this.show(res);
+        this.show(res);
         //this.show(res);
       }
       out.push(res);
@@ -2705,7 +2705,7 @@ class Zotero {
         response.push(resp);
       }
     }
-    if (!response || response.length == 0) {
+    if (response.length == 0) {
       return { status: 1, message: 'error', data: [] };
     }
     return { status: 0, message: 'Success', data: response };
@@ -3003,7 +3003,7 @@ async function syncToLocalDB(args: any) {
 
           // console.log('res', res);
           // @ts-ignore
-          await allItems.push(res.data);
+          allItems.push(res.data);
 
           if (++counter % 10 === 0) {
             console.log('counter: ', counter);
