@@ -327,26 +327,30 @@ class Zotero {
     const data: any[] = [];
 
     let link = uri;
+    let body = {
+      fulluri: false,
+      resolveWithFullResponse: true,
+      params,
+    };
     while (link) {
-      const chunk = await this.http
-        .get(
-          link,
-          {
-            resolveWithFullResponse: true,
-            params,
-          },
-          this.config
-        )
-        .catch(error => {
-          logger.info(`Error in fetchAll: ${error}`);
-        });
+      const chunk = await this.http.get(link, body, this.config).catch(error => {
+        logger.info(`Error in fetchItems: ${error}`);
+      });
 
-      data.push(...chunk.body);
+      if (chunk && chunk.body) {
+        data.push(...chunk.body);
+      }
 
-      link = chunk.headers.link && LinkHeader.parse(chunk.headers.link).rel('next')[0]?.uri;
-      if (chunk.headers.backoff) {
+      if (chunk && chunk.headers && chunk.headers.link) {
+        link = LinkHeader.parse(chunk.headers.link).rel('next')[0]?.uri;
+      } else {
+        link = undefined;
+      }
+
+      if (chunk && chunk.headers && chunk.headers.backoff) {
         await sleep(parseInt(chunk.headers.backoff) * 1000);
       }
+      body.fulluri = true;
     }
 
     return data;
@@ -358,6 +362,8 @@ class Zotero {
    * properties:
    * @returns an array of type `any[]`.
    */
+  //TODO:not used need to review
+
   public async __get(args: ZoteroArgs): Promise<any[]> {
     const results: any[] = [];
 
@@ -386,6 +392,8 @@ class Zotero {
    * @param {ZoteroArgs} args - ZoteroArgs is a type that contains the following properties:
    * @returns The response from the HTTP post request is being returned.
    */
+  //TODO:not used need to review
+
   public async __post(args: ZoteroArgs): Promise<any> {
     const response = await this.http.post(args.uri, args.data, {}, this.config);
     this.print(response);
@@ -402,6 +410,8 @@ class Zotero {
    * method. It likely contains the following properties:
    * @returns The response from the HTTP PUT request is being returned.
    */
+  //TODO:not used need to review
+
   public async __put(args: ZoteroArgs): Promise<any> {
     const response = await this.http.put(args.uri, args.data, this.config);
     this.print(response);
@@ -418,6 +428,8 @@ class Zotero {
    * @param {ZoteroArgs} args - ZoteroArgs is a type that contains the following properties:
    * @returns The response from the HTTP patch request is being returned.
    */
+  //TODO:not used need to review
+
   public async __patch(args: ZoteroArgs): Promise<any> {
     const response = await this.http.patch(args.uri, args.data, args.version, this.config);
     this.print(response);
@@ -435,6 +447,8 @@ class Zotero {
    * deleted.
    * @returns an array of any type.
    */
+  //TODO:not used need to review
+
   public async __delete(args: ZoteroArgs): Promise<any[]> {
     const output: any[] = [];
 
@@ -451,6 +465,7 @@ class Zotero {
    * Show details about this API key.
    * (API: /keys )
    */
+  //TODO:not used need to review
   public async key(args) {
     if (!args.api_key) {
       args.api_key = this.config.api_key;
