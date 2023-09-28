@@ -69,7 +69,7 @@ interface ZoteroConfig {
   zotero_schema?: string;
 }
 
-interface Args extends ZoteroConfig {
+interface ZoteroArgs extends ZoteroConfig {
   key?: string;
   filter?: string | object;
   savefiles?: boolean;
@@ -253,18 +253,18 @@ class Zotero {
   }
 
   /**
-   * The function "message" returns an object with a status code, a message, and optional data.
-   * @param [stat=0] - The "stat" parameter is used to specify the status of the message. It is an
-   * optional parameter with a default value of 0.
-   * @param [msg=None] - The `msg` parameter is a string that represents the message you want to include
-   * in the response. It can be any text you want to convey to the user.
-   * @param [data=null] - The `data` parameter is an optional parameter that can be used to pass
-   * additional information or data along with the message. It can be any type of data, such as an
-   * object, array, string, or number. If no value is provided for the `data` parameter, it will default
-   * to
-   * @returns An object with three properties: "status", "message", and "data".
+   * The function "message" returns an object with a status, message, and data property.
+   * @param {0 | 1} [stat=0] - The "stat" parameter is a number that can only have two possible values: 0
+   * or 1. It is used to indicate the status of the message. If "stat" is 0, it means there is an error
+   * or failure. If "stat" is 1, it means
+   * @param {string} [msg=None] - The `msg` parameter is a string that represents the message you want to
+   * include in the response. It has a default value of 'None', which means if you don't provide a value
+   * for `msg`, it will be set to 'None' by default.
+   * @param [data=null] - The `data` parameter is an optional parameter of type `object` that can be used
+   * to pass additional data along with the message. It is initialized with a default value of `null`.
+   * @returns An object with the properties "status", "message", and "data".
    */
-  private message(stat = 0, msg = 'None', data = null) {
+  private message(stat: 0 | 1 = 0, msg: string = 'None', data: {} = null) {
     return {
       status: stat,
       message: msg,
@@ -272,9 +272,13 @@ class Zotero {
     };
   }
 
-  private finalActions(output) {
-    // logger.info("args="+JSON.stringify(args))
-    // TODO: Look at the type of output: if string, then print, if object, then stringify
+  /**
+   * The `finalActions` function performs final actions such as writing output to a file and displaying
+   * it if specified in the configuration.
+   * @param {{} | string} output - The `output` parameter can be either an object (`{}`) or a string.
+   */
+  private finalActions(output: {} | string) {
+    if (typeof output === 'string') output = JSON.stringify(output, null, this.config.indent);
     if (this.config.out) {
       fs.writeFileSync(this.config.out, JSON.stringify(output, null, this.config.indent));
     }
