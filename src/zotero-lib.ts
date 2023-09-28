@@ -308,44 +308,43 @@ class Zotero {
   }
 
   // Function to get more than 100 records, i.e. chunked retrieval.
-  async all(uri, params = {}) {
-    let chunk = await this.http
-      .get(
-        uri,
-        {
-          resolveWithFullResponse: true,
-          params,
-        },
-        this.config
-      )
-      .catch(error => {
-        logger.info('Error in all: ' + error);
-      });
+  /**
+   * The `fetchItems` function is an asynchronous function that fetches items from a given URI and
+   * returns them as an array.
+   * @param {string} uri - The `uri` parameter is a string that represents the URL or endpoint from which
+   * you want to fetch data. It is the base URL that will be used for the initial request and subsequent
+   * requests for paginated data.
+   * @param {object} params - The `params` parameter is an object that contains additional parameters to
+   * be included in the HTTP request. These parameters are typically used for filtering or pagination
+   * purposes.
+   * @returns The function `fetchItems` returns a Promise that resolves to an array of any type.
+   */
+  async fetchItems(uri: string, params: object = {}): Promise<any[]> {
+    const data: any[] = [];
 
-    let data = chunk.body;
-
-    let link = chunk.headers.link && LinkHeader.parse(chunk.headers.link).rel('next');
-    while (link && link.length && link[0].uri) {
-      if (chunk.headers.backoff) {
-        await sleep(parseInt(chunk.headers.backoff) * 1000);
-      }
-
-      chunk = await this.http
+    let link = uri;
+    while (link) {
+      const chunk = await this.http
         .get(
-          link[0].uri,
+          link,
           {
-            fulluri: true,
             resolveWithFullResponse: true,
             params,
           },
           this.config
         )
         .catch(error => {
-          logger.info('Error in all: ' + error);
+          logger.info(`Error in fetchAll: ${error}`);
         });
-      data = data.concat(chunk.body);
-      link = chunk.headers.link && LinkHeader.parse(chunk.headers.link).rel('next');
+
+      data.push(...chunk.body);
+
+      link = chunk.headers.link && LinkHeader.parse(chunk.headers.link).rel('next')[0]?.uri;
+      if (chunk.headers.backoff) {
+        await sleep(parseInt(chunk.headers.backoff) * 1000);
+      }
     }
+
     return data;
   }
 
@@ -656,9 +655,9 @@ class Zotero {
       // If create_child==false:
       let collections = null;
       if (args.key) {
-        collections = await this.all(`/collections/${args.key}/collections`);
+        collections = await this.fetchItems(`/collections/${args.key}/collections`);
       } else {
-        collections = await this.all(`/collections${args.top ? '/top' : ''}`);
+        collections = await this.fetchItems(`/collections${args.top ? '/top' : ''}`);
       }
       this.show(collections);
       this.finalActions(collections);
@@ -790,7 +789,7 @@ class Zotero {
     if (args.top) {
       // This should be all - there may be more than 100 items.
       // items = await this.all(`${collection}/items/top`, { params })
-      items = await this.all(`${collection}/items/top`, params);
+      items = await this.fetchItems(`${collection}/items/top`, params);
     } else if (params.limit) {
       if (params.limit > 100) {
         return this.message(0, 'You can only retrieve up to 100 items with with params.limit.');
@@ -799,7 +798,7 @@ class Zotero {
       items = await this.http.get(`${collection}/items`, { params }, this.config);
     } else {
       // logger.info("all-----")
-      items = await this.all(`${collection}/items`, params);
+      items = await this.fetchItems(`${collection}/items`, params);
     }
 
     if (args.validate || args.validate_with) {
@@ -1505,9 +1504,9 @@ class Zotero {
   async tags(args) {
     let rawTags = null;
     if (args.filter) {
-      rawTags = await this.all(`/ tags / ${encodeURIComponent(args.filter)} `);
+      rawTags = await this.fetchItems(`/ tags / ${encodeURIComponent(args.filter)} `);
     } else {
-      rawTags = await this.all('/tags');
+      rawTags = await this.fetchItems('/tags');
     }
     const tags = rawTags.map(tag => tag.tag).sort();
 

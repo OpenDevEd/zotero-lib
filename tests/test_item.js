@@ -1,8 +1,8 @@
 /*
 Testing item functions.
 */
-const Zotero = require('../build/zotero-lib')
-const fs = require('fs')
+const Zotero = require('../build/zotero-lib');
+const fs = require('fs');
 
 async function main() {
   /*
@@ -15,16 +15,14 @@ async function main() {
   //const zotero = new Zotero({verbose: true})
 
   // Specify group via constructor
-  const zotero = new Zotero({verbose: false, "group-id": 2259720})
-  const response = await zotero.item({key: "YH7GFG6L"})
-  console.log("response = " + JSON.stringify(response, null, 2))
+  const zotero = new Zotero({ verbose: false, 'group-id': 2259720 });
+  const response = await zotero.item({ key: 'YH7GFG6L' });
+  console.log('response = ' + JSON.stringify(response, null, 2));
   // TODO: Have automated test to see whether successful.
   if (!response) {
-    console.log("1 - item not found - item does not exist")
+    console.log('1 - item not found - item does not exist');
   }
-  return 0
+  return 0;
 }
 
-
-main()
-
+main();
