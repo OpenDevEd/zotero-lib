@@ -55,10 +55,8 @@ const LinkHeader = require('http-link-header');
 const ajv = new Ajv();
 interface ZoteroConfig {
   'user-id'?: string;
-  'group-id'?: string;
   group_id?: string;
   'library-type'?: string;
-  'api-key'?: string;
   api_key?: string;
   indent?: number;
   verbose?: boolean;
@@ -69,6 +67,26 @@ interface ZoteroConfig {
   out?: boolean;
   show?: boolean;
   zotero_schema?: string;
+}
+
+interface Args extends ZoteroConfig {
+  key?: string;
+  filter?: string | object;
+  savefiles?: boolean;
+  addfiles?: string[];
+  addtocollection?: string[];
+  switchNames?: boolean;
+  organise_extra?: boolean;
+  crossref_user?: string;
+  removefromcollection?: string[];
+  addtags?: string[];
+  removetags?: string[];
+  children?: boolean;
+  validate?: boolean;
+  validate_with?: string;
+  fullresponse?: boolean;
+  show?: boolean;
+  debug?: boolean;
 }
 class Zotero {
   // The following config keys are expected/allowed,
@@ -108,7 +126,7 @@ class Zotero {
   public configure(args, shouldReadConfigFile = false) {
     // pick up config: The function reads args and populates config
 
-    let config = {};
+    let config: ZoteroConfig = {};
 
     // STEP 1. Read config file
     if (shouldReadConfigFile || args.config) {
@@ -234,6 +252,18 @@ class Zotero {
     args.group_id ? (this.config.group_id = args.group_id) : null;
   }
 
+  /**
+   * The function "message" returns an object with a status code, a message, and optional data.
+   * @param [stat=0] - The "stat" parameter is used to specify the status of the message. It is an
+   * optional parameter with a default value of 0.
+   * @param [msg=None] - The `msg` parameter is a string that represents the message you want to include
+   * in the response. It can be any text you want to convey to the user.
+   * @param [data=null] - The `data` parameter is an optional parameter that can be used to pass
+   * additional information or data along with the message. It can be any type of data, such as an
+   * object, array, string, or number. If no value is provided for the `data` parameter, it will default
+   * to
+   * @returns An object with three properties: "status", "message", and "data".
+   */
   private message(stat = 0, msg = 'None', data = null) {
     return {
       status: stat,
