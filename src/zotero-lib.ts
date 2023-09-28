@@ -89,6 +89,7 @@ interface ZoteroArgs extends ZoteroConfig {
   debug?: boolean;
   uri?: string[];
   root?: string;
+  data?: {};
 }
 class Zotero {
   // The following config keys are expected/allowed,
@@ -379,13 +380,15 @@ class Zotero {
   // TODO: Add resolveWithFullResponse: options.resolveWithFullResponse,
 
   /**
-   * Expose 'post'. Make a direct query to the API using
-   * 'POST uri [--data data]'.
+   * The function `post` sends a POST request to a specified URI with provided data and returns the
+   * response.
+   * @param {ZoteroArgs} args - ZoteroArgs is a type that contains the following properties:
+   * @returns The response from the HTTP post request is being returned.
    */
-  public async __post(args) {
-    const res = await this.http.post(args.uri, args.data, {}, this.config);
-    this.print(res);
-    return res;
+  public async post(args: ZoteroArgs): Promise<any> {
+    const response = await this.http.post(args.uri, args.data, {}, this.config);
+    this.print(response);
+    return response;
   }
 
   /**

@@ -4,7 +4,7 @@ Testing record creation.
 const Zotero = require('../build/zotero-lib');
 
 async function main() {
-  const zotero = new Zotero({ verbose: true, 'group-id': 2259720 });
+  const zotero = new Zotero({ verbose: false, 'group-id': 2259720 });
   const collections = await zotero.collections({
     key: 'HP6NALR4',
     terse: true,
