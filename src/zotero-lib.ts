@@ -87,6 +87,8 @@ interface ZoteroArgs extends ZoteroConfig {
   fullresponse?: boolean;
   show?: boolean;
   debug?: boolean;
+  uri?: string[];
+  root?: string;
 }
 class Zotero {
   // The following config keys are expected/allowed,
@@ -349,20 +351,29 @@ class Zotero {
   }
 
   /**
-   * Expose 'get'
-   * Make a direct query to the API using 'GET uri'.
+   * The function `get` retrieves data from multiple URIs and returns an array of the responses.
+   * @param {ZoteroArgs} args - The `args` parameter is an object that contains the following
+   * properties:
+   * @returns an array of type `any[]`.
    */
-  public async __get(args) {
-    const out = [];
+  public async get(args: ZoteroArgs): Promise<any[]> {
+    const results: any[] = [];
+
     for (const uri of args.uri) {
-      const res = await this.http.get(uri, { userOrGroupPrefix: !args.root }, this.config);
-      if (args.show) {
-        this.show(res);
-        //this.show(res);
+      const requestOptions = {
+        userOrGroupPrefix: !args.root,
+      };
+
+      const response = await this.http.get(uri, requestOptions, this.config);
+
+      if (args.verbose) {
+        this.show(response);
       }
-      out.push(res);
+
+      results.push(response);
     }
-    return out;
+
+    return results;
   }
 
   // TODO: Add resolveWithFullResponse: options.resolveWithFullResponse,
