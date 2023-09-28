@@ -67,6 +67,7 @@ interface ZoteroConfig {
   out?: boolean;
   show?: boolean;
   zotero_schema?: string;
+  sdk?: boolean;
 }
 
 interface ZoteroArgs extends ZoteroConfig {
@@ -91,7 +92,6 @@ interface ZoteroArgs extends ZoteroConfig {
   root?: string;
   data?: {};
   version?: string | number;
-  sdk?: boolean;
 }
 class Zotero {
   // The following config keys are expected/allowed,
@@ -152,7 +152,7 @@ class Zotero {
 
     const result = this.canonicalConfig(config, args);
 
-    if (args.verbose && !args.sdk) {
+    if (args.verbose && !this.config.sdk) {
       logger.info('config=' + JSON.stringify(result, null, 2));
     }
 
@@ -208,6 +208,7 @@ class Zotero {
    */
   private canonicalConfig(_config: any, args: any) {
     const config = { ..._config };
+    if (args.sdk) config.sdk = args.sdk;
 
     this.config_keys.forEach(key => {
       const key_zotero = 'zotero-' + key;
@@ -375,7 +376,7 @@ class Zotero {
 
       const response = await this.http.get(uri, requestOptions, this.config);
 
-      if (args.verbose && !args.sdk) {
+      if (args.verbose && !this.config.sdk) {
         this.show(response);
       }
 
@@ -685,20 +686,21 @@ class Zotero {
         );
       }
       const resp = response;
-      logger.info('response=' + JSON.stringify(resp, null, 2));
       if (resp.successful) {
-        this.print('Collections created: ', resp.successful);
-        logger.info('collection....done');
+        if (!this.config.sdk) {
+          this.print('Collections created: ', resp.successful);
+        }
         return resp.successful;
       } else {
-        logger.info('collection....failed');
-        logger.info('response=' + JSON.stringify(resp, null, 2));
+        if (!this.config.sdk) {
+          logger.info('collection....failed');
+          logger.info('response=' + JSON.stringify(resp, null, 2));
+        }
         return resp;
       }
       // TODO: In all functions where data is returned, add '.successful' - Zotero always wraps in that.
       // This leaves an array.
     } else {
-      logger.info('get...');
       // test for args.top: Not required.
       // If create_child==false:
       let collections = null;
@@ -707,10 +709,9 @@ class Zotero {
       } else {
         collections = await this.fetchItems(`/collections${args.top ? '/top' : ''}`);
       }
-      this.show(collections);
-      this.finalActions(collections);
+      if (!this.config.sdk) this.show(collections);
+      if (!this.config.sdk) this.finalActions(collections);
       if (args.terse) {
-        logger.info('test');
         collections = collections.map(element =>
           Object({ key: element.data.key, name: element.data.name })
         );
@@ -853,7 +854,7 @@ class Zotero {
       this.validate_items(args, items);
     }
 
-    if (args.verbose && !args.sdk) this.show(items);
+    if (args.verbose && !this.config.sdk) this.show(items);
     return items;
   }
 
@@ -1021,7 +1022,7 @@ class Zotero {
                 this.config
               )
               .then(res => res.data);
-            if (args.verbose && !args.sdk) {
+            if (args.verbose && !this.config.sdk) {
               logger.info('uploadResponse=');
               this.show(uploadResponse);
             }
@@ -1194,7 +1195,8 @@ class Zotero {
 
     this.output = JSON.stringify(output);
 
-    if (args.verbose && !args.sdk) logger.info('item -> resul=' + JSON.stringify(result, null, 2));
+    if (args.verbose && !this.config.sdk)
+      logger.info('item -> resul=' + JSON.stringify(result, null, 2));
 
     const finalactions = this.finalActions(result);
     return args.fullresponse
@@ -2381,7 +2383,7 @@ class Zotero {
             });
           }
           const zoteroRecord = await this.item({ key: args.key });
-          if (args.verbose && !args.sdk)
+          if (args.verbose && !this.config.sdk)
             logger.info('Result=' + JSON.stringify(zoteroRecord, null, 2));
           return zoteroRecord;
         } else {
@@ -2524,7 +2526,7 @@ class Zotero {
       if (update.statusCode == 204) {
         logger.info('update successfull - getting record');
         const zoteroRecord = await this.item({ key: args.key });
-        if (args.verbose && !args.sdk)
+        if (args.verbose && !this.config.sdk)
           logger.info('Result=' + JSON.stringify(zoteroRecord, null, 2));
         return zoteroRecord;
       } else {
@@ -2609,7 +2611,7 @@ class Zotero {
       if (update.statusCode == 204) {
         logger.info('update successfull - getting record');
         zoteroRecord = await this.item({ key: args.key });
-        if (args.verbose && !args.sdk)
+        if (args.verbose && !this.config.sdk)
           logger.info('Result=' + JSON.stringify(zoteroRecord, null, 2));
       } else {
         logger.info('update failed');

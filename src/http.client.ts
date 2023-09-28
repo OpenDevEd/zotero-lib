@@ -1,3 +1,4 @@
+import { ZoteroConfig } from './local-db/types';
 import logger from './logger';
 import { as_array } from './utils';
 
@@ -16,15 +17,14 @@ export class HttpClient {
     this.headers = headers;
   }
 
-  async post(uri, data, headers = {}, config: any = {}) {
+  async post(uri, data, headers = {}, config: ZoteroConfig) {
     const prefix = config.user_id ? `/users/${config.user_id}` : `/groups/${config.group_id}`;
     if (!uri.startsWith('http')) {
       uri = `${base}${prefix}${uri}`;
     }
     console.log('POST uri: ' + uri);
     if (config.verbose) console.error('POST', uri);
-
-    console.log('POST data: ', data);
+    if (!config.sdk) console.log('POST data: ', data);
     return axios({
       method: 'POST',
       url: uri,
@@ -47,7 +47,7 @@ export class HttpClient {
       json?: boolean;
       arraybuffer?: boolean;
     } = {},
-    config: any = {}
+    config: ZoteroConfig
   ) {
     if (typeof options.userOrGroupPrefix === 'undefined') options.userOrGroupPrefix = true;
 
@@ -70,9 +70,10 @@ export class HttpClient {
     if (!options.fulluri) {
       uri = `${base}${prefix}${uri}${params ? '?' + params : ''}`;
     }
-    if (config.verbose) console.error('GET', uri);
+    if (!config.sdk && config.verbose) console.error('GET', uri);
     //TODO: remove this
-    logger.info('get uri: %s', uri);
+    if (!config.sdk) logger.info('get uri: %s', uri);
+
     const requestConfig: any = {
       method: 'get',
       url: uri,
@@ -122,7 +123,7 @@ export class HttpClient {
   }
 
   // TODO: Add resolveWithFullResponse: options.resolveWithFullResponse,
-  async put(uri, data, config) {
+  async put(uri, data, config: ZoteroConfig) {
     const prefix = config.user_id ? `/users/${config.user_id}` : `/groups/${config.group_id}`;
 
     uri = `${base}${prefix}${uri}`;
