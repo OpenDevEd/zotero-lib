@@ -91,6 +91,7 @@ interface ZoteroArgs extends ZoteroConfig {
   root?: string;
   data?: {};
   version?: string | number;
+  sdk?: boolean;
 }
 class Zotero {
   // The following config keys are expected/allowed,
@@ -151,7 +152,7 @@ class Zotero {
 
     const result = this.canonicalConfig(config, args);
 
-    if (args.verbose) {
+    if (args.verbose && !args.sdk) {
       logger.info('config=' + JSON.stringify(result, null, 2));
     }
 
@@ -374,7 +375,7 @@ class Zotero {
 
       const response = await this.http.get(uri, requestOptions, this.config);
 
-      if (args.verbose) {
+      if (args.verbose && !args.sdk) {
         this.show(response);
       }
 
@@ -533,50 +534,46 @@ class Zotero {
     this.print(JSON.stringify(v, null, this.config.indent));
   }
 
-  private extractKeyGroupVariable(key, n) {
-    // n=1 -> group
-    // n=2 -> items vs. collections
-    // n=3 -> key
-    // zotero://select/groups/(\d+)/(items|collections)/([A-Z01-9]+)
-    // TO DO - make this function array->array and string->string.
+  /**
+   * The function `extractKeyGroupVariable` extracts a specific part of a key string based on a given
+   * index, and returns it as a string or an array.
+   * @param {string | string[]} key - The `key` parameter can be either a string or an array of strings.
+   * It represents a key or a list of keys that need to be processed.
+   * @param {number} n - The parameter `n` is a number that determines which part of the matched key
+   * string to return. It is used in the `return res[n]` statement.
+   * @returns The function `extractKeyGroupVariable` returns a string, an array of strings, or null.
+   */
+  private extractKeyGroupVariable(key: string | string[], n: number): string | string[] | null {
     if (Array.isArray(key)) {
-      key = key.map(mykey => {
-        return this.extractKeyGroupVariable(mykey, n);
-      });
-      return key;
+      return key
+        .map(mykey => this.extractKeyGroupVariable(mykey, n))
+        .filter(Boolean)
+        .flat();
     }
-
-    let out = undefined;
-    key = key.toString();
-    const res = key.match(
-      /^zotero\:\/\/select\/groups\/(library|\d+)\/(items|collections)\/([A-Z01-9]+)/
+    const keyString = key.toString();
+    const res = keyString.match(
+      /^zotero:\/\/select\/groups\/(library|\d+)\/(items|collections)\/([A-Z01-9]+)/
     );
 
     if (res) {
-      // logger.info("extractKeyGroupVariable -> res=" + JSON.stringify(res, null, 2))
       if (res[2] === 'library') {
         logger.info(
           'You cannot specify zotero-select links (zotero://...) to select user libraries.'
         );
         return null;
       }
-      // logger.info("Key: zotero://-key provided for "+res[2]+" Setting group-id.")
+
       this.config.group_id = res[1];
-      out = res[n];
+      return res[n];
     }
 
-    if (!res) {
-      // There wasn't a match. We might have a group, or a key.
-      if (key.match(/^([A-Z01-9]+)/)) {
-        if ((n === 1 && key.match(/^([01-9]+)/)) || n === 3) {
-          // Group requested
-          // This is slightly ropy - presumably a zotero item key could just be numbers?
-          // item requested - this is ok, because we wouldn't expect a group to go in as sole argument
-          out = key;
-        }
+    if (keyString.match(/^([A-Z01-9]+)/)) {
+      if ((n === 1 && keyString.match(/^([01-9]+)/)) || n === 3) {
+        return keyString;
       }
     }
-    return out;
+
+    return null;
   }
 
   // TODO: args parsing code
@@ -856,7 +853,7 @@ class Zotero {
       this.validate_items(args, items);
     }
 
-    if (args.show) this.show(items);
+    if (args.verbose && !args.sdk) this.show(items);
     return items;
   }
 
@@ -1024,7 +1021,7 @@ class Zotero {
                 this.config
               )
               .then(res => res.data);
-            if (args.verbose) {
+            if (args.verbose && !args.sdk) {
               logger.info('uploadResponse=');
               this.show(uploadResponse);
             }
@@ -1197,7 +1194,7 @@ class Zotero {
 
     this.output = JSON.stringify(output);
 
-    if (args.show) logger.info('item -> resul=' + JSON.stringify(result, null, 2));
+    if (args.verbose && !args.sdk) logger.info('item -> resul=' + JSON.stringify(result, null, 2));
 
     const finalactions = this.finalActions(result);
     return args.fullresponse
@@ -2048,14 +2045,14 @@ class Zotero {
               await this.item({
                 key: item,
                 addtocollection: [collection.key],
-                verbose: true,
+                verbose: false,
               });
               for (const iterator of itemData[item]) {
                 finalName = finalName + ' , ' + iterator.key;
                 await this.item({
                   key: iterator.key,
                   addtocollection: [collection.key],
-                  verbose: true,
+                  verbose: false,
                 });
               }
             }
@@ -2070,14 +2067,14 @@ class Zotero {
             await this.item({
               key: item,
               addtocollection: [collectionTemp['0'].key],
-              verbose: true,
+              verbose: false,
             });
             for (const iterator of itemData[item]) {
               finalName = finalName + ' , ' + iterator.key;
               await this.item({
                 key: iterator.key,
                 addtocollection: [collectionTemp['0'].key],
-                verbose: true,
+                verbose: false,
               });
             }
           }
@@ -2091,14 +2088,14 @@ class Zotero {
           await this.item({
             key: item,
             addtocollection: [collectionTemp['0'].key],
-            verbose: true,
+            verbose: false,
           });
           for (const iterator of itemData[item]) {
             finalName = finalName + ' , ' + iterator.key;
             await this.item({
               key: iterator.key,
               addtocollection: [collectionTemp['0'].key],
-              verbose: true,
+              verbose: false,
             });
           }
         }
@@ -2384,7 +2381,8 @@ class Zotero {
             });
           }
           const zoteroRecord = await this.item({ key: args.key });
-          if (args.verbose) logger.info('Result=' + JSON.stringify(zoteroRecord, null, 2));
+          if (args.verbose && !args.sdk)
+            logger.info('Result=' + JSON.stringify(zoteroRecord, null, 2));
           return zoteroRecord;
         } else {
           logger.info('async update_doi - update failed', JSON.stringify(updatedItem, null, 2));
@@ -2526,7 +2524,8 @@ class Zotero {
       if (update.statusCode == 204) {
         logger.info('update successfull - getting record');
         const zoteroRecord = await this.item({ key: args.key });
-        if (args.verbose) logger.info('Result=' + JSON.stringify(zoteroRecord, null, 2));
+        if (args.verbose && !args.sdk)
+          logger.info('Result=' + JSON.stringify(zoteroRecord, null, 2));
         return zoteroRecord;
       } else {
         logger.info('update failed');
@@ -2610,7 +2609,8 @@ class Zotero {
       if (update.statusCode == 204) {
         logger.info('update successfull - getting record');
         zoteroRecord = await this.item({ key: args.key });
-        if (args.verbose) logger.info('Result=' + JSON.stringify(zoteroRecord, null, 2));
+        if (args.verbose && !args.sdk)
+          logger.info('Result=' + JSON.stringify(zoteroRecord, null, 2));
       } else {
         logger.info('update failed');
         return this.message(1, 'update failed', { update });

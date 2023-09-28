@@ -153,6 +153,10 @@ function parseArguments() {
     action: 'store_true',
     help: 'Log requests.',
   });
+  parser.add_argument('--sdk', {
+    action: 'store_true',
+    help: 'stop printing all output in SDK mode',
+  });
   parser.add_argument('--javascript', {
     action: 'store_true',
     help: 'convert to santax of javascript',
