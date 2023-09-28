@@ -286,20 +286,25 @@ class Zotero {
   }
 
   // library starts.
-  //TODO: this was made public because of cli refactoring
+  //TODO: need to refactor this and check about output
   // see if we can make it private again
-  public print(...args: any[]) {
-    if (!this.config.out) {
+
+  /**
+   * The `print` function logs the provided arguments to the console, with optional formatting and
+   * verbosity.
+   * @param {any[]} args - The `args` parameter is a rest parameter that allows the function to accept
+   * any number of arguments. It is of type `any[]`, which means it can accept arguments of any type.
+   * @returns If the `this.config.verbose` condition is true, then the function will return `undefined`.
+   * If the condition is false, then the function will return `void`.
+   */
+  public print(...args: any[]): void {
+    if (!this.config.verbose) {
       logger.info(args);
       return;
     }
 
-    this.output +=
-      args
-        .map(m => {
-          return this.formatMessage(m);
-        })
-        .join(' ') + '\n';
+    const formattedArgs = args.map(arg => this.formatMessage(arg));
+    this.output += `${formattedArgs.join(' ')}\n`;
   }
 
   // Function to get more than 100 records, i.e. chunked retrieval.

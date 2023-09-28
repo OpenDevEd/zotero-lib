@@ -187,3 +187,6 @@ after*.json
 item.json
 before*.json
 keys*.txt
+
+
+push.sh
