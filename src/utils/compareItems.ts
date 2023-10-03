@@ -13,7 +13,7 @@ export default async function compare(item, item2, args): Promise<deduplicate_fu
   // process.exit(0);
 
   // compare the two objects
-  if (!args.mode) {
+
     if (
       (await CompareAllFields(temp, temp2)) &&
       (await compareCreators(temp.creators, temp2.creators))
@@ -28,6 +28,7 @@ export default async function compare(item, item2, args): Promise<deduplicate_fu
       return { result: true, reason: 'identicalInTitleAndAuthors' };
     else if (await compareDIO(temp, temp2))
       return { result: true, reason: 'same_doi_but_other_variations' };
+
   } else {
     if (
       (await CompareAllFields(temp, temp2)) &&
@@ -52,10 +53,12 @@ export default async function compare(item, item2, args): Promise<deduplicate_fu
   return { result: false, reason: 'not_identical' };
 }
 
+//TODO:DRY
 // write function to compare creators
 async function compareCreators(creators, creators2) {
   try {
     // check if both are empty
+
     if (
       (creators === undefined || creators === null) &&
       (creators2 === undefined || creators2 === null)
@@ -68,14 +71,12 @@ async function compareCreators(creators, creators2) {
       creators2 === null
     )
       return false;
+
     if (creators.length === 0 && creators2.length === 0) return true;
 
     if (creators.length === creators2.length) {
       for (let i = 0; i < creators.length; i++) {
-        if (
-          creators[i].firstName !== creators2[i].firstName &&
-          creators[i].lastName !== creators2[i].lastName
-        ) {
+        if (creators[i].firstName !== creators2[i].firstName && creators[i].lastName !== creators2[i].lastName) {
           return false;
         }
       }
@@ -126,6 +127,15 @@ async function CompareAllFields(item, item2) {
   return true;
 }
 
+/**
+ * This function compares all fields of two objects, converting string values to lowercase and
+ * returning true if they match.
+ * @param item - The first object to compare.
+ * @param item2 - The second object being compared to the first object (item) in the
+ * CompareAllFieldsLowerCase function.
+ * @returns a boolean value. It returns true if all the non-creator and non-key fields of the two input
+ * objects are equal (ignoring case for string values), and false otherwise.
+ */
 async function CompareAllFieldsLowerCase(item, item2) {
   // compare the two objects
   // get all the keys of the object
@@ -195,6 +205,17 @@ async function CompareAllFieldsLowerCase(item, item2) {
 
 //   return false;
 // }
+
+
+/**
+ * This function compares two objects based on identical values in specific fields and returns a
+ * boolean indicating if there are at least two matches.
+ * @param {any} item - The first object to compare, which contains properties to be compared with the
+ * second object.
+ * @param {any} item2 - The `item2` parameter is an object that is being compared to another object
+ * (`item`) for identical values in several fields.
+ * @returns A boolean value is being returned.
+ */
 
 async function compareIdenticalInSeveralFields(item: any, item2: any): Promise<boolean> {
   const keys1 = Object.keys(item);

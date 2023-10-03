@@ -9,13 +9,26 @@ import formatAsZenodoJson from './utils/formatAsZenodoJson';
 import logger from './logger';
 import { configAllParsers } from './sub-commands';
 const fs = require('fs');
+import { configSetup } from './utils/setupConfig';
 
-const zoteroLib = new Zotero({});
+let zoteroLib = new Zotero({});
 
 /**
  * Initialize Command Line Interface
  */
 async function main() {
+  console.log(zoteroLib.config);
+
+  if (zoteroLib.config === false) {
+    try {
+      await configSetup();
+      zoteroLib = new Zotero({});
+    } catch (error) {
+      throw new Error('error happened while setting up config please try again');
+      // throw new Error('Both user/group are missing. You must provide exactly one of --user-id or --group-id');
+    }
+  }
+
   const args = parseArguments();
   if (args.version) {
     getVersion();
@@ -77,7 +90,6 @@ async function main() {
     if (!(args.func in zoteroLib)) {
       throw new Error(`No cmd handler defined for ${args.func}`);
     }
-
     zoteroLib.changeConfig(args);
     let result = await zoteroLib[args.func](args);
     // This really just works for 'item'... should realy move those functions elsewhere

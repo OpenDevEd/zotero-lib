@@ -8,6 +8,7 @@ async function getItems(items: string[]): Promise<{}> {
       id: {
         in: items,
       },
+      //TODO: add isDeleted to the where clause
     },
   });
   await prisma.$disconnect();
@@ -86,6 +87,7 @@ async function mergeTwoItems(groupid, base, deleted) {
     noMergeType.includes(deletedItem.result.data.itemType) ||
     noMergeType.includes(baseItem.result.data.itemType)
   ) {
+
     console.log('one of the items is not a note or attachment');
     return 0;
   }
@@ -135,11 +137,21 @@ async function mergeTwoItems(groupid, base, deleted) {
   // add or replace relations to base item
   baseItem.result.data.relations['dc:replaces'] = relations['dc:replaces'];
   let note = null;
+  baseItem.result.data.tags.push({
+    tag: 'auto_merged',
+  });
+  deletedItem.result.data.tags.push({
+    tag: 'merged',
+  });
+  deletedItem.result.data.tags.push({
+    tag: 'deleted',
+  });
   try {
     //update deleted item
     await zotero.update_item({
       key: deletedItem.result.key,
       json: {
+        tags: deletedItem.result.data.tags,
         deleted: 1,
         // title: `deleted ${deletedItem.result.data.title}`,
       },
@@ -149,6 +161,7 @@ async function mergeTwoItems(groupid, base, deleted) {
       key: baseItem.result.key,
       json: {
         relations: baseItem.result.data.relations,
+        tags: baseItem.result.data.tags,
       },
     });
     note = await zotero.attachNoteToItem(baseItem.result.key, {

@@ -10,15 +10,7 @@ import newVanityDOI from './utils/newVanityDOI';
 
 import compare from './utils/compareItems';
 import { createHttpClient } from './http.client';
-import {
-  as_array,
-  as_value,
-  catchme,
-  colophon,
-  getCanonicalURL,
-  isomessage,
-  urlify,
-} from './utils';
+import { as_array, as_value, catchme, colophon, getCanonicalURL, isomessage, urlify } from './utils';
 import decorations from './decorations';
 import { readConfigFile } from './readConfigFile';
 import md5File from './utils/md5-file';
@@ -26,20 +18,22 @@ import {
   fetchCurrentKey,
   fetchGroupData,
   fetchGroups,
-  //fetchItemsByIds,
+  //lookupItems,
   getChangedItemsForGroup,
 } from './local-db/api';
 import {
-  fetchAllItems,
+  // fetchAllItems,
   getAllGroups,
   saveGroup,
   // saveZoteroItems,
-  test,
+  saveZoteroItems2,
+  lookupItems,
 } from './local-db/db';
-import saveToFile from './local-db/saveToFile';
+// import saveToFile from './local-db/saveToFile';
 import { checkForValidLockFile, removeLockFile } from './lock.utils';
 import axios from 'axios';
 import { merge_items } from './utils/merge';
+import webSocket from 'ws';
 // import printJSON from './utils/printJSON';
 
 require('dotenv').config();
@@ -47,7 +41,6 @@ require('dotenv').config();
 const _ = require('lodash');
 const he = require('he');
 const convert = require('xml-js');
-const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const LinkHeader = require('http-link-header');
@@ -69,6 +62,7 @@ interface ZoteroConfig {
   zotero_schema?: string;
   sdk?: boolean;
 }
+
 
 interface ZoteroArgs extends ZoteroConfig {
   key?: string;
@@ -93,6 +87,7 @@ interface ZoteroArgs extends ZoteroConfig {
   data?: {};
   version?: string | number;
 }
+
 class Zotero {
   // The following config keys are expected/allowed,
   // with both "-" and "_". The corresponding variables have _
@@ -162,6 +157,7 @@ class Zotero {
       throw new Error(
         'Both user/group are missing. You must provide exactly one of --user-id or --group-id'
       );
+
     }
 
     // Check that one and only one is defined:
@@ -169,6 +165,7 @@ class Zotero {
       throw new Error(
         'Both user/group are specified. You must provide exactly one of --user-id or --group-id'
       );
+
     }
 
     if (args.indent === null) {
@@ -343,6 +340,7 @@ class Zotero {
         data.push(...chunk.body);
       }
 
+
       if (chunk && chunk.headers && chunk.headers.link) {
         link = LinkHeader.parse(chunk.headers.link).rel('next')[0]?.uri;
       } else {
@@ -353,8 +351,8 @@ class Zotero {
         await sleep(parseInt(chunk.headers.backoff) * 1000);
       }
       body.fulluri = true;
-    }
 
+    }
     return data;
   }
 
@@ -424,6 +422,7 @@ class Zotero {
    * Make a direct query to the API using
    * 'PATCH uri [--data data]'.
    */
+
   /**
    * The __patch function sends a PATCH request to a specified URI with the provided data and version,
    * and then prints and returns the response.
@@ -436,6 +435,7 @@ class Zotero {
     const response = await this.http.patch(args.uri, args.data, args.version, this.config);
     this.print(response);
     return response;
+
   }
 
   /**
@@ -564,6 +564,7 @@ class Zotero {
    */
   private extractKeyGroupVariable(key: string | string[], n: number): string | string[] | null {
     if (Array.isArray(key)) {
+
       return key
         .map(mykey => this.extractKeyGroupVariable(mykey, n))
         .filter(Boolean)
@@ -573,6 +574,7 @@ class Zotero {
     const res = keyString.match(
       /^zotero:\/\/select\/groups\/(library|\d+)\/(items|collections)\/([A-Z01-9]+)/
     );
+
 
     if (res) {
       if (res[2] === 'library') {
@@ -841,7 +843,6 @@ class Zotero {
         );
       }
     }
-
     const res = await this.http.get(
       `/collections/${args.key}${args.tags ? '/tags' : ''}`,
       undefined,
@@ -951,18 +952,18 @@ class Zotero {
       }
     } else {
       if (!fs.existsSync(this.config.zotero_schema))
+
         throw new Error(
           `You have asked for validation, but '${this.config.zotero_schema}' does not exist`
         );
+
       else {
         schema_path = this.config.zotero_schema;
       }
     }
     const oneSchema = fs.lstatSync(schema_path).isFile();
 
-    let validate = oneSchema
-      ? ajv.compile(JSON.parse(fs.readFileSync(schema_path, 'utf-8')))
-      : null;
+    let validate = oneSchema ? ajv.compile(JSON.parse(fs.readFileSync(schema_path, 'utf-8'))) : null;
 
     const validators = {};
     // still a bit rudimentary
@@ -1084,12 +1085,14 @@ class Zotero {
           const stat = fs.statSync(filename);
 
           // upload file using attachment template
+
           const uploadItem = await this.http.post(
             '/items',
             JSON.stringify([attachmentFileData]),
             {},
             this.config
           );
+
           const uploadAuthorization = await this.http.post(
             `/items/${uploadItem.successful[0].key}/file?md5=${md5File(filename)}&filename=${
               attachmentFileData.filename
@@ -1262,13 +1265,7 @@ class Zotero {
       result = await this.http.get(`/items/${args.key}/children`, { params }, this.config);
       output.push({ children_final: result });
     } else {
-      if (
-        args.addtocollection ||
-        args.removefromcollection ||
-        args.removetags ||
-        args.addtags ||
-        args.filter
-      ) {
+      if (args.addtocollection || args.removefromcollection || args.removetags || args.addtags || args.filter) {
         result = await this.http.get(`/items`, { params }, this.config);
       } else {
         // Nothing about the item has changed:
@@ -1288,8 +1285,11 @@ class Zotero {
 
     this.output = JSON.stringify(output);
 
+
     if (args.verbose && !this.config.sdk)
       logger.info('item -> resul=' + JSON.stringify(result, null, 2));
+    if (args.show) logger.info('item -> resul=' + JSON.stringify(result, null, 2));
+
 
     const finalactions = this.finalActions(result);
     return args.fullresponse
@@ -1385,6 +1385,7 @@ class Zotero {
       return result;
     }
 
+
     if (Array.isArray(args.files) && args.files.length > 0) {
       // if (!args.files.length)
       //   return this.message(
@@ -1407,6 +1408,7 @@ class Zotero {
         100..149 (end=150)
         150..150 (end=151)
         */
+
         for (var start = 0; start < itemsflat.length; start += batchSize) {
           const end =
             start + batchSize <= itemsflat.length ? start + batchSize : itemsflat.length + 1;
@@ -1426,11 +1428,12 @@ class Zotero {
             logger.error(`NOT Uploading objects ${start} to ${end}-1`);
             logger.info(`NOT Uploading objects ${start} to ${end}-1`);
             logger.info(`${itemsflat.slice(start, end).length}`);
+
           }
         }
+        // TODO: see how to use pruneData
+        return res;
       }
-      // TODO: see how to use pruneData
-      return res;
     }
 
     if ('items' in args) {
@@ -1438,7 +1441,9 @@ class Zotero {
       let items = args.items;
 
       if (Array.isArray(args.items) && args.items.length > 0) {
+
         items = items.map(item => (typeof item === 'string' ? JSON.parse(item) : item));
+
         items = JSON.stringify(items);
       }
 
@@ -1497,11 +1502,13 @@ class Zotero {
     if (args.key) {
       args.key = this.extractKeyAndSetGroup(args.key);
     } else {
+
       const msg = this.message(
         0,
         'Unable to extract group/key from the string provided. Arguments attached.',
         args
       );
+
       logger.info(msg);
     }
 
@@ -1905,22 +1912,28 @@ class Zotero {
   // TODO: needs review
   public async manageLocalDB(args) {
     console.log('args: ', { ...args }, this.config);
+    if (args.lookup && !args.keys) {
+      logger.error('You must provide keys to lookup');
+      process.exit(1);
+    }
 
-    process.env.DATABASE_URL_2 = `file:${process.cwd()}/${args.database}`;
-    console.log(process.env.DATABASE_URL_2);
+    // process.env.DATABASE_URL_2 = `file:${process.cwd()}/${args.database}`;
+    // console.log(process.env.DATABASE_URL_2);
 
-    try {
-      await exec(
-        `npx prisma migrate dev --schema=${process.cwd()}/prisma/schema2.prisma --name 'test2'`
-      );
-      await exec(`npx prisma generate --schema=${process.cwd()}/prisma/schema2.prisma`);
-    } catch (error) {}
+    if (args.lookup && Array.isArray(args.keys) && args.keys.length > 0) {
+      let keys = { keys: [...args.keys] };
+      let result = await lookupItems(keys);
+      if (args.verbose) logger.info('result: ', result);
+      return result;
+    }
+
 
     if (args.sync) {
       const lockFileName = args.lockfile;
       const runSync = () => {
         return checkForValidLockFile(args.lockfile, args.lock_timeout).then((hasValidLock: any) => {
           if (hasValidLock) {
+
             console.log(
               `Another sync run is in progress, please wait for it, or remove its lockfile ${lockFileName}`
             );
@@ -1929,6 +1942,7 @@ class Zotero {
           return syncToLocalDB({ ...args, ...this.config }).then(() =>
             removeLockFile(lockFileName)
           );
+
         });
       };
 
@@ -1940,43 +1954,46 @@ class Zotero {
       } else {
         await runSync();
       }
+      if (args.websocket) {
+        await websocket(args, this.config);
+      }
     } else {
       console.log('skipping syncing with online library');
     }
 
-    let filters = undefined;
-    if (args.lookup && Array.isArray(args.keys) && args.keys.length > 0) {
-      filters = { keys: [...args.keys] };
+    if (!args.websocket) {
+      sleep(1000);
+      process.exit(0);
     }
 
-    if (args.errors) {
-      filters = { errors: args.errors };
-    }
+    // if (args.errors) {
+    //   filters = { errors: args.errors };
+    // }
 
-    const allItems = await fetchAllItems({
-      database: args.database,
-      filters,
-    });
 
-    const itemsAsJSON = JSON.stringify(
-      allItems.map(item => item.data),
-      null,
-      2
-    );
-    if (args.export_json) {
-      console.log('exporting json into file: ', args.export_json);
-      let fileName = args.export_json;
-      if (!fileName.endsWith('.json')) {
-        fileName += '.json';
-      }
-      saveToFile(fileName, itemsAsJSON);
-    } else {
-      if (args.lookup || args.errors) {
-        console.log(itemsAsJSON);
-      }
-    }
-    sleep(1000);
-    process.exit(0);
+    // const allItems = await fetchAllItems({
+    //   database: args.database,
+    //   filters,
+    // });
+
+    // const itemsAsJSON = JSON.stringify(
+    //   allItems.map((item) => item.data),
+    //   null,
+    //   2,
+    // );
+    // if (args.export_json) {
+    //   console.log('exporting json into file: ', args.export_json);
+    //   let fileName = args.export_json;
+    //   if (!fileName.endsWith('.json')) {
+    //     fileName += '.json';
+    //   }
+    //   saveToFile(fileName, itemsAsJSON);
+    // } else {
+    //   if (args.lookup || args.errors) {
+    //     console.log(itemsAsJSON);
+    //   }
+    // }
+
   }
 
   /**
@@ -1991,6 +2008,8 @@ class Zotero {
     const prisma = new PrismaClient();
     await prisma.$connect();
     let group_id = args.group_id;
+    console.log('api_key: ', args.api_key);
+
     // get first item
     // let item = await prisma.items.findFirst({
     //   where: {
@@ -1998,6 +2017,8 @@ class Zotero {
     //     id:'MAN2TFDG'
     //   }});
     // first is to get all items from the group
+    logger.info('started finding duplicates process');
+    logger.info(`fetching data for : ${group_id}`);
     let allItems = await prisma.items.findMany({
       where: {
         group_id,
@@ -2005,17 +2026,24 @@ class Zotero {
       },
     });
     // slip into object by item.data.data.itemType
+    let types = [];
     let itemsByType = {};
+    logger.info(`fetching data end for : ${group_id}`);
+    logger.info(`started filtering duplicates by type : ${group_id}`);
     for (let item of allItems) {
       let itemType = item.data.data.itemType;
-      if (!['attachment', 'note'].includes(itemType)) {
+
+      if (!['attachment', 'note', 'annotation'].includes(itemType)) {
         if (itemType in itemsByType) {
           itemsByType[itemType].push(item);
         } else {
           itemsByType[itemType] = [item];
         }
+
+        if (!types.includes(itemType)) types.push(itemType);
       }
     }
+    logger.info(`filtering duplicates by type end : ${group_id}`);
 
     // show length of each key
     // for (let key in itemsByType) {
@@ -2034,19 +2062,21 @@ class Zotero {
 
     let duplicatesInType = [];
 
+
     if (items.length) {
       for (let i = 0; i < items.length; i++) {
         let isDuplicate = false;
         let item1 = items[i].data.data;
         let tags1 = item1.tags ? item1.tags.map(tag => tag.tag) : [];
+
         if (tags1.includes('_ignore-duplicate')) continue;
 
         // let title = item.title.toLowerCase();
         // loop through all items and check if there is a duplicate item[j].data.data.title
         for (let j = i + 1; j < items.length; j++) {
           let item2 = items[j].data.data;
-
           let tags2 = item2.tags ? item2.tags.map(tag => tag.tag) : [];
+
           if (tags2.includes('_ignore-duplicate')) continue;
 
           // create array of tag objects from item1 and item2
@@ -2061,11 +2091,13 @@ class Zotero {
             //   ...duplicates[result.reason][item.key],
             //   "key":item2.key,"version":item2.version
             // }
+
             if (
               result.reason === 'identical' &&
               args.collection &&
               Array.isArray(item2.collections)
             ) {
+
               this.item({
                 key: item2.key,
                 addtocollection: [args.collection],
@@ -2433,7 +2465,9 @@ class Zotero {
                 return null;
               }
               if (rowsImportbleItem.length != 1)
+
                 rowsImportbleItem = rowsImportbleItem.filter(row => row.id !== itemid);
+
 
               if (rowsImportbleItem.length == 1) {
                 type = 'importable';
@@ -2469,9 +2503,11 @@ class Zotero {
                 }
                 // remove rows item_id is the same as the itemid
                 if (rowsImportbleAlsoKnownAs.length != 1)
+
                   rowsImportbleAlsoKnownAs = rowsImportbleAlsoKnownAs.filter(
                     row => row.item_id !== itemid
                   );
+
                 if (rowsImportbleAlsoKnownAs.length == 1) {
                   type = 'importable_redirect';
                   data.push(
@@ -2481,9 +2517,11 @@ class Zotero {
                   type = 'importable_ambiguous';
                   for (const row of rowsImportbleAlsoKnownAs) {
                     if (row.item_id == itemid && group_id == row.group_id) type = 'valid_ambiguous';
+
                     data.push(
                       `https://ref.opendeved.net/g/${row.group_id}/${row.item_id}/?openin=zoteroapp`
                     );
+
                     //console.log(kerkoLine);
                   }
                 } else type = 'unknown';
@@ -2493,9 +2531,11 @@ class Zotero {
           if (type != 'valid')
             for (const row of rows) {
               if (row.item_id == itemid && group_id == row.group_id) type = 'valid_ambiguous';
+
               data.push(
                 `https://ref.opendeved.net/g/${row.group_id}/${row.item_id}/?openin=zoteroapp`
               );
+
               //console.log(kerkoLine);
             }
           result[key] = { type, data };
@@ -2575,8 +2615,10 @@ class Zotero {
             });
           }
           const zoteroRecord = await this.item({ key: args.key });
+
           if (args.verbose && !this.config.sdk)
             logger.info('Result=' + JSON.stringify(zoteroRecord, null, 2));
+
           return zoteroRecord;
         } else {
           logger.info('async update_doi - update failed', JSON.stringify(updatedItem, null, 2));
@@ -2663,11 +2705,13 @@ class Zotero {
         tags = args.tags ? tags.push(args.tags) : tags;
         const addkey = option === 'kerko_site_url' ? as_value(args.key) : '';
         // ACTION: run code
+
         const data = await this.attachLinkToItem(
           as_value(args.key),
           as_value(args[option]) + addkey,
           { title, tags }
         );
+
         dataout.push({
           decoration: option,
           data,
@@ -2685,9 +2729,7 @@ class Zotero {
     }
     if (args.update_url_field) {
       if (args.url || args.kerko_site_url) {
-        const kerkoUrl = as_value(args.kerko_site_url)
-          ? as_value(args.kerko_site_url) + as_value(args.key)
-          : '';
+        const kerkoUrl = as_value(args.kerko_site_url) ? as_value(args.kerko_site_url) + as_value(args.key) : '';
         //TODO: args parsing code
         const argx = {
           key: as_value(args.key),
@@ -2744,8 +2786,10 @@ class Zotero {
       if (update.statusCode == 204) {
         logger.info('update successfull - getting record');
         const zoteroRecord = await this.item({ key: args.key });
+
         if (args.verbose && !this.config.sdk)
           logger.info('Result=' + JSON.stringify(zoteroRecord, null, 2));
+
         return zoteroRecord;
       } else {
         logger.info('update failed');
@@ -2854,8 +2898,10 @@ class Zotero {
       if (update.statusCode == 204) {
         logger.info('update successfull - getting record');
         zoteroRecord = await this.item({ key: args.key });
+
         if (args.verbose && !this.config.sdk)
           logger.info('Result=' + JSON.stringify(zoteroRecord, null, 2));
+
       } else {
         logger.info('update failed');
         return this.message(1, 'update failed', { update });
@@ -3004,9 +3050,7 @@ class Zotero {
               spaces: 4,
             });
             outputstr =
-              `{\n"status": 0,\n"count": ${response.length},\n"duration": ${innerN},\n"data": ` +
-              payload +
-              '\n}';
+              `{\n"status": 0,\n"count": ${response.length},\n"duration": ${innerN},\n"data": ` + payload + '\n}';
           } catch (e) {
             outputstr = catchme(2, 'caught error in convert.xml2json', e, xml);
           }
@@ -3253,6 +3297,7 @@ class Zotero {
   }
 }
 
+
 /**
  * The function `syncToLocalDB` synchronizes a local database with an online library by fetching and
  * saving updated group and item data.
@@ -3265,25 +3310,46 @@ class Zotero {
 async function syncToLocalDB(args: any) {
   // print pwd
 
-  // const path = process.cwd() + '/' + args.database;
+const API_URL = 'https://api.zotero.org';
+// const ATTACHMENT_PATH = './attachments/';
 
-  // excute shell command
+// Utils
 
+const fetchChangedGroups = async (onlineGroups, offlineGroups): Promise<string[]> => {
+  const localGroupsMap = offlineGroups.reduce((a, c) => ({ ...a, [c.id]: c.version }), {});
+  return Object.keys(onlineGroups).filter((group) => onlineGroups[group] !== localGroupsMap[group]);
+};
+
+
+const fetchGroupItems = async (group, itemIds, args) => {
+  try {
+    const res = await axios.get(`${API_URL}/groups/${group.group}/items/?itemKey=${itemIds}&includeTrashed=1`, {
+      headers: { Authorization: `Bearer ${args.api_key}` },
+    });
+    // Extend this as needed for further processing
+    return res;
+  } catch (error) {
+    console.log('Error fetching group items');
+    console.log('retrying in 2 seconds');
+    sleep(2000);
+    return await fetchGroupItems(group, itemIds, args);
+  }
+};
+
+// Main Function
+const syncToLocalDB = async (args: any) => {
   const syncStart = Date.now();
   console.log('syncing local db with online library');
 
-  // perform key check i.e. do we have valid key and we'll also get userId as a bonus
   const keyCheck = await fetchCurrentKey(args);
-  //TODO: here we can perform extra check that the key is still valid and has access to groups
   const { userID } = keyCheck;
 
   args.user_id = userID;
   const { groupid } = args;
 
-  // fetch groups version and check which are changed
   const onlineGroups = await fetchGroups({ ...args });
-  // console.log('online groups: ', onlineGroups);
   const offlineGroups = await getAllGroups();
+
 
   // console.log('offline groups: ', offlineGroups);
   const offlineItemsVersion = offlineGroups.reduce(
@@ -3296,40 +3362,32 @@ async function syncToLocalDB(args: any) {
 
     let res = [];
 
-    for (let group in online) {
-      if (online[group] !== localGroupsMap[group]) {
-        res.push(group);
-      }
-    }
 
-    return res;
-  }
-  let changedGroups;
-  if (!groupid) changedGroups = getChangedGroups(onlineGroups, offlineGroups);
-  else changedGroups = [groupid];
+  const changedGroups: string[] = groupid ? [groupid] : await 
+  (onlineGroups, offlineGroups);
 
   if (changedGroups.length === 0) {
     console.log('found no changed group, so not fetching group data');
   } else {
     console.log('changed group count: ', changedGroups.length);
+
     console.log('changed  groups: ', changedGroups);
     let allChangedGroupsData = await Promise.all(
       changedGroups.map(changedGroup => fetchGroupData({ ...args, group_id: changedGroup }))
     );
     //@ts-ignore
 
-    // console.log('allChangedGroupsData: ', printJSON(allChangedGroupsData));
+
+    const allChangedGroupsData = await Promise.all(
+      changedGroups.map((changedGroup) => fetchGroupData({ ...args, group_id: changedGroup })),
+    );
     await saveGroup(allChangedGroupsData);
-    // console.log('savedChangedGroups: ', printJSON(savedChangedGroups));
   }
 
-  let changedGroupsArray;
-  if (groupid) changedGroupsArray = [groupid];
-  else changedGroupsArray = Object.keys(onlineGroups);
+  const changedGroupsArray = groupid ? [groupid] : Object.keys(onlineGroups);
 
-  //TODO: push local changes
-  // get remote changes
   const changedItemsForGroups = await Promise.all(
+
     changedGroupsArray.map(group =>
       getChangedItemsForGroup({
         ...args,
@@ -3341,34 +3399,17 @@ async function syncToLocalDB(args: any) {
 
   const totalToBeSynced = changedItemsForGroups.reduce((a, c) => a + Object.keys(c).length, 0);
   // console.log('changed items for groups: ', changedItemsForGroups);
+
   console.log('Total items to be synced: ', totalToBeSynced);
+
   if (totalToBeSynced > 0) {
-    // convert id: version map to array of ids, chuncked by 50 items max
     const chunckedItemsByGroup = changedItemsForGroups.map((item, index) => ({
       group: changedGroupsArray[index],
       itemIds: _.chunk(Object.keys(item), 100),
     }));
 
-    // console.log('chuncked items by group: ', printJSON(chunckedItemsByGroup));
-    let itemsLastModifiedVersion = {};
-
-    // item children map
-    const childrenMap = {};
-    // item referenced by map
-    const referenceMap = {};
-
-    // for each group fetch all items with given ids, in batch of 50
-    // 👇️ ts-ignore ignores any ts errors on the next line
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    let allItems = [];
-    let counter = 0;
-    // let Zoterolib = new Zotero({group_id:2259720});
-    // const options =  {"count":false,"top":false,"validate":false}
-    // const result = await Zoterolib.items(options);
-    // console.log('result: ', result.length);
-
     for (let group of chunckedItemsByGroup) {
+
       console.log('group length: ', group.itemIds.length);
 
       for (let itemIds of group.itemIds) {
@@ -3462,10 +3503,25 @@ async function syncToLocalDB(args: any) {
 
           return chunkedItem;
         })
+
+      console.log('group: ', group.group, 'item count: ', group.itemIds.length);
+      if (group.itemIds.length === 0) continue;
+      //@ts-ignore
+      const resItems = await Promise.all(
+        group.itemIds.map(async (itemIds) => {
+          //@ts-ignore
+          const { data, headers } = await fetchGroupItems(group, itemIds, args);
+
+          return { data, headers };
+        }),
+
       );
 
-      if (allFetchedItems.length) {
-        console.log('itemsVersion: ', itemsLastModifiedVersion);
+      //@ts-ignore
+      const lastModifiedVersion = resItems[resItems.length - 1].headers['last-modified-version'];
+      //@ts-ignore
+      const groupItems = resItems.map((item) => item.data);
+
 
         await test(allFetchedItems, itemsLastModifiedVersion, group.group).then(() =>
           console.log('group saved into db ', group.group)
@@ -3474,9 +3530,18 @@ async function syncToLocalDB(args: any) {
       // sleep for 1 second
       await new Promise(resolve => setTimeout(resolve, 0));
 
-      allItems = [];
-      allFetchedItems = [];
-      itemsLastModifiedVersion = {};
+      // console.log('group items fetched: ', Object.keys(resItems));
+
+
+      const itemsLastModifiedVersion = {}; // Extend this as needed
+      //@ts-ignore
+      itemsLastModifiedVersion[group.group] = lastModifiedVersion;
+
+      await saveZoteroItems2(groupItems, itemsLastModifiedVersion, group.group, args.no_archive);
+      // Saving logic here...
+      console.log('group saved into db ', group.group);
+
+      await sleep(1000); // Sleep for 1 second
     }
   } else {
     console.log('Everything already synced!!! Hurray!!!');
@@ -3484,6 +3549,46 @@ async function syncToLocalDB(args: any) {
 
   const syncEnd = Date.now();
   console.log(`Time taken: ${(syncEnd - syncStart) / 1000}s`);
-}
+};
+async function websocket(args, config) {
+  console.log('starting websocket');
+  const groups = await getAllGroups();
+  const groupIds: string[] = groups.map((group) => `/groups/${group.id}`);
+  var ws: webSocket = new webSocket('wss://stream.zotero.org');
 
+  ws.on('open', async () => {
+    console.log('WebSocket connection opened');
+  });
+
+  ws.on('message', async (data) => {
+    console.log('Received message:', data);
+    data = JSON.parse(data);
+    console.log(data.event);
+    if (data.event === 'connected') {
+      const groupChunks = _.chunk(groupIds, 2);
+
+      await ws.send(
+        JSON.stringify({
+          action: 'createSubscriptions',
+          subscriptions: [
+            {
+              apiKey: config.api_key,
+              topics: groupChunks,
+            },
+          ],
+        }),
+      );
+    }
+
+    if (['topicUpdated', 'topicAdded', 'topicRemoved'].includes(data.event)) {
+      await syncToLocalDB({ ...args, ...config });
+    }
+  });
+  ws.on('error', (err) => {
+    console.log('WebSocket error ', err.message);
+  });
+  ws.on('close', () => {
+    console.log('WebSocket connection closed');
+  });
+}
 export = Zotero;

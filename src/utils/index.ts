@@ -45,6 +45,7 @@ export function getCanonicalURL(args, element) {
   let url = '';
   url =
     element.data.url != '' && !element.bib.match(element.data.url)
+
       ? ` Available from <a href="${he.encode(element.data.url)}">${he.encode(
           element.data.url
         )}</a>.`
@@ -60,18 +61,13 @@ export function getCanonicalURL(args, element) {
         args.openinzotero
       ) +
       ')'
+
     : url;
   return url;
 }
 
-export function urlify(
-  details,
-  elementLibraryId,
-  elementKey,
-  argsZGroup,
-  argsZKey,
-  argsOpenInZotero
-) {
+export function urlify(details, elementLibraryId, elementKey, argsZGroup, argsZKey, argsOpenInZotero) {
+
   return `<a href="https://ref.opendeved.net/zo/zg/${elementLibraryId}/7/${elementKey}/NA?${
     argsZGroup || argsZKey ? `src=${argsZGroup}:${argsZKey}&` : ''
   }${argsOpenInZotero ? 'openin=zotero' : ''}">${details}</a>`;
