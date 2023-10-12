@@ -40,7 +40,7 @@ model items {
 
 model itemsArchive {
   row_id           Int                @id @default(autoincrement())
-  id               String
+  id               String             @unique
   version          Int
   data             Json
   inconsistent     Boolean?           @default(false)
@@ -75,6 +75,7 @@ model collection_items {
 
   @@index([collection_id])
   @@index([item_id])
+  @@index([itemsArchiveId])
 }
 
 model alsoKnownAs {
@@ -92,4 +93,5 @@ model alsoKnownAs {
 
   @@index([item_id])
   @@index([group_id])
+  @@index([itemsArchiveId])
 }
