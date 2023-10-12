@@ -128,7 +128,7 @@ async function main() {
 // local functions
 function getVersion() {
   const pjson = require('../package.json');
-  if (pjson.version) logger.info(`zenodo-lib version=${pjson.version}`);
+  if (pjson.version) logger.info(`zotero-lib version=${pjson.version}`);
   return pjson.version;
 }
 
