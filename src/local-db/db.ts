@@ -1,70 +1,3 @@
-import { log } from 'console';
-// import sleep from '../utils/sleep';
-
-const sqlite3 = require('sqlite3').verbose();
-const fs = require('fs');
-
-export function initDB(dbName) {
-  let db = new sqlite3.Database(dbName);
-  db.exec(`CREATE TABLE IF NOT EXISTS groups (
-        id INT PRIMARY KEY NOT NULL,
-        version INT,
-        itemsVersion INT,
-        data TEXT,
-        createdAt TEXT NOT NULL,
-        updatedAt TEXT NOT NULL
-    );`);
-  db.exec(`CREATE TABLE IF NOT EXISTS collections (
-        id TEXT PRIMARY KEY NOT NULL,
-        createdAt TEXT NOT NULL,
-        updatedAt TEXT NOT NULL
-    );`);
-  db.exec(`CREATE TABLE IF NOT EXISTS items (
-        id TEXT PRIMARY KEY NOT NULL,
-        version INT,
-        synced BOOLEAN,
-        data TEXT,
-        inconsistent BOOLEAN,
-        group_id INT ,
-        createdAt TEXT NOT NULL,
-        updatedAt TEXT NOT NULL,
-        FOREIGN KEY(group_id) REFERENCES groups(id)
-    );`);
-  db.exec(`CREATE TABLE IF NOT EXISTS item_Collection (
-        item_id TEXT NOT NULL,
-        collection_id TEXT NOT NULL,
-        createdAt TEXT NOT NULL,
-        updatedAt TEXT NOT NULL,
-        FOREIGN KEY(collection_id) REFERENCES collections(id),
-        FOREIGN KEY(item_id) REFERENCES items(id)
-    );`);
-  db.exec(`CREATE TABLE IF NOT EXISTS alsoKnownAs  (
-        item_id TEXT NOT NULL,
-        group_id INT NOT NULL,
-        alsoKnownAs TEXT NOT NULL,
-        createdAt TEXT NOT NULL,
-        updatedAt TEXT NOT NULL,
-        FOREIGN KEY(item_id) REFERENCES items(id),
-        FOREIGN KEY(group_id) REFERENCES groups(id)
-    );`);
-
-  return db;
-}
-
-export function createDBConnection(database) {
-  //TODO: if database is not string, it means it could be an initilized connection? so just use it? we need to make this check more rigours, it will execute even if database is not string but also not a valid conection
-  if (typeof database !== 'string') {
-    console.log('connection already opened');
-    return database;
-  }
-
-  if (!fs.existsSync(database)) {
-    return initDB(database);
-  }
-
-  return new sqlite3.Database(database);
-}
-
 export async function getAllGroups() {
   const { PrismaClient } = require('@prisma/client');
   const prisma = new PrismaClient();
@@ -129,70 +62,7 @@ export async function saveGroup(groupData) {
   // }
 }
 
-export async function createGroup(groupData) {
-  const { database, group } = groupData;
-  return new Promise((res, rej) => {
-    const db = createDBConnection(database);
-    db.run(
-      `INSERT into groups (id,version,data,createdAt,updatedAt) VALUES ($id, $version, $data, datetime('now'), datetime('now'))`,
-      {
-        $id: group.id,
-        $version: group.version,
-        $data: JSON.stringify(group),
-      },
-      (err, row) => {
-        if (err) {
-          rej(err);
-          db.close();
-          return;
-        }
-        res(row);
-        db.close();
-      },
-    );
-  });
-}
-
-export async function updateGroup(groupData) {
-  const { database, group } = groupData;
-  return new Promise((res, rej) => {
-    const db = createDBConnection(database);
-    db.run(
-      `UPDATE  groups SET version=$version, data=$data, updatedAt=datetime('now') WHERE id=$id`,
-      {
-        $id: group.id,
-        $version: group.version,
-        $data: JSON.stringify(group),
-      },
-      (err, row) => {
-        if (err) {
-          rej(err);
-          db.close();
-          return;
-        }
-        res(row);
-        db.close();
-      },
-    );
-  });
-}
-
 // get all collections
-export function getAllCollections({ database }) {
-  const db = createDBConnection(database);
-  const sql = 'SELECT * FROM collections';
-
-  return new Promise((resolve, reject) => {
-    db.all(sql, (err, rows) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(rows);
-      }
-      db.close();
-    });
-  });
-}
 
 // let collections = [];
 //@ts-ignore
@@ -222,7 +92,7 @@ let UpdatedItems = [];
 async function updateItems(prisma) {
   // const { PrismaClient } = require('@prisma/client');
   // const prisma = new PrismaClient();
-  log('updating items...');
+  console.log('updating items...');
   // update multiple rows of items in parallel
   if (UpdatedItems.length > 0) {
     await Promise.all(
@@ -240,7 +110,7 @@ async function updateItems(prisma) {
         });
       }),
     );
-    log('finished updating items');
+    console.log('finished updating items');
     UpdatedItems = [];
   }
 }
@@ -289,7 +159,7 @@ async function insertAlsoKnownAs(prisma) {
 let updatedAlsoKnownAs = [];
 async function updateAlsoknownAs(prisma) {
   // insert multiple rows of items
-  log('updating alsoKnownAs...');
+  console.log('updating alsoKnownAs...');
   if (updatedAlsoKnownAs.length > 0) {
     updatedAlsoKnownAs.map(async (item) => {
       await prisma.alsoKnownAs.update({
@@ -306,7 +176,7 @@ async function updateAlsoknownAs(prisma) {
       });
     });
 
-    log('finished updating alsoKnownAs');
+    console.log('finished updating alsoKnownAs');
     updatedAlsoKnownAs = [];
   }
 }
@@ -409,12 +279,12 @@ export async function saveZoteroItems2(
     }
   }
 
-  log('items', newItems.length);
-  // log('collections', collections.length);
-  // log('newItemCollections', newItemCollections.length);
-  log('UpdatedItems', UpdatedItems.length);
-  log('newAlsoKnownAs', newAlsoKnownAs.length);
-  log('updatedAlsoKnownAs', updatedAlsoKnownAs.length);
+  console.log('items', newItems.length);
+  // console.log('collections', collections.length);
+  // console.log('newItemCollections', newItemCollections.length);
+  console.log('UpdatedItems', UpdatedItems.length);
+  console.log('newAlsoKnownAs', newAlsoKnownAs.length);
+  console.log('updatedAlsoKnownAs', updatedAlsoKnownAs.length);
 
   // await insertCollections(prisma);
   await insertItems(prisma);
