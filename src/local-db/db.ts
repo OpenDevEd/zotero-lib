@@ -164,12 +164,7 @@ async function updateAlsoKnownAs(prisma) {
   }
 }
 
-export async function saveZoteroItems2(
-  allFetchedItems,
-  lastModifiedVersion,
-  groupId: string,
-  isArchive: boolean = false,
-) {
+export async function saveZoteroItems(allFetchedItems, lastModifiedVersion, groupId: string) {
   const { PrismaClient } = require('@prisma/client');
   const prisma = new PrismaClient();
   // console.log(lastModifiedVersion);
