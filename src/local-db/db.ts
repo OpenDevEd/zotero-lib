@@ -93,6 +93,14 @@ async function updateItems(prisma) {
   // const { PrismaClient } = require('@prisma/client');
   // const prisma = new PrismaClient();
   console.log('updating items...');
+  let archive: any[string] = UpdatedItems.map((item) => item.id);
+  let archiveItems = await prisma.items.findMany({
+    where: {
+      id: {
+        in: archive,
+      },
+    },
+  });
   // update multiple rows of items in parallel
   if (UpdatedItems.length > 0) {
     await Promise.all(
@@ -110,10 +118,14 @@ async function updateItems(prisma) {
         });
       }),
     );
+    await prisma.itemsArchive.createMany({
+      data: archiveItems,
+    });
     console.log('finished updating items');
     UpdatedItems = [];
   }
 }
+
 //@ts-ignore
 async function createArchiveItemsTrigger(prisma) {
   console.log('creating archive_items_trigger');
