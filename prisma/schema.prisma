@@ -63,33 +63,39 @@ model collections {
 }
 
 model collection_items {
-  id             Int           @id @default(autoincrement())
-  createdAt      DateTime
-  updatedAt      DateTime
-  collection_id  String
-  collection     collections   @relation(fields: [collection_id], references: [id])
-  item_id        String
-  item           items         @relation(fields: [item_id], references: [id])
-  itemsArchive   itemsArchive? @relation(fields: [itemsArchiveId], references: [id])
-  itemsArchiveId String?
+  id                 Int           @id @default(autoincrement())
+  createdAt          DateTime
+  updatedAt          DateTime
+  collection_id      String
+  collection         collections   @relation(fields: [collection_id], references: [id])
+  item_id            String
+  item               items         @relation(fields: [item_id], references: [id])
+  itemsArchiveId     String?
+  itemsArchive       itemsArchive? @relation(fields: [itemsArchiveRow_id], references: [row_id])
+  itemsArchiveRow_id Int?
 
   @@index([collection_id])
   @@index([item_id])
+  @@index([itemsArchiveId])
+  @@index([itemsArchiveRow_id])
 }
 
 model alsoKnownAs {
-  id             Int           @id @default(autoincrement())
-  item_id        String
-  item           items         @relation(fields: [item_id], references: [id], onDelete: Cascade)
-  group_id       Int
-  group          groups        @relation(fields: [group_id], references: [id])
-  createdAt      DateTime
-  updatedAt      DateTime
-  data           String
-  isDeleted      Boolean       @default(false)
-  itemsArchive   itemsArchive? @relation(fields: [itemsArchiveId], references: [id])
-  itemsArchiveId String?
+  id                 Int           @id @default(autoincrement())
+  item_id            String
+  item               items         @relation(fields: [item_id], references: [id], onDelete: Cascade)
+  group_id           Int
+  group              groups        @relation(fields: [group_id], references: [id])
+  createdAt          DateTime
+  updatedAt          DateTime
+  data               String
+  isDeleted          Boolean       @default(false)
+  itemsArchiveId     String?
+  itemsArchive       itemsArchive? @relation(fields: [itemsArchiveRow_id], references: [row_id])
+  itemsArchiveRow_id Int?
 
   @@index([item_id])
   @@index([group_id])
+  @@index([itemsArchiveId])
+  @@index([itemsArchiveRow_id])
 }
