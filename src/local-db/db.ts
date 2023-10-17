@@ -101,6 +101,9 @@ async function updateItems(prisma) {
       },
     },
   });
+  await prisma.itemsArchive.createMany({
+    data: archiveItems,
+  });
   // update multiple rows of items in parallel
   if (UpdatedItems.length > 0) {
     await Promise.all(
@@ -118,9 +121,6 @@ async function updateItems(prisma) {
         });
       }),
     );
-    await prisma.itemsArchive.createMany({
-      data: archiveItems,
-    });
     console.log('finished updating items');
     UpdatedItems = [];
   }
