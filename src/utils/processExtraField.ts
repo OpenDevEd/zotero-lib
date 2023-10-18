@@ -7,16 +7,16 @@ export default function processExtraField(input = '') {
     } else {
       return input
     } */
-  console.log("pEF:" + lines.join("\n///"));
-  let doiLines = lines.filter((line) => line.includes('DOI: '));
+  console.log('pEF:' + lines.join('\n///'));
+  let doiLines = lines.filter(line => line.includes('DOI: '));
   if (doiLines.length > 0) {
     let firstDOI = doiLines[0];
     if (doiLines.length > 1) {
-      doiLines = doiLines.slice(1, doiLines.length)
+      doiLines = doiLines.slice(1, doiLines.length);
       // sort dois
       doiLines.sort();
       doiLines.reverse();
-      console.log("pEF:00000>" + doiLines.join("\n"));
+      console.log('pEF:00000>' + doiLines.join('\n'));
       // prefix older DOIs with previous
       doiLines = doiLines.map((doi, index) => {
         /* if (index === 0) {
@@ -29,19 +29,19 @@ export default function processExtraField(input = '') {
         }
         return doi;
       });
-      doiLines = [firstDOI, ...doiLines]
+      doiLines = [firstDOI, ...doiLines];
     } else {
-      doiLines = [firstDOI]
+      doiLines = [firstDOI];
     }
   }
   let nonDOILines = lines.filter(
-    (line) => !(line.startsWith('DOI: ') || line.startsWith('previousDOI: '))
+    line => !(line.startsWith('DOI: ') || line.startsWith('previousDOI: '))
   );
 
   const kerkoLinePrefix = 'KerkoCite.ItemAlsoKnownAs:';
-  let kerkoLine = nonDOILines.find((line) => line.startsWith(kerkoLinePrefix));
+  let kerkoLine = nonDOILines.find(line => line.startsWith(kerkoLinePrefix));
 
-  nonDOILines = nonDOILines.filter((line) => !line.startsWith(kerkoLinePrefix));
+  nonDOILines = nonDOILines.filter(line => !line.startsWith(kerkoLinePrefix));
   // if line not exist add it
   if (!kerkoLine) {
     kerkoLine = kerkoLinePrefix;
@@ -53,7 +53,7 @@ export default function processExtraField(input = '') {
   kerkoItems = [
     ...new Set(
       doiLines
-        .map((line) => {
+        .map(line => {
           const [, doi] = line.split(' ');
           return doi;
         })

@@ -33,7 +33,7 @@ export async function get_oldest_item(items: string[]) {
     //@ts-ignore
     allItemsArray[0].data.key,
     //@ts-ignore
-    allItemsArray.slice(1).map((item) => item.data.key),
+    allItemsArray.slice(1).map(item => item.data.key),
   ];
 }
 
@@ -56,7 +56,7 @@ export async function get_Newest_item(items: string[]) {
     //@ts-ignore
     allItemsArray[0].data.key,
     //@ts-ignore
-    allItemsArray.slice(1).map((item) => item.data.key),
+    allItemsArray.slice(1).map(item => item.data.key),
   ];
 }
 
@@ -83,7 +83,11 @@ async function mergeTwoItems(groupid, base, deleted) {
   const zotero = new Zotero({ verbose: false, 'group-id': groupid });
   const deletedItem = await zotero.item({ key: deleted, fullresponse: true });
   const baseItem = await zotero.item({ key: base, fullresponse: true });
-  if (noMergeType.includes(deletedItem.result.data.itemType) || noMergeType.includes(baseItem.result.data.itemType)) {
+  if (
+    noMergeType.includes(deletedItem.result.data.itemType) ||
+    noMergeType.includes(baseItem.result.data.itemType)
+  ) {
+
     console.log('one of the items is not a note or attachment');
     return 0;
   }
@@ -126,7 +130,7 @@ async function mergeTwoItems(groupid, base, deleted) {
   // check if there any duplicates in relations if so remove them
   if (Array.isArray(relations['dc:replaces'])) {
     relations['dc:replaces'] = relations['dc:replaces'].filter(
-      (item, index) => relations['dc:replaces'].indexOf(item) === index,
+      (item, index) => relations['dc:replaces'].indexOf(item) === index
     );
   }
   let originRelations = baseItem.result.data.relations;
@@ -166,7 +170,7 @@ async function mergeTwoItems(groupid, base, deleted) {
       } on ${new Date().toISOString()} with metadata of base is\n ${JSON.stringify(
         baseItem.result.meta,
         null,
-        2,
+        2
       )} and metadata of deleted is\n ${JSON.stringify(deletedItem.result.meta, null, 2)}`,
       tags: ['merged', 'deleted'],
     });

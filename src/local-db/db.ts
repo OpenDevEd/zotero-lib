@@ -1,6 +1,3 @@
-import { log } from 'console';
-// import sleep from '../utils/sleep';
-
 const sqlite3 = require('sqlite3').verbose();
 const fs = require('fs');
 
@@ -79,7 +76,7 @@ export async function saveGroup(groupData) {
   const prisma = new PrismaClient();
 
   const groups = await prisma.groups.findMany();
-  const groupIds = groups.map((group) => group.id);
+  const groupIds = groups.map(group => group.id);
   for (const group of groupData) {
     const { id, version } = group;
     if (groupIds.includes(id)) {
@@ -148,7 +145,7 @@ export async function createGroup(groupData) {
         }
         res(row);
         db.close();
-      },
+      }
     );
   });
 }
@@ -172,7 +169,7 @@ export async function updateGroup(groupData) {
         }
         res(row);
         db.close();
-      },
+      }
     );
   });
 }
@@ -537,16 +534,16 @@ export async function test(allFetchedItems, lastModifiedVersion, groupId) {
       group_id: parseInt(groupId),
     },
   });
-  const allItemsIds = allItems.map((item) => item.id);
+  const allItemsIds = allItems.map(item => item.id);
   const allCollections = await prisma.collections.findMany();
-  const allCollectionsIds = allCollections.map((collection) => collection.id);
+  const allCollectionsIds = allCollections.map(collection => collection.id);
   const alsoKnownAs = await prisma.alsoKnownAs.findMany({
     where: {
       group_id: parseInt(groupId),
     },
   });
   const allGroups = await prisma.groups.findMany();
-  const allGroupsIds = allGroups.map((group) => group.id);
+  const allGroupsIds = allGroups.map(group => group.id);
 
   Object.entries(lastModifiedVersion).forEach(async ([group]) => {
     if (!allGroupsIds.includes(parseInt(group))) {
@@ -593,7 +590,7 @@ export async function test(allFetchedItems, lastModifiedVersion, groupId) {
         }
 
         if (item.data.extra) {
-          if (alsoKnownAs.some((i) => i.item_id === item.key && i.group_id === item.library.id)) {
+          if (alsoKnownAs.some(i => i.item_id === item.key && i.group_id === item.library.id)) {
             await prisma.alsoKnownAs.updateMany({
               where: {
                 item_id: item.key,
@@ -645,7 +642,9 @@ export async function test(allFetchedItems, lastModifiedVersion, groupId) {
         }
 
         if (item.data.extra) {
-          if (alsoKnownAs.some((i) => i.item_id === item.key && i.group_id === item.library.id)) {
+
+          if (alsoKnownAs.some(i => i.item_id === item.key && i.group_id === item.library.id)) {
+
             await prisma.alsoKnownAs.updateMany({
               where: {
                 item_id: item.key,

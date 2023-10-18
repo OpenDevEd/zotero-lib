@@ -46,6 +46,47 @@ const path = require('path');
 const LinkHeader = require('http-link-header');
 
 const ajv = new Ajv();
+interface ZoteroConfig {
+  'user-id'?: string;
+  group_id?: string;
+  'library-type'?: string;
+  api_key?: string;
+  indent?: number;
+  verbose?: boolean;
+  debug?: boolean;
+  config?: string;
+  'config-json'?: string;
+  'zotero-schema'?: string;
+  out?: boolean;
+  show?: boolean;
+  zotero_schema?: string;
+  sdk?: boolean;
+}
+
+
+interface ZoteroArgs extends ZoteroConfig {
+  key?: string;
+  filter?: string | object;
+  savefiles?: boolean;
+  addfiles?: string[];
+  addtocollection?: string[];
+  switchNames?: boolean;
+  organise_extra?: boolean;
+  crossref_user?: string;
+  removefromcollection?: string[];
+  addtags?: string[];
+  removetags?: string[];
+  children?: boolean;
+  validate?: boolean;
+  validate_with?: string;
+  fullresponse?: boolean;
+  show?: boolean;
+  debug?: boolean;
+  uri?: string[];
+  root?: string;
+  data?: {};
+  version?: string | number;
+}
 
 class Zotero {
   // The following config keys are expected/allowed,
@@ -63,7 +104,7 @@ class Zotero {
     'zotero-schema',
   ];
 
-  config: any;
+  config: ZoteroConfig;
 
   output: string = '';
 
@@ -85,7 +126,7 @@ class Zotero {
   public configure(args, shouldReadConfigFile = false) {
     // pick up config: The function reads args and populates config
 
-    let config = {};
+    let config: ZoteroConfig = {};
 
     // STEP 1. Read config file
     if (shouldReadConfigFile || args.config) {
@@ -106,18 +147,25 @@ class Zotero {
 
     const result = this.canonicalConfig(config, args);
 
-    if (args.verbose) {
+    if (args.verbose && !this.config.sdk) {
       logger.info('config=' + JSON.stringify(result, null, 2));
     }
 
     // Check that not both are undefined:
     if (!result.user_id && !result.group_id) {
-      return false;
+      logger.info('result: ', result);
+      throw new Error(
+        'Both user/group are missing. You must provide exactly one of --user-id or --group-id'
+      );
+
     }
 
     // Check that one and only one is defined:
     if (result.user_id && result.group_id) {
-      throw new Error('Both user/group are specified. You must provide exactly one of --user-id or --group-id');
+      throw new Error(
+        'Both user/group are specified. You must provide exactly one of --user-id or --group-id'
+      );
+
     }
 
     if (args.indent === null) {
@@ -139,7 +187,7 @@ class Zotero {
     const result = [];
     if (tags) {
       tags = as_array(tags);
-      tags.forEach((item) => {
+      tags.forEach(item => {
         result.push({ tag: item, type: 0 });
       });
     }
@@ -157,8 +205,9 @@ class Zotero {
    */
   private canonicalConfig(_config: any, args: any) {
     const config = { ..._config };
+    if (args.sdk) config.sdk = args.sdk;
 
-    this.config_keys.forEach((key) => {
+    this.config_keys.forEach(key => {
       const key_zotero = 'zotero-' + key;
       const key_underscore = key.replace(/-/g, '_');
       const key_zotero_underscore = key_zotero.replace(/-/g, '_');
@@ -206,7 +255,19 @@ class Zotero {
     args.group_id ? (this.config.group_id = args.group_id) : null;
   }
 
-  private message(stat = 0, msg = 'None', data = null) {
+  /**
+   * The function "message" returns an object with a status, message, and data property.
+   * @param {0 | 1} [stat=0] - The "stat" parameter is a number that can only have two possible values: 0
+   * or 1. It is used to indicate the status of the message. If "stat" is 0, it means there is an error
+   * or failure. If "stat" is 1, it means
+   * @param {string} [msg=None] - The `msg` parameter is a string that represents the message you want to
+   * include in the response. It has a default value of 'None', which means if you don't provide a value
+   * for `msg`, it will be set to 'None' by default.
+   * @param [data=null] - The `data` parameter is an optional parameter of type `object` that can be used
+   * to pass additional data along with the message. It is initialized with a default value of `null`.
+   * @returns An object with the properties "status", "message", and "data".
+   */
+  private message(stat: 0 | 1 = 0, msg: string = 'None', data: {} = null) {
     return {
       status: stat,
       message: msg,
@@ -214,9 +275,13 @@ class Zotero {
     };
   }
 
-  private finalActions(output) {
-    // logger.info("args="+JSON.stringify(args))
-    // TODO: Look at the type of output: if string, then print, if object, then stringify
+  /**
+   * The `finalActions` function performs final actions such as writing output to a file and displaying
+   * it if specified in the configuration.
+   * @param {{} | string} output - The `output` parameter can be either an object (`{}`) or a string.
+   */
+  private finalActions(output: {} | string) {
+    if (typeof output === 'string') output = JSON.stringify(output, null, this.config.indent);
     if (this.config.out) {
       fs.writeFileSync(this.config.out, JSON.stringify(output, null, this.config.indent));
     }
@@ -224,124 +289,177 @@ class Zotero {
   }
 
   // library starts.
-  //TODO: this was made public because of cli refactoring
+  //TODO: need to refactor this and check about output
   // see if we can make it private again
-  public print(...args: any[]) {
-    if (!this.config.out) {
+
+  /**
+   * The `print` function logs the provided arguments to the console, with optional formatting and
+   * verbosity.
+   * @param {any[]} args - The `args` parameter is a rest parameter that allows the function to accept
+   * any number of arguments. It is of type `any[]`, which means it can accept arguments of any type.
+   * @returns If the `this.config.verbose` condition is true, then the function will return `undefined`.
+   * If the condition is false, then the function will return `void`.
+   */
+  public print(...args: any[]): void {
+    if (!this.config.verbose) {
       logger.info(args);
       return;
     }
 
-    this.output +=
-      args
-        .map((m) => {
-          return this.formatMessage(m);
-        })
-        .join(' ') + '\n';
+    const formattedArgs = args.map(arg => this.formatMessage(arg));
+    this.output += `${formattedArgs.join(' ')}\n`;
   }
 
   // Function to get more than 100 records, i.e. chunked retrieval.
-  async all(uri, params = {}) {
-    let chunk = await this.http
-      .get(
-        uri,
-        {
-          resolveWithFullResponse: true,
-          params,
-        },
-        this.config,
-      )
-      .catch((error) => {
-        logger.info('Error in all: ' + error);
+  /**
+   * The `fetchItems` function is an asynchronous function that fetches items from a given URI and
+   * returns them as an array.
+   * @param {string} uri - The `uri` parameter is a string that represents the URL or endpoint from which
+   * you want to fetch data. It is the base URL that will be used for the initial request and subsequent
+   * requests for paginated data.
+   * @param {object} params - The `params` parameter is an object that contains additional parameters to
+   * be included in the HTTP request. These parameters are typically used for filtering or pagination
+   * purposes.
+   * @returns The function `fetchItems` returns a Promise that resolves to an array of any type.
+   */
+  async fetchItems(uri: string, params: object = {}): Promise<any[]> {
+    const data: any[] = [];
+
+    let link = uri;
+    let body = {
+      fulluri: false,
+      resolveWithFullResponse: true,
+      params,
+    };
+    while (link) {
+      const chunk = await this.http.get(link, body, this.config).catch(error => {
+        logger.info(`Error in fetchItems: ${error}`);
       });
 
-    let data = chunk.body;
-
-    let link = chunk.headers.link && LinkHeader.parse(chunk.headers.link).rel('next');
-    while (link && link.length && link[0].uri) {
-      if (chunk.headers.backoff) {
-        await sleep(parseInt(chunk.headers.backoff) * 1000);
+      if (chunk && chunk.body) {
+        data.push(...chunk.body);
       }
 
-      chunk = await this.http
-        .get(
-          link[0].uri,
-          {
-            fulluri: true,
-            resolveWithFullResponse: true,
-            params,
-          },
-          this.config,
-        )
-        .catch((error) => {
-          logger.info('Error in all: ' + error);
-        });
-      data = data.concat(chunk.body);
-      link = chunk.headers.link && LinkHeader.parse(chunk.headers.link).rel('next');
+
+      if (chunk && chunk.headers && chunk.headers.link) {
+        link = LinkHeader.parse(chunk.headers.link).rel('next')[0]?.uri;
+      } else {
+        link = undefined;
+      }
+
+      if (chunk && chunk.headers && chunk.headers.backoff) {
+        await sleep(parseInt(chunk.headers.backoff) * 1000);
+      }
+      body.fulluri = true;
+
     }
     return data;
   }
 
   /**
-   * Expose 'get'
-   * Make a direct query to the API using 'GET uri'.
+   * The function `get` retrieves data from multiple URIs and returns an array of the responses.
+   * @param {ZoteroArgs} args - The `args` parameter is an object that contains the following
+   * properties:
+   * @returns an array of type `any[]`.
    */
-  public async __get(args) {
-    const out = [];
+  //TODO:not used need to review
+
+  public async __get(args: ZoteroArgs): Promise<any[]> {
+    const results: any[] = [];
+
     for (const uri of args.uri) {
-      const res = await this.http.get(uri, { userOrGroupPrefix: !args.root }, this.config);
-      if (args.show) {
-        //TODO: this.show(res);
-        //this.show(res);
+      const requestOptions = {
+        userOrGroupPrefix: !args.root,
+      };
+
+      const response = await this.http.get(uri, requestOptions, this.config);
+
+      if (args.verbose && !this.config.sdk) {
+        this.show(response);
       }
-      out.push(res);
+
+      results.push(response);
     }
-    return out;
+
+    return results;
   }
 
   // TODO: Add resolveWithFullResponse: options.resolveWithFullResponse,
 
   /**
-   * Expose 'post'. Make a direct query to the API using
-   * 'POST uri [--data data]'.
+   * The function `post` sends a POST request to a specified URI with provided data and returns the
+   * response.
+   * @param {ZoteroArgs} args - ZoteroArgs is a type that contains the following properties:
+   * @returns The response from the HTTP post request is being returned.
    */
-  public async __post(args) {
-    const res = await this.http.post(args.uri, args.data, {}, this.config);
-    this.print(res);
-    return res;
+  //TODO:not used need to review
+
+  public async __post(args: ZoteroArgs): Promise<any> {
+    const response = await this.http.post(args.uri, args.data, {}, this.config);
+    this.print(response);
+    return response;
   }
 
   /**
    * Make a direct query to the API using
    * 'PUT uri [--data data]'.
    */
-  public async __put(args) {
-    const res = await this.http.put(args.uri, args.data, this.config);
-    this.print(res);
-    return res;
+  /**
+   * The function performs an HTTP PUT request with the provided arguments and prints the response.
+   * @param {ZoteroArgs} args - ZoteroArgs is a type that represents the arguments for the `__put`
+   * method. It likely contains the following properties:
+   * @returns The response from the HTTP PUT request is being returned.
+   */
+  //TODO:not used need to review
+
+  public async __put(args: ZoteroArgs): Promise<any> {
+    const response = await this.http.put(args.uri, args.data, this.config);
+    this.print(response);
+    return response;
   }
 
   /**
    * Make a direct query to the API using
    * 'PATCH uri [--data data]'.
    */
-  public async __patch(args) {
-    const res = await this.http.patch(args.uri, args.data, args.version, this.config);
-    this.print(res);
-    return res;
+
+  /**
+   * The __patch function sends a PATCH request to a specified URI with the provided data and version,
+   * and then prints and returns the response.
+   * @param {ZoteroArgs} args - ZoteroArgs is a type that contains the following properties:
+   * @returns The response from the HTTP patch request is being returned.
+   */
+  //TODO:not used need to review
+
+  public async __patch(args: ZoteroArgs): Promise<any> {
+    const response = await this.http.patch(args.uri, args.data, args.version, this.config);
+    this.print(response);
+    return response;
+
   }
 
   /**
    * Make a direct delete query to the API using
    * 'DELETE uri'.
    */
-  public async __delete(args) {
-    const output = [];
+  /**
+   * The function deletes resources specified by their URIs and returns an array of delete responses.
+   * @param {ZoteroArgs} args - ZoteroArgs - an object containing the arguments for the delete operation.
+   * It should have a property called "uri" which is an array of URIs representing the items to be
+   * deleted.
+   * @returns an array of any type.
+   */
+  //TODO:not used need to review
+
+  public async __delete(args: ZoteroArgs): Promise<any[]> {
+    const output: any[] = [];
+
     for (const uri of args.uri) {
       const response = await this.http.get(uri, undefined, this.config);
       const deleteResponse = await this.http.delete(uri, response.version, this.config);
       output.push(deleteResponse);
     }
+
     return output;
   }
 
@@ -349,6 +467,7 @@ class Zotero {
    * Show details about this API key.
    * (API: /keys )
    */
+  //TODO:not used need to review
   public async key(args) {
     if (!args.api_key) {
       args.api_key = this.config.api_key;
@@ -358,7 +477,7 @@ class Zotero {
       {
         userOrGroupPrefix: false,
       },
-      this.config,
+      this.config
     );
     this.show(res);
     let res2 = [];
@@ -370,7 +489,7 @@ class Zotero {
           params: { limit: 100 },
           userOrGroupPrefix: false,
         },
-        this.config,
+        this.config
       );
       // /users/<userID>/groups
       if (args.terse) {
@@ -384,7 +503,7 @@ class Zotero {
           return 0;
         });
 
-        res3.forEach((element) => {
+        res3.forEach(element => {
           const data = element.data;
           logger.info(`${data.id}\t${data.name} ${data.owner} ${data.type}`);
         });
@@ -401,10 +520,29 @@ class Zotero {
   // End of standard API calls
 
   // Utility functions. private?
+  /**
+   * The count function makes an asynchronous HTTP GET request to a specified URI and returns the value
+   * of the 'total-results' header from the response.
+   * @param uri - The `uri` parameter is the endpoint or URL that you want to send the HTTP GET request
+   * to. It specifies the location of the resource you want to retrieve or interact with.
+   * @param params - The `params` parameter is an object that contains additional query parameters to be
+   * included in the HTTP request. These parameters can be used to filter or modify the data that is
+   * returned from the API endpoint specified by the `uri` parameter.
+   * @returns The code is returning the value of the 'total-results' header from the HTTP response.
+   */
   async count(uri, params = {}) {
-    return (await this.http.get(uri, { resolveWithFullResponse: true, params }, this.config)).headers['total-results'];
+    return (await this.http.get(uri, { resolveWithFullResponse: true, params }, this.config))
+      .headers['total-results'];
   }
 
+  /**
+   * The function "show" takes a parameter "v" and prints it if it is a string, otherwise it stringifies
+   * it and prints the result.
+   * @param v - The parameter `v` is a variable that can be of any type. The `show` function checks the
+   * type of `v` and performs different actions based on the type. If `v` is a string, it calls the
+   * `print` function with `v` as the argument. If
+   * @returns nothing (undefined).
+   */
   private show(v) {
     // TODO: Look at the type of v: if string, then print, if object, then stringify
     if (typeof v === 'string') {
@@ -415,60 +553,76 @@ class Zotero {
     this.print(JSON.stringify(v, null, this.config.indent));
   }
 
-  private extractKeyGroupVariable(key, n) {
-    // n=1 -> group
-    // n=2 -> items vs. collections
-    // n=3 -> key
-    // zotero://select/groups/(\d+)/(items|collections)/([A-Z01-9]+)
-    // TO DO - make this function array->array and string->string.
+  /**
+   * The function `extractKeyGroupVariable` extracts a specific part of a key string based on a given
+   * index, and returns it as a string or an array.
+   * @param {string | string[]} key - The `key` parameter can be either a string or an array of strings.
+   * It represents a key or a list of keys that need to be processed.
+   * @param {number} n - The parameter `n` is a number that determines which part of the matched key
+   * string to return. It is used in the `return res[n]` statement.
+   * @returns The function `extractKeyGroupVariable` returns a string, an array of strings, or null.
+   */
+  private extractKeyGroupVariable(key: string | string[], n: number): string | string[] | null {
     if (Array.isArray(key)) {
-      key = key.map((mykey) => {
-        return this.extractKeyGroupVariable(mykey, n);
-      });
-      return key;
-    }
 
-    let out = undefined;
-    key = key.toString();
-    const res = key.match(/^zotero\:\/\/select\/groups\/(library|\d+)\/(items|collections)\/([A-Z01-9]+)/);
+      return key
+        .map(mykey => this.extractKeyGroupVariable(mykey, n))
+        .filter(Boolean)
+        .flat();
+    }
+    const keyString = key.toString();
+    const res = keyString.match(
+      /^zotero:\/\/select\/groups\/(library|\d+)\/(items|collections)\/([A-Z01-9]+)/
+    );
+
 
     if (res) {
-      // logger.info("extractKeyGroupVariable -> res=" + JSON.stringify(res, null, 2))
       if (res[2] === 'library') {
-        logger.info('You cannot specify zotero-select links (zotero://...) to select user libraries.');
+        logger.info(
+          'You cannot specify zotero-select links (zotero://...) to select user libraries.'
+        );
         return null;
       }
-      // logger.info("Key: zotero://-key provided for "+res[2]+" Setting group-id.")
+
       this.config.group_id = res[1];
-      out = res[n];
+      return res[n];
     }
 
-    if (!res) {
-      // There wasn't a match. We might have a group, or a key.
-      if (key.match(/^([A-Z01-9]+)/)) {
-        if ((n === 1 && key.match(/^([01-9]+)/)) || n === 3) {
-          // Group requested
-          // This is slightly ropy - presumably a zotero item key could just be numbers?
-          // item requested - this is ok, because we wouldn't expect a group to go in as sole argument
-          out = key;
-        }
+    if (keyString.match(/^([A-Z01-9]+)/)) {
+      if ((n === 1 && keyString.match(/^([01-9]+)/)) || n === 3) {
+        return keyString;
       }
     }
-    return out;
+
+    return null;
   }
 
   // TODO: args parsing code
+  /**
+   * The function "extractKeyAndSetGroup" extracts a key and sets a group based on the key.
+   * @param key - The key parameter is a variable that is passed to the extractKeyAndSetGroup function.
+   * @returns The function `extractKeyAndSetGroup` is returning the result of calling the
+   * `extractKeyGroupVariable` function with the `key` parameter and the value `3`.
+   */
   private extractKeyAndSetGroup(key) {
     // logger.info("extractKeyAndSetGroup")
     return this.extractKeyGroupVariable(key, 3);
   }
 
+  /**
+   * The function attachNoteToItem attaches a note to a parent item with the specified content and tags.
+   * @param PARENT - The `PARENT` parameter is the parent item to which the note will be attached. It is
+   * expected to be a valid identifier or reference to the parent item.
+   * @param options - An object that contains two optional properties: "content" and "tags".
+   * @returns the result of calling the `create_item` function with the `item` parameter set to the
+   * `json` object.
+   */
   public async attachNoteToItem(
     PARENT,
     options: { content?: string; tags?: any } = {
       content: 'Note note.',
       tags: [],
-    },
+    }
   ) {
     const tags = this.objectifyTags(options.tags);
     const noteText = options.content.replace(/\n/g, '<br>');
@@ -485,13 +639,24 @@ class Zotero {
 
   // TODO: Rewrite other function args like this.
   // Rather than fn(args) have fn({......})
+  /**
+   * The function `attachLinkToItem` attaches a link to a parent item with the specified URL, title, and
+   * tags.
+   * @param PARENT - The `PARENT` parameter is the ID or reference to the parent item to which the link
+   * will be attached. It represents the item under which the link will be stored or associated with.
+   * @param URL - The URL parameter is the link that you want to attach to an item. It should be a
+   * string representing the URL of the link you want to attach.
+   * @param options - The `options` parameter is an object that can have two properties:
+   * @returns the result of calling the `create_item` function with the `item` parameter set to the
+   * `json` object.
+   */
   public async attachLinkToItem(
     PARENT,
     URL,
     options: { title?: string; tags?: any } = {
       title: 'Click to open',
       tags: [],
-    },
+    }
   ) {
     const tags = this.objectifyTags(options.tags);
     logger.info('Linktitle=' + options.title);
@@ -523,6 +688,15 @@ class Zotero {
    * <userOrGroupPrefix>/collections/<collectionKey>/collections Subcollections within a specific collection in the library
    * TODO: --create-child should go into 'collection'.
    */
+  /**
+   * The `collections` function is responsible for parsing arguments, creating child collections, and
+   * fetching collections based on the provided arguments.
+   * @param args - The `args` parameter is an object that contains various properties used for parsing
+   * and processing the arguments passed to the `collections` function. The specific properties used in
+   * the code are:
+   * @returns either a response object or an array of collections.
+   */
+  // TODO: needs review
   public async collections(args) {
     // TODO: args parsing code
     if (args.key) {
@@ -545,54 +719,56 @@ class Zotero {
         response = await this.http.post(
           '/collections',
           JSON.stringify(
-            args.create_child.map((c) => {
+            args.create_child.map(c => {
               return { name: c, parentCollection: args.key };
-            }),
+            })
           ),
           {},
-          this.config,
+          this.config
         );
       } else {
         logger.info('(top)=>args.create_child');
         response = await this.http.post(
           '/collections',
           JSON.stringify(
-            args.create_child.map((c) => {
+            args.create_child.map(c => {
               return { name: c };
-            }),
+            })
           ),
           {},
-          this.config,
+          this.config
         );
       }
       const resp = response;
-      logger.info('response=' + JSON.stringify(resp, null, 2));
       if (resp.successful) {
-        this.print('Collections created: ', resp.successful);
-        logger.info('collection....done');
+        if (!this.config.sdk) {
+          this.print('Collections created: ', resp.successful);
+        }
         return resp.successful;
       } else {
-        logger.info('collection....failed');
-        logger.info('response=' + JSON.stringify(resp, null, 2));
+        if (!this.config.sdk) {
+          logger.info('collection....failed');
+          logger.info('response=' + JSON.stringify(resp, null, 2));
+        }
         return resp;
       }
       // TODO: In all functions where data is returned, add '.successful' - Zotero always wraps in that.
       // This leaves an array.
     } else {
-      logger.info('get...');
       // test for args.top: Not required.
       // If create_child==false:
       let collections = null;
       if (args.key) {
-        collections = await this.all(`/collections/${args.key}/collections`);
+        collections = await this.fetchItems(`/collections/${args.key}/collections`);
       } else {
-        collections = await this.all(`/collections${args.top ? '/top' : ''}`);
+        collections = await this.fetchItems(`/collections${args.top ? '/top' : ''}`);
       }
-      this.show(collections);
-      this.finalActions(collections);
+      if (!this.config.sdk) this.show(collections);
+      if (!this.config.sdk) this.finalActions(collections);
       if (args.terse) {
-        logger.info('test');
-        collections = collections.map((element) => Object({ key: element.data.key, name: element.data.name }));
+        collections = collections.map(element =>
+          Object({ key: element.data.key, name: element.data.name })
+        );
       }
       return collections;
     }
@@ -610,6 +786,15 @@ class Zotero {
    * TODO: --create-child should go into 'collection'.
    * DONE: Why is does the setup for --add and --remove differ? Should 'add' not be "nargs: '*'"? Remove 'itemkeys'?
    * TODO: Add option "--output file.json" to pipe output to file.
+   */
+  // TODO: needs review
+  /**
+   * The `collection` function performs various operations on a collection based on the arguments
+   * provided.
+   * @param args - The `args` parameter is an object that contains various properties. The specific
+   * properties used in the code are:
+   * @returns the result of the HTTP GET request made to the `/collections/${args.key}${args.tags ?
+   * '/tags' : ''}` endpoint.
    */
   async collection(args) {
     // TODO: args parsing code
@@ -638,7 +823,7 @@ class Zotero {
             collections: item.data.collections.concat(args.key),
           }),
           item.version,
-          this.config,
+          this.config
         );
       }
     }
@@ -654,12 +839,15 @@ class Zotero {
           `/items/${itemKey}`,
           JSON.stringify({ collections: item.data.collections }),
           item.version,
-          this.config,
+          this.config
         );
       }
     }
-
-    const res = await this.http.get(`/collections/${args.key}${args.tags ? '/tags' : ''}`, undefined, this.config);
+    const res = await this.http.get(
+      `/collections/${args.key}${args.tags ? '/tags' : ''}`,
+      undefined,
+      this.config
+    );
     this.show(res);
     return res;
   }
@@ -674,6 +862,16 @@ class Zotero {
    * https://www.zotero.org/support/dev/web_api/v3/basics
    * <userOrGroupPrefix>/items All items in the library, excluding trashed items
    * <userOrGroupPrefix>/items/top Top-level items in the library, excluding trashed items
+   */
+  // TODO: needs review
+
+  /**
+   * The function "items" is an asynchronous function that takes in arguments and performs various
+   * parsing and filtering operations on those arguments before fetching and returning a collection of
+   * items.
+   * @param args - The `args` parameter is an object that contains various arguments passed to the
+   * `items` function. These arguments can include:
+   * @returns the variable "items".
    */
   async items(args) {
     //
@@ -700,7 +898,9 @@ class Zotero {
     const collection = args.collection ? `/collections/${args.collection}` : '';
 
     if (args.count) {
-      this.print(await this.count(`${collection}/items${args.top ? '/top' : ''}`, args.filter || {}));
+      this.print(
+        await this.count(`${collection}/items${args.top ? '/top' : ''}`, args.filter || {})
+      );
       return;
     }
 
@@ -710,7 +910,7 @@ class Zotero {
     if (args.top) {
       // This should be all - there may be more than 100 items.
       // items = await this.all(`${collection}/items/top`, { params })
-      items = await this.all(`${collection}/items/top`, params);
+      items = await this.fetchItems(`${collection}/items/top`, params);
     } else if (params.limit) {
       if (params.limit > 100) {
         return this.message(0, 'You can only retrieve up to 100 items with with params.limit.');
@@ -719,30 +919,44 @@ class Zotero {
       items = await this.http.get(`${collection}/items`, { params }, this.config);
     } else {
       // logger.info("all-----")
-      items = await this.all(`${collection}/items`, params);
+      items = await this.fetchItems(`${collection}/items`, params);
     }
 
     if (args.validate || args.validate_with) {
       this.validate_items(args, items);
     }
 
-    if (args.show) this.show(items);
+    if (args.verbose && !this.config.sdk) this.show(items);
     return items;
   }
+  // TODO: needs review
 
+  /**
+   * The function `validate_items` is used to validate a list of items against a JSON schema file.
+   * @param {any} args - The `args` parameter is an object that contains various arguments passed to the
+   * `validate_items` function. It may include a `validate_with` property, which specifies the path to a
+   * schema file for validation.
+   * @param {any} items - The `items` parameter is an array of objects. Each object represents an item
+   * and contains various properties such as `itemType`, `key`, and others. The function iterates over
+   * each item in the `items` array and performs validation on it.
+   */
   private async validate_items(args: any, items: any) {
     let schema_path = '';
     if (args.validate_with) {
       if (!fs.existsSync(args.validate_with))
         throw new Error(
-          `You have provided a schema with --validate-with that does not exist: ${args.validate_with} does not exist`,
+          `You have provided a schema with --validate-with that does not exist: ${args.validate_with} does not exist`
         );
       else {
         schema_path = args.validate_with;
       }
     } else {
       if (!fs.existsSync(this.config.zotero_schema))
-        throw new Error(`You have asked for validation, but '${this.config.zotero_schema}' does not exist`);
+
+        throw new Error(
+          `You have asked for validation, but '${this.config.zotero_schema}' does not exist`
+        );
+
       else {
         schema_path = this.config.zotero_schema;
       }
@@ -757,7 +971,9 @@ class Zotero {
       if (!oneSchema) {
         validate = validators[item.itemType] =
           validators[item.itemType] ||
-          ajv.compile(JSON.parse(fs.readFileSync(path.join(schema_path, `${item.itemType}.json`), 'utf-8')));
+          ajv.compile(
+            JSON.parse(fs.readFileSync(path.join(schema_path, `${item.itemType}.json`), 'utf-8'))
+          );
       }
 
       if (!validate(item)) {
@@ -777,6 +993,18 @@ class Zotero {
    * https://www.zotero.org/support/dev/web_api/v3/basics
    * <userOrGroupPrefix>/items/<itemKey> A specific item in the library
    * <userOrGroupPrefix>/items/<itemKey>/children Child items under a specific item
+   */
+  // TODO: needs review
+  /**
+   * The `item` function is an asynchronous function that performs various operations on an item, such
+   * as retrieving the item, downloading files attached to the item, adding files to the item, adding or
+   * removing the item from collections, adding or removing tags from the item, and validating the item.
+   * @param args - The `args` parameter is an object that contains various parameters for the `item`
+   * function. These parameters include:
+   * @returns either the `result` object or a modified version of it, depending on the arguments passed
+   * to the function. If the `args.fullresponse` is `true`, then the function returns an object with the
+   * properties `status`, `message`, `output`, `result`, and `final`. Otherwise, it returns the `result`
+   * object directly.
    */
   public async item(args) {
     const output = [];
@@ -804,15 +1032,15 @@ class Zotero {
         output.push({ children });
         await Promise.all(
           children
-            .filter((i) => i.data.itemType === 'attachment')
-            .map(async (child) => {
+            .filter(i => i.data.itemType === 'attachment')
+            .map(async child => {
               if (child.data.filename) {
                 logger.info(`Downloading file ${child.data.filename}`);
                 // TODO: Is 'binary' correct?
                 fs.writeFileSync(
                   child.data.filename,
                   await this.http.get(`/items/${child.key}/file`, undefined, this.config),
-                  'binary',
+                  'binary'
                 );
 
                 // checking md5, if it doesn't match we throw an error
@@ -822,10 +1050,10 @@ class Zotero {
                 }
               } else {
                 logger.info(
-                  `Not downloading file ${child.key}/${child.data.itemType}/${child.data.linkMode}/${child.data.title}`,
+                  `Not downloading file ${child.key}/${child.data.itemType}/${child.data.linkMode}/${child.data.title}`
                 );
               }
-            }),
+            })
         );
       }
 
@@ -837,7 +1065,7 @@ class Zotero {
         const attachmentTemplate = await this.http.get(
           '/items/new?itemType=attachment&linkMode=imported_file',
           { userOrGroupPrefix: false },
-          this.config,
+          this.config
         );
 
         // try to upload each file
@@ -857,14 +1085,21 @@ class Zotero {
           const stat = fs.statSync(filename);
 
           // upload file using attachment template
-          const uploadItem = await this.http.post('/items', JSON.stringify([attachmentFileData]), {}, this.config);
+
+          const uploadItem = await this.http.post(
+            '/items',
+            JSON.stringify([attachmentFileData]),
+            {},
+            this.config
+          );
+
           const uploadAuthorization = await this.http.post(
             `/items/${uploadItem.successful[0].key}/file?md5=${md5File(filename)}&filename=${
               attachmentFileData.filename
             }&filesize=${fs.statSync(filename)['size']}&mtime=${stat.mtimeMs}`,
             '{}',
             { 'If-None-Match': '*' },
-            this.config,
+            this.config
           );
 
           let request_post = null;
@@ -877,11 +1112,13 @@ class Zotero {
                   fs.readFileSync(filename),
                   Buffer.from(uploadAuthorization.suffix),
                 ]),
-                { 'Content-Type': uploadAuthorization.contentType },
-                this.config,
+                {
+                  'Content-Type': uploadAuthorization.contentType,
+                },
+                this.config
               )
-              .then((res) => res.data);
-            if (args.verbose) {
+              .then(res => res.data);
+            if (args.verbose && !this.config.sdk) {
               logger.info('uploadResponse=');
               this.show(uploadResponse);
             }
@@ -892,7 +1129,7 @@ class Zotero {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'If-None-Match': '*',
               },
-              this.config,
+              this.config
             );
           }
           output.push({ file: request_post });
@@ -901,7 +1138,7 @@ class Zotero {
 
       if (args.addtocollection) {
         const newCollections = item.data.collections;
-        args.addtocollection.forEach((itemKey) => {
+        args.addtocollection.forEach(itemKey => {
           if (!newCollections.includes(itemKey)) {
             newCollections.push(itemKey);
           }
@@ -910,7 +1147,7 @@ class Zotero {
           `/items/${args.key}`,
           JSON.stringify({ collections: newCollections }),
           item.version,
-          this.config,
+          this.config
         );
         output.push({ addtocollection: addTo });
       }
@@ -920,14 +1157,18 @@ class Zotero {
 
         logger.info('switching creators, old = %O', creators);
 
-        let updatedCreators = creators.map((creator) => {
+        let updatedCreators = creators.map(creator => {
           if ('name' in creator) {
             return creator;
           }
 
           const { firstName, lastName, creatorType } = creator;
 
-          return { lastName: firstName, firstName: lastName, creatorType };
+          return {
+            lastName: firstName,
+            firstName: lastName,
+            creatorType,
+          };
         });
 
         logger.info('switched creators, new = %O', updatedCreators);
@@ -935,7 +1176,7 @@ class Zotero {
           `/items/${args.key}`,
           JSON.stringify({ creators: updatedCreators }),
           item.version,
-          this.config,
+          this.config
         );
         output.push({ switchNames: res });
       }
@@ -954,7 +1195,7 @@ class Zotero {
             `/items/${args.key}`,
             JSON.stringify({ extra: updatedExtra }),
             item.version,
-            this.config,
+            this.config
           );
           logger.info('organise extra: ' + updatedExtra);
           output.push({ organise_extra: res });
@@ -975,7 +1216,7 @@ class Zotero {
       if (args.removefromcollection) {
         args.removefromcollection = this.extractKeyAndSetGroup(args.removefromcollection);
         const newCollections = item.data.collections;
-        args.removefromcollection.forEach((itemKey) => {
+        args.removefromcollection.forEach(itemKey => {
           const index = newCollections.indexOf(itemKey);
           if (index > -1) {
             newCollections.splice(index, 1);
@@ -985,15 +1226,15 @@ class Zotero {
           `/items/${args.key}`,
           JSON.stringify({ collections: newCollections }),
           item.version,
-          this.config,
+          this.config
         );
         output.push({ removefromcollection: removefrom });
       }
 
       if (args.addtags) {
         const newTags = item.data.tags;
-        args.addtags.forEach((tag) => {
-          if (!newTags.find((newTag) => newTag.tag === tag)) {
+        args.addtags.forEach(tag => {
+          if (!newTags.find(newTag => newTag.tag === tag)) {
             newTags.push({ tag });
           }
         });
@@ -1001,18 +1242,18 @@ class Zotero {
           `/items/${args.key}`,
           JSON.stringify({ tags: newTags }),
           item.version,
-          this.config,
+          this.config
         );
         output.push({ addtags: res });
       }
 
       if (args.removetags) {
-        const newTags = item.data.tags.filter((tag) => !args.removetags.includes(tag.tag));
+        const newTags = item.data.tags.filter(tag => !args.removetags.includes(tag.tag));
         const res = await this.http.patch(
           `/items/${args.key}`,
           JSON.stringify({ tags: newTags }),
           item.version,
-          this.config,
+          this.config
         );
         output.push({ removetags: res });
       }
@@ -1044,7 +1285,11 @@ class Zotero {
 
     this.output = JSON.stringify(output);
 
+
+    if (args.verbose && !this.config.sdk)
+      logger.info('item -> resul=' + JSON.stringify(result, null, 2));
     if (args.show) logger.info('item -> resul=' + JSON.stringify(result, null, 2));
+
 
     const finalactions = this.finalActions(result);
     return args.fullresponse
@@ -1066,6 +1311,15 @@ class Zotero {
    * (API: /items/KEY/file).
    * Also see 'item', which has options for adding/saving file attachments.
    */
+  // TODO: needs review
+  /**
+   * The `attachment` function extracts a group and key from a string, retrieves a file from a server
+   * using the key, saves the file locally, compares the MD5 checksum of the saved file with the server's
+   * response, and returns a message with the saved file's information.
+   * @param args - The `args` parameter is an object that contains the following properties:
+   * @returns a message object with a status code of 0, a message of 'File saved', and additional data
+   * including the filename, md5 checksum, and modification time of the saved file.
+   */
   async attachment(args) {
     if (args.key) {
       //TODO: args parsing code
@@ -1080,7 +1334,7 @@ class Zotero {
       {
         arraybuffer: true,
       },
-      this.config,
+      this.config
     );
 
     fs.writeFileSync(args.save, blob, 'binary');
@@ -1105,6 +1359,14 @@ class Zotero {
    * [single item](https://www.zotero.org/support/dev/web_api/v3/write_requests#_an_item) OR
    * [multiple items](https://www.zotero.org/support/dev/web_api/v3/write_requests#creating_multiple_items)
    */
+  // TODO: needs review
+  /**
+   * The `create_item` function is used to create new items in a system, either based on a template, from
+   * a list of files, or from a single item.
+   * @param args - The `args` parameter is an object that contains various properties used as arguments
+   * for the `create_item` function. The properties include:
+   * @returns The function `create_item` returns different values based on the conditions:
+   */
   public async create_item(args) {
     //
 
@@ -1115,7 +1377,7 @@ class Zotero {
           userOrGroupPrefix: false,
           params: { itemType: args.template },
         },
-        this.config,
+        this.config
       );
       //TODO: this.show(result);
       this.show(result);
@@ -1123,45 +1385,50 @@ class Zotero {
       return result;
     }
 
-    if (Array.isArray(args.files)) {
-      if (!args.files.length)
-        return this.message(0, 'Need at least one item (args.items) to create or use args.template');
-      else {
-        //  all items are read into a single structure:
-        const items = args.files.map((item) => JSON.parse(fs.readFileSync(item, 'utf-8')));
-        const itemsflat = items.flat(1);
-        let res = [];
-        const batchSize = 50;
-        if (itemsflat.length <= batchSize) {
-          const result = await this.http.post('/items', JSON.stringify(itemsflat), {}, this.config);
-          res.push(result);
-          this.show(res);
-        } else {
-          /* items.length = 151
+
+    if (Array.isArray(args.files) && args.files.length > 0) {
+      // if (!args.files.length)
+      //   return this.message(
+      //     0,
+      //     'Need at least one item (args.items) to create or use args.template'
+      //   );
+      //  all items are read into a single structure:
+      const items = args.files.map(item => JSON.parse(fs.readFileSync(item, 'utf-8')));
+      const itemsflat = items.flat(1);
+      let res = [];
+      const batchSize = 50;
+      if (itemsflat.length <= batchSize) {
+        const result = await this.http.post('/items', JSON.stringify(itemsflat), {}, this.config);
+        res.push(result);
+        this.show(res);
+      } else {
+        /* items.length = 151
         0..49 (end=50)
         50..99 (end=100)
         100..149 (end=150)
         150..150 (end=151)
         */
-          for (var start = 0; start < itemsflat.length; start += batchSize) {
-            const end = start + batchSize <= itemsflat.length ? start + batchSize : itemsflat.length + 1;
-            // Safety check - should always be true:
-            if (itemsflat.slice(start, end).length) {
-              logger.error(`Uploading objects ${start} to ${end}-1`);
-              logger.info(`Uploading objects ${start} to ${end}-1`);
-              logger.info(`${itemsflat.slice(start, end).length}`);
-              const result = await this.http.post(
-                '/items',
-                JSON.stringify(itemsflat.slice(start, end)),
-                {},
-                this.config,
-              );
-              res.push(result);
-            } else {
-              logger.error(`NOT Uploading objects ${start} to ${end}-1`);
-              logger.info(`NOT Uploading objects ${start} to ${end}-1`);
-              logger.info(`${itemsflat.slice(start, end).length}`);
-            }
+
+        for (var start = 0; start < itemsflat.length; start += batchSize) {
+          const end =
+            start + batchSize <= itemsflat.length ? start + batchSize : itemsflat.length + 1;
+          // Safety check - should always be true:
+          if (itemsflat.slice(start, end).length) {
+            logger.error(`Uploading objects ${start} to ${end}-1`);
+            logger.info(`Uploading objects ${start} to ${end}-1`);
+            logger.info(`${itemsflat.slice(start, end).length}`);
+            const result = await this.http.post(
+              '/items',
+              JSON.stringify(itemsflat.slice(start, end)),
+              {},
+              this.config
+            );
+            res.push(result);
+          } else {
+            logger.error(`NOT Uploading objects ${start} to ${end}-1`);
+            logger.info(`NOT Uploading objects ${start} to ${end}-1`);
+            logger.info(`${itemsflat.slice(start, end).length}`);
+
           }
         }
         // TODO: see how to use pruneData
@@ -1174,7 +1441,9 @@ class Zotero {
       let items = args.items;
 
       if (Array.isArray(args.items) && args.items.length > 0) {
-        items = items.map((item) => (typeof item === 'string' ? JSON.parse(item) : item));
+
+        items = items.map(item => (typeof item === 'string' ? JSON.parse(item) : item));
+
         items = JSON.stringify(items);
       }
 
@@ -1209,6 +1478,13 @@ class Zotero {
    *
    * [see api docs](https://www.zotero.org/support/dev/web_api/v3/write_requests#updating_an_existing_item)
    */
+  // TODO: needs review
+  /**
+   * The `update_item` function updates an item in a database based on the provided arguments.
+   * @param args - The `args` parameter is an object that contains various properties used for updating
+   * an item. The properties include:
+   * @returns the result of the HTTP request made either with the `put` or `patch` method.
+   */
   public async update_item(args) {
     //TODO: args parsing code
     args.replace = args.replace || false;
@@ -1226,7 +1502,13 @@ class Zotero {
     if (args.key) {
       args.key = this.extractKeyAndSetGroup(args.key);
     } else {
-      const msg = this.message(0, 'Unable to extract group/key from the string provided. Arguments attached.', args);
+
+      const msg = this.message(
+        0,
+        'Unable to extract group/key from the string provided. Arguments attached.',
+        args
+      );
+
       logger.info(msg);
     }
 
@@ -1283,6 +1565,7 @@ class Zotero {
    * https://www.zotero.org/support/dev/web_api/v3/basics
    * <userOrGroupPrefix>/publications/items Items in My Publications
    */
+  // TODO: needs review
   async publications(args) {
     const items = await this.http.get('/publications/items', undefined, this.config);
     this.show(items);
@@ -1293,13 +1576,14 @@ class Zotero {
    * Retrieve a list of items types available in Zotero.
    * (API: /itemTypes)
    */
+  // TODO: needs review
   async types(args) {
     const types = await this.http.get(
       '/itemTypes',
       {
         userOrGroupPrefix: false,
       },
-      this.config,
+      this.config
     );
     this.show(types);
     return types;
@@ -1310,6 +1594,7 @@ class Zotero {
    * library_id and api_key has access to.
    * (API: /users/<user-id>/groups)
    */
+  // TODO: needs review
   async groups(args) {
     const groups = await this.http.get('/groups', undefined, this.config);
     this.show(groups);
@@ -1323,6 +1608,9 @@ class Zotero {
    * Note that to retrieve a template, use 'create-item --template TYPE'
    * rather than this command.
    */
+
+  // TODO: needs review
+
   async fields(args) {
     if (args.type) {
       const result = {
@@ -1332,7 +1620,7 @@ class Zotero {
             params: { itemType: args.type },
             userOrGroupPrefix: false,
           },
-          this.config,
+          this.config
         ),
         itemTypeCreatorTypes: await this.http.get(
           '/itemTypeCreatorTypes',
@@ -1340,7 +1628,7 @@ class Zotero {
             params: { itemType: args.type },
             userOrGroupPrefix: false,
           },
-          this.config,
+          this.config
         ),
       };
       this.show(result);
@@ -1352,7 +1640,7 @@ class Zotero {
           {
             userOrGroupPrefix: false,
           },
-          this.config,
+          this.config
         ),
       };
       this.show(result);
@@ -1369,6 +1657,7 @@ class Zotero {
    *
    * https://www.zotero.org/support/dev/web_api/v3/basics
    */
+  // TODO: needs review
   async searches(args) {
     if (args.create) {
       let searchDef = [];
@@ -1390,17 +1679,21 @@ class Zotero {
   }
 
   /**
-   * Return a list of tags in the library. Options to filter
-   * and count tags. (API: /tags)
+   * The "tags" function retrieves a list of tags from a server and either displays them or counts the
+   * number of items associated with each tag.
+   * @param args - The `args` parameter is an object that contains the following properties:
+   * @returns The function `tags` returns either an object `tag_counts` if `args.count` is truthy, or an
+   * array `tags` if `args.count` is falsy.
    */
+  // TODO: needs review
   async tags(args) {
     let rawTags = null;
     if (args.filter) {
-      rawTags = await this.all(`/ tags / ${encodeURIComponent(args.filter)} `);
+      rawTags = await this.fetchItems(`/ tags / ${encodeURIComponent(args.filter)} `);
     } else {
-      rawTags = await this.all('/tags');
+      rawTags = await this.fetchItems('/tags');
     }
-    const tags = rawTags.map((tag) => tag.tag).sort();
+    const tags = rawTags.map(tag => tag.tag).sort();
 
     if (args.count) {
       const tag_counts: Record<string, number> = {};
@@ -1418,7 +1711,13 @@ class Zotero {
   /**
    * Utility functions.
    */
-
+  /**
+   * The function `enclose_item_in_collection` encloses an item in a collection in Zotero and performs
+   * various operations related to the collection and the item.
+   * @param args - The `args` parameter is an object that contains the following properties:
+   * @returns a message with a status code, a success message, and an array of output objects.
+   */
+  // TODO: needs review
   public async enclose_item_in_collection(args) {
     const output = [];
     //TODO: args parsing code
@@ -1564,11 +1863,13 @@ class Zotero {
   }
 
   /**
-   * Get the DOI of the item provided.
-   * @param args
-   * @param subparsers
-   * @returns
+   * The function `get_doi` retrieves the DOI (Digital Object Identifier) from an item and returns it.
+   * @param args - The `args` parameter is an object that contains the arguments passed to the `get_doi`
+   * function. It is not specified what specific properties are expected in the `args` object, but it is
+   * used to pass additional information or configuration to the function.
+   * @returns the DOI (Digital Object Identifier) of an item.
    */
+  // TODO: needs review
   public async get_doi(args) {
     // We dont know what kind of item this is - gotta get the item to see
 
@@ -1578,13 +1879,21 @@ class Zotero {
     logger.info(`DOI: ${doi}, ${typeof doi}`);
     return doi;
   }
-
+  /**
+   * The function `get_doi_from_item` retrieves the DOI (Digital Object Identifier) from an item object,
+   * either directly from the `doi` property or by parsing the `extra` property.
+   * @param item - The `item` parameter is an object that represents an item. It may have a `doi`
+   * property or an `extra` property. If the `doi` property exists, its value will be assigned to the
+   * `doi` variable. If the `doi` property does not exist, the `
+   * @returns the DOI (Digital Object Identifier) value extracted from the given item.
+   */
+  // TODO: needs review
   public get_doi_from_item(item) {
     let doi = '';
     if ('doi' in item) {
       doi = item.doi;
     } else {
-      item.extra.split('\n').forEach((element) => {
+      item.extra.split('\n').forEach(element => {
         var mymatch = element.match(/^DOI\:\s*(.*?)\s*$/);
         if (mymatch) {
           doi = mymatch[1];
@@ -1594,6 +1903,13 @@ class Zotero {
     return doi;
   }
 
+  /**
+   * The function `manageLocalDB` performs various operations related to managing a local database,
+   * including syncing with an online library, fetching items based on specified filters, and exporting
+   * the items as JSON.
+   * @param args - {
+   */
+  // TODO: needs review
   public async manageLocalDB(args) {
     console.log('args: ', { ...args }, this.config);
     if (args.lookup && !args.keys) {
@@ -1604,11 +1920,6 @@ class Zotero {
     // process.env.DATABASE_URL_2 = `file:${process.cwd()}/${args.database}`;
     // console.log(process.env.DATABASE_URL_2);
 
-    // try {
-    //   await exec(`npx prisma migrate dev --schema=${process.cwd()}/prisma/schema2.prisma --name 'test2'`);
-    //   await exec(`npx prisma generate --schema=${process.cwd()}/prisma/schema2.prisma`);
-    // } catch (error) {}
-
     if (args.lookup && Array.isArray(args.keys) && args.keys.length > 0) {
       let keys = { keys: [...args.keys] };
       let result = await lookupItems(keys);
@@ -1616,15 +1927,22 @@ class Zotero {
       return result;
     }
 
+
     if (args.sync) {
       const lockFileName = args.lockfile;
       const runSync = () => {
         return checkForValidLockFile(args.lockfile, args.lock_timeout).then((hasValidLock: any) => {
           if (hasValidLock) {
-            console.log(`Another sync run is in progress, please wait for it, or remove its lockfile ${lockFileName}`);
+
+            console.log(
+              `Another sync run is in progress, please wait for it, or remove its lockfile ${lockFileName}`
+            );
             return hasValidLock;
           }
-          return syncToLocalDB({ ...args, ...this.config }).then(() => removeLockFile(lockFileName));
+          return syncToLocalDB({ ...args, ...this.config }).then(() =>
+            removeLockFile(lockFileName)
+          );
+
         });
       };
 
@@ -1652,6 +1970,7 @@ class Zotero {
     //   filters = { errors: args.errors };
     // }
 
+
     // const allItems = await fetchAllItems({
     //   database: args.database,
     //   filters,
@@ -1674,8 +1993,15 @@ class Zotero {
     //     console.log(itemsAsJSON);
     //   }
     // }
+
   }
 
+  /**
+   * The function `deduplicate_func` in TypeScript uses the Prisma ORM to find and deduplicate items
+   * based on their type and title, storing the duplicates in an object and writing them to a JSON file.
+   * @param {any} args - The `args` parameter is an object that contains the following properties:
+   */
+  // TODO: needs review
   public async deduplicate_func(args: any) {
     const { PrismaClient } = require('@prisma/client');
     //@ts-ignore
@@ -1706,6 +2032,7 @@ class Zotero {
     logger.info(`started filtering duplicates by type : ${group_id}`);
     for (let item of allItems) {
       let itemType = item.data.data.itemType;
+
       if (!['attachment', 'note', 'annotation'].includes(itemType)) {
         if (itemType in itemsByType) {
           itemsByType[itemType].push(item);
@@ -1734,19 +2061,22 @@ class Zotero {
     }
 
     let duplicatesInType = [];
-    if (items.length > 0 && !args.files?.length) {
+
+
+    if (items.length) {
       for (let i = 0; i < items.length; i++) {
         let isDuplicate = false;
         let item1 = items[i].data.data;
-        let tags1 = item1.tags ? item1.tags.map((tag) => tag.tag) : [];
+        let tags1 = item1.tags ? item1.tags.map(tag => tag.tag) : [];
+
         if (tags1.includes('_ignore-duplicate')) continue;
 
         // let title = item.title.toLowerCase();
         // loop through all items and check if there is a duplicate item[j].data.data.title
         for (let j = i + 1; j < items.length; j++) {
           let item2 = items[j].data.data;
+          let tags2 = item2.tags ? item2.tags.map(tag => tag.tag) : [];
 
-          let tags2 = item2.tags ? item2.tags.map((tag) => tag.tag) : [];
           if (tags2.includes('_ignore-duplicate')) continue;
 
           // create array of tag objects from item1 and item2
@@ -1761,7 +2091,13 @@ class Zotero {
             //   ...duplicates[result.reason][item.key],
             //   "key":item2.key,"version":item2.version
             // }
-            if (result.reason === 'identical' && args.collection && Array.isArray(item2.collections)) {
+
+            if (
+              result.reason === 'identical' &&
+              args.collection &&
+              Array.isArray(item2.collections)
+            ) {
+
               this.item({
                 key: item2.key,
                 addtocollection: [args.collection],
@@ -1806,6 +2142,12 @@ class Zotero {
     }
   }
 
+  /**
+   * The function `Move_deduplicate_to_collection` reads a deduplicate JSON file, checks the category in
+   * the file, creates subcollections if they don't exist, and adds items to the subcollections.
+   * @param {any} args - The `args` parameter is an object that contains the following properties:
+   */
+  // TODO: needs review
   public async Move_deduplicate_to_collection(args: any) {
     // read deduplicate json file
 
@@ -1876,7 +2218,7 @@ class Zotero {
 
     for (const key of keys) {
       let itemData = items[key];
-      let collection = await subCollectionData.find((collection) => {
+      let collection = await subCollectionData.find(collection => {
         return collection.name === key;
       });
       console.log(collection, key);
@@ -1900,14 +2242,14 @@ class Zotero {
               await this.item({
                 key: item,
                 addtocollection: [collection.key],
-                verbose: true,
+                verbose: false,
               });
               for (const iterator of itemData[item]) {
                 finalName = finalName + ' , ' + iterator.key;
                 await this.item({
                   key: iterator.key,
                   addtocollection: [collection.key],
-                  verbose: true,
+                  verbose: false,
                 });
               }
             }
@@ -1922,14 +2264,14 @@ class Zotero {
             await this.item({
               key: item,
               addtocollection: [collectionTemp['0'].key],
-              verbose: true,
+              verbose: false,
             });
             for (const iterator of itemData[item]) {
               finalName = finalName + ' , ' + iterator.key;
               await this.item({
                 key: iterator.key,
                 addtocollection: [collectionTemp['0'].key],
-                verbose: true,
+                verbose: false,
               });
             }
           }
@@ -1943,14 +2285,14 @@ class Zotero {
           await this.item({
             key: item,
             addtocollection: [collectionTemp['0'].key],
-            verbose: true,
+            verbose: false,
           });
           for (const iterator of itemData[item]) {
             finalName = finalName + ' , ' + iterator.key;
             await this.item({
               key: iterator.key,
               addtocollection: [collectionTemp['0'].key],
-              verbose: true,
+              verbose: false,
             });
           }
         }
@@ -1958,6 +2300,12 @@ class Zotero {
     }
   }
 
+  /**
+   * The `merge_func` function reads a JSON file, extracts specific items based on user options, and then
+   * merges those items into a list.
+   * @param {any} args - The `args` parameter is an object that contains the following properties:
+   */
+  // TODO: needs review
   public async merge_func(args: any) {
     if (!fs.existsSync(args.data)) {
       console.log('file not found');
@@ -1983,7 +2331,13 @@ class Zotero {
       console.log(itemList);
     }
   }
+  /**
+   * The function retrieves the count of items from a database using Prisma and returns the count.
+   * @param items - The `items` parameter is an array of item IDs.
+   * @returns The variable "allItems" is being returned.
+   */
   //@ts-ignore
+  // TODO: needs review
   private async getItems(items) {
     const { PrismaClient } = require('@prisma/client');
     const prisma = new PrismaClient();
@@ -1999,6 +2353,14 @@ class Zotero {
     // check if file exists using fs
   }
 
+  /**
+   * The above function is a TypeScript function that resolves a given set of keys by querying a database
+   * and returning the corresponding data and type for each key.
+   * @param {any} args - The `args` parameter is an object that contains the following properties:
+   * @returns an object `result` that contains information about the keys passed as arguments. The
+   * structure of the `result` object is as follows:
+   */
+  // TODO: needs review
   public async resolvefunc(args: any) {
     const { PrismaClient } = require('@prisma/client');
     const prisma = new PrismaClient();
@@ -2066,7 +2428,7 @@ class Zotero {
           return null;
         }
         // remove rows item_id is the same as the itemid
-        rows = rows.filter((row) => row.item_id !== itemid);
+        rows = rows.filter(row => row.item_id !== itemid);
         if (rows) {
           if (rows.length > 1) type = 'redirect_ambiguous';
           else if (rows.length == 1) {
@@ -2103,12 +2465,14 @@ class Zotero {
                 return null;
               }
               if (rowsImportbleItem.length != 1)
-                rowsImportbleItem = rowsImportbleItem.filter((row) => row.id !== itemid);
+
+                rowsImportbleItem = rowsImportbleItem.filter(row => row.id !== itemid);
+
 
               if (rowsImportbleItem.length == 1) {
                 type = 'importable';
                 data.push(
-                  `https://ref.opendeved.net/g/${rowsImportbleItem[0].group_id}/${rowsImportbleItem.id}/?openin=zoteroapp`,
+                  `https://ref.opendeved.net/g/${rowsImportbleItem[0].group_id}/${rowsImportbleItem.id}/?openin=zoteroapp`
                 );
               } else if (rowsImportbleItem.length > 1) {
                 type = 'importable_ambiguous';
@@ -2139,17 +2503,25 @@ class Zotero {
                 }
                 // remove rows item_id is the same as the itemid
                 if (rowsImportbleAlsoKnownAs.length != 1)
-                  rowsImportbleAlsoKnownAs = rowsImportbleAlsoKnownAs.filter((row) => row.item_id !== itemid);
+
+                  rowsImportbleAlsoKnownAs = rowsImportbleAlsoKnownAs.filter(
+                    row => row.item_id !== itemid
+                  );
+
                 if (rowsImportbleAlsoKnownAs.length == 1) {
                   type = 'importable_redirect';
                   data.push(
-                    `https://ref.opendeved.net/g/${rowsImportbleAlsoKnownAs[0].group_id}/${rowsImportbleAlsoKnownAs[0].item_id}/?openin=zoteroapp`,
+                    `https://ref.opendeved.net/g/${rowsImportbleAlsoKnownAs[0].group_id}/${rowsImportbleAlsoKnownAs[0].item_id}/?openin=zoteroapp`
                   );
                 } else if (rowsImportbleAlsoKnownAs.length > 1) {
                   type = 'importable_ambiguous';
                   for (const row of rowsImportbleAlsoKnownAs) {
                     if (row.item_id == itemid && group_id == row.group_id) type = 'valid_ambiguous';
-                    data.push(`https://ref.opendeved.net/g/${row.group_id}/${row.item_id}/?openin=zoteroapp`);
+
+                    data.push(
+                      `https://ref.opendeved.net/g/${row.group_id}/${row.item_id}/?openin=zoteroapp`
+                    );
+
                     //console.log(kerkoLine);
                   }
                 } else type = 'unknown';
@@ -2159,7 +2531,11 @@ class Zotero {
           if (type != 'valid')
             for (const row of rows) {
               if (row.item_id == itemid && group_id == row.group_id) type = 'valid_ambiguous';
-              data.push(`https://ref.opendeved.net/g/${row.group_id}/${row.item_id}/?openin=zoteroapp`);
+
+              data.push(
+                `https://ref.opendeved.net/g/${row.group_id}/${row.item_id}/?openin=zoteroapp`
+              );
+
               //console.log(kerkoLine);
             }
           result[key] = { type, data };
@@ -2177,6 +2553,15 @@ class Zotero {
   /**
    * Update the DOI of the item provided.
    */
+  /**
+   * The function `update_doi` is an asynchronous function that updates the DOI (Digital Object
+   * Identifier) of an item in a Zotero library based on the provided arguments.
+   * @param args - The `args` parameter is an object that contains various properties. Here's a
+   * breakdown of the properties used in the `update_doi` function:
+   * @returns either the updated item with the attached DOI or a message indicating that the update
+   * failed.
+   */
+  // TODO: needs review
   public async update_doi(args) {
     //TODO: args parsing code
     args.fullresponse = false;
@@ -2230,7 +2615,10 @@ class Zotero {
             });
           }
           const zoteroRecord = await this.item({ key: args.key });
-          if (args.verbose) logger.info('Result=' + JSON.stringify(zoteroRecord, null, 2));
+
+          if (args.verbose && !this.config.sdk)
+            logger.info('Result=' + JSON.stringify(zoteroRecord, null, 2));
+
           return zoteroRecord;
         } else {
           logger.info('async update_doi - update failed', JSON.stringify(updatedItem, null, 2));
@@ -2244,12 +2632,28 @@ class Zotero {
     }
   }
 
+  /**
+   * The TEMPLATE function returns a message with an exist status and an empty data object.
+   * @param args - The "args" parameter is a placeholder for any arguments that you may want to pass to
+   * the function. It can be of any data type and can be used to provide additional information or
+   * configuration to the function.
+   * @returns a message with a status code of 0, a message of 'exist status', and an empty data object.
+   */
+  // TODO: needs review
   public async TEMPLATE(args) {
     const data = {};
     return this.message(0, 'exist status', data);
   }
 
   // TODO: Implement
+  /**
+   * The `attach_link` function in TypeScript adds various types of links to an item based on the
+   * provided arguments, including Zenodo links, decoration links, and URL links.
+   * @param args - The `args` parameter is an object that contains various properties used as inputs for
+   * the `attach_link` function. The properties include:
+   * @returns a message with a status code of 0 (indicating success) and an array of data objects.
+   */
+  // TODO: needs review
   public async attach_link(args) {
     // TODO: There's a problem here... the following just offer docorations. We need to have inputs too...
 
@@ -2301,7 +2705,13 @@ class Zotero {
         tags = args.tags ? tags.push(args.tags) : tags;
         const addkey = option === 'kerko_site_url' ? as_value(args.key) : '';
         // ACTION: run code
-        const data = await this.attachLinkToItem(as_value(args.key), as_value(args[option]) + addkey, { title, tags });
+
+        const data = await this.attachLinkToItem(
+          as_value(args.key),
+          as_value(args[option]) + addkey,
+          { title, tags }
+        );
+
         dataout.push({
           decoration: option,
           data,
@@ -2336,6 +2746,16 @@ class Zotero {
     return this.message(0, 'exist status', dataout);
   }
 
+  /**
+   * The above function is a TypeScript code that handles a field in an object, either updating its value
+   * or returning its current value.
+   * @param args - The `args` parameter is an object that contains various properties. The properties
+   * used in the code snippet are:
+   * @returns The code is returning either the updated Zotero record if the update is successful, or an
+   * error message if the update fails. If there is no value provided, it returns the value of the
+   * specified field from the Zotero item.
+   */
+  // TODO: needs review
   public async field(args) {
     //TODO: args parsing code
     if (!args.field) {
@@ -2366,7 +2786,10 @@ class Zotero {
       if (update.statusCode == 204) {
         logger.info('update successfull - getting record');
         const zoteroRecord = await this.item({ key: args.key });
-        if (args.verbose) logger.info('Result=' + JSON.stringify(zoteroRecord, null, 2));
+
+        if (args.verbose && !this.config.sdk)
+          logger.info('Result=' + JSON.stringify(zoteroRecord, null, 2));
+
         return zoteroRecord;
       } else {
         logger.info('update failed');
@@ -2383,11 +2806,27 @@ class Zotero {
   }
 
   // TODO: Implement
+  /**
+   * The function "extra_append" returns a message with an exit status and an empty data object.
+   * @param args - The "args" parameter is a placeholder for any additional arguments that may be passed
+   * to the "extra_append" function. It can be used to provide additional information or configuration to
+   * the function.
+   * @returns a promise that resolves to an object with three properties: `status` with a value of 0,
+   * `message` with a value of 'exit status', and `data` with an empty object.
+   */
+  // TODO: needs review
   public async extra_append(args) {
     const data = {};
     return this.message(0, 'exit status', data);
   }
 
+  /**
+   * The function updates a URL value and returns the result of updating an item.
+   * @param args - The `args` parameter is an object that contains the necessary information for updating
+   * a URL. It may have the following properties:
+   * @returns the result of calling the `update_item` function with the `args` object as an argument.
+   */
+  // TODO: needs review
   public async update_url(args) {
     //TODO: args parsing code
     args.json = {
@@ -2396,6 +2835,15 @@ class Zotero {
     return this.update_item(args);
   }
 
+  /**
+   * The function `KerkoCiteItemAlsoKnownAs` updates the "ItemAlsoKnownAs" field of a Zotero item with
+   * additional values provided in the `args.add` parameter.
+   * @param args - The `args` parameter is an object that contains various properties. The specific
+   * properties used in the code are:
+   * @returns a message object with different properties depending on the execution path. The possible
+   * return objects are:
+   */
+  // TODO: needs review
   public async KerkoCiteItemAlsoKnownAs(args) {
     //TODO: args parsing code
     args.fullresponse = false;
@@ -2450,7 +2898,10 @@ class Zotero {
       if (update.statusCode == 204) {
         logger.info('update successfull - getting record');
         zoteroRecord = await this.item({ key: args.key });
-        if (args.verbose) logger.info('Result=' + JSON.stringify(zoteroRecord, null, 2));
+
+        if (args.verbose && !this.config.sdk)
+          logger.info('Result=' + JSON.stringify(zoteroRecord, null, 2));
+
       } else {
         logger.info('update failed');
         return this.message(1, 'update failed', { update });
@@ -2465,6 +2916,18 @@ class Zotero {
   }
 
   // TODO: Implement
+  /**
+   * The function "getbib" retrieves data from Zotero and returns it in either XML format or as a JSON
+   * object.
+   * @param args - The `args` parameter is an object that contains the arguments passed to the `getbib`
+   * function. It is used to customize the behavior of the function. The specific properties of the
+   * `args` object are not provided in the code snippet, so it is not possible to determine their exact
+   * purpose without
+   * @returns If the `args.xml` is true, then the `output` data is logged and returned as is. Otherwise,
+   * a success message along with the `output` data is returned as an object with properties `status`,
+   * `message`, and `data`.
+   */
+  // TODO: needs review
   public async getbib(args) {
     let output;
     try {
@@ -2482,6 +2945,17 @@ class Zotero {
   }
 
   /* START FUcntionS FOR GETBIB */
+  /**
+   * The function `getZoteroDataX` retrieves data from Zotero API based on the provided arguments and
+   * returns the formatted response.
+   * @param args - The `args` parameter is an object that contains various parameters for the
+   * `getZoteroDataX` function. The specific parameters used in the function are:
+   * @returns The function `getZoteroDataX` returns a response object. If the response object contains
+   * data, it is processed and transformed into a formatted XML string. If the `args.json` parameter is
+   * set to true, the XML string is converted to JSON format. If the `args.test` parameter is set to
+   * true, the response is further processed and sorted. If there is no response data
+   */
+  // TODO: needs review
   async getZoteroDataX(args) {
     //logger.info("Hello")
     let d = new Date();
@@ -2504,23 +2978,23 @@ class Zotero {
       var resp = [];
       try {
         resp = response.map(
-          (element) =>
+          element =>
             element.bib
               .replace(
                 /\((\d\d\d\d)\)/,
                 '($1' +
                   element.data.tags
-                    .filter((i) => i.tag.match(/_yl:/))
-                    .map((item) => item.tag)
+                    .filter(i => i.tag.match(/_yl:/))
+                    .map(item => item.tag)
                     .join(',')
                     .replace(/_yl\:/, '') +
-                  ')',
+                  ')'
               )
               .replace('</div>\n</div>', '')
               .replace(/\.\s*$/, '')
               .replace(
                 '<div class="csl-bib-body" style="line-height: 1.35; padding-left: 1em; text-indent:-1em;">',
-                '<div class="csl-bib-body">',
+                '<div class="csl-bib-body">'
               ) +
             '.' +
             getCanonicalURL(args, element) +
@@ -2529,9 +3003,16 @@ class Zotero {
               : '') +
             colophon(element.data.extra) +
             ' (' +
-            urlify('details', element.library.id, element.key, args.zgroup, args.zkey, args.openinzotero) +
+            urlify(
+              'details',
+              element.library.id,
+              element.key,
+              args.zgroup,
+              args.zkey,
+              args.openinzotero
+            ) +
             ')' +
-            '</div>\n</div>',
+            '</div>\n</div>'
         );
       } catch (e) {
         return catchme(2, 'caught error in response', e, response);
@@ -2589,11 +3070,21 @@ class Zotero {
           data: fullresponse,
         },
         null,
-        2,
+        2
       );
     }
   }
 
+  /**
+   * The function `makeZoteroQuery` takes an argument `arg` and performs a query to retrieve data from
+   * Zotero, returning a response object with the status, message, and data.
+   * @param arg - The `arg` parameter is an object that contains the following properties:
+   * @returns The function `makeZoteroQuery` returns an object with three properties: `status`,
+   * `message`, and `data`. The `status` property indicates the status of the query, where `0` represents
+   * success and `1` represents an error. The `message` property provides a message describing the status
+   * of the query. The `data` property contains an array of results from the query
+   */
+  // TODO: needs review
   async makeZoteroQuery(arg) {
     var response = [];
     logger.info('hello');
@@ -2641,12 +3132,25 @@ class Zotero {
         response.push(resp);
       }
     }
-    if (!response || response.length == 0) {
+    if (response.length == 0) {
       return { status: 1, message: 'error', data: [] };
     }
     return { status: 0, message: 'Success', data: response };
   }
 
+  /**
+   * The function `makeMultiQuery` takes an argument `args` and performs multiple queries based on the
+   * provided group keys, combining the results into an array `b` and returning it along with any errors
+   * encountered.
+   * @param args - The `args` parameter is an object that contains the following properties:
+   * @returns The function `makeMultiQuery` returns an object with the following properties:
+   * - `status`: A number indicating the status of the query (0 for success).
+   * - `message`: A string message indicating the result of the query ("Success").
+   * - `data`: An array containing the retrieved data from the queries.
+   * - `errors`: An array containing any errors encountered during the queries. Each error object
+   * includes
+   */
+  // TODO: needs review
   async makeMultiQuery(args) {
     // logger.info("Multi query 1")
     let mykeys;
@@ -2660,7 +3164,7 @@ class Zotero {
     }
     var a = {};
     try {
-      mykeys.forEach((x) => {
+      mykeys.forEach(x => {
         const gk = x.split(':');
         if (a[gk[0]]) {
           a[gk[0]].push(gk[1]);
@@ -2700,6 +3204,14 @@ class Zotero {
   /* END Fucntions FOR GETBIB */
 
   // TODO: Implement
+  /**
+   * The `attach_note` function attaches a note to an item, combining the content from a note file and a
+   * note text, and returns the exit status and data.
+   * @param args - The `args` parameter is an object that contains various properties. The specific
+   * properties used in the code are:
+   * @returns a message with an exit status and the data that was attached to the item.
+   */
+  // TODO: needs review
   public async attach_note(args) {
     //TODO: args parsing code
     args.notetext = as_value(args.notetext);
@@ -2721,12 +3233,29 @@ class Zotero {
   }
 
   // TODO: Implement
+  /**
+   * The function "getValue" returns a message with an exist status and an empty data object.
+   * @param args - The "args" parameter is not specified in the code snippet provided. It seems to be
+   * missing or not used in the "getValue" function.
+   * @returns a promise that resolves to an object with three properties: a status code of 0, a message
+   * of 'exist status', and an empty data object.
+   */
+  // TODO: needs review
   public async getValue(args) {
     const data = {};
     return this.message(0, 'exist status', data);
   }
 
   // TODO: Implement
+  /**
+   * The function "collectionName" returns a message with an exist status and an empty data object.
+   * @param args - The "args" parameter is likely used to pass any additional arguments or parameters to
+   * the "collectionName" function. It could be an object or an array containing any necessary data for
+   * the function to execute properly.
+   * @returns the result of the `this.message` function call, passing in the arguments 0, 'exist status',
+   * and an empty object `{}`.
+   */
+  // TODO: needs review
   public async collectionName(args) {
     const data = {};
     return this.message(0, 'exist status', data);
@@ -2739,6 +3268,15 @@ class Zotero {
   }
 
   // private methods
+  /**
+   * The function `formatMessage` takes a message as input and returns a formatted string
+   * representation of the message.
+   * @param m - The parameter `m` is the message that needs to be formatted. It can be of type string,
+   * number, undefined, boolean, null, Error object, or any other object.
+   * @returns The function `formatMessage` returns a formatted message based on the input `m`. The
+   * return value depends on the type and content of `m`.
+   */
+  // TODO: needs review
   formatMessage(m) {
     const type = typeof m;
 
@@ -2759,6 +3297,19 @@ class Zotero {
   }
 }
 
+
+/**
+ * The function `syncToLocalDB` synchronizes a local database with an online library by fetching and
+ * saving updated group and item data.
+ * @param {any} args - The `args` parameter is an object that contains various parameters for the
+ * `syncToLocalDB` function. The specific properties of the `args` object are not provided in the code
+ * snippet, so I cannot provide specific details about them. However, based on the usage in the code,
+ * it seems that
+ */
+// TODO: needs review
+async function syncToLocalDB(args: any) {
+  // print pwd
+
 const API_URL = 'https://api.zotero.org';
 // const ATTACHMENT_PATH = './attachments/';
 
@@ -2768,6 +3319,7 @@ const fetchChangedGroups = async (onlineGroups, offlineGroups): Promise<string[]
   const localGroupsMap = offlineGroups.reduce((a, c) => ({ ...a, [c.id]: c.version }), {});
   return Object.keys(onlineGroups).filter((group) => onlineGroups[group] !== localGroupsMap[group]);
 };
+
 
 const fetchGroupItems = async (group, itemIds, args) => {
   try {
@@ -2798,14 +3350,33 @@ const syncToLocalDB = async (args: any) => {
   const onlineGroups = await fetchGroups({ ...args });
   const offlineGroups = await getAllGroups();
 
-  const offlineItemsVersion = offlineGroups.reduce((a, c) => ({ ...a, [c.id]: c.itemsVersion }), {});
 
-  const changedGroups: string[] = groupid ? [groupid] : await fetchChangedGroups(onlineGroups, offlineGroups);
+  // console.log('offline groups: ', offlineGroups);
+  const offlineItemsVersion = offlineGroups.reduce(
+    (a, c) => ({ ...a, [c.id]: c.itemsVersion }),
+    {}
+  );
+
+  function getChangedGroups(online, local) {
+    const localGroupsMap = local.reduce((a, c) => ({ ...a, [c.id]: c.version }), {});
+
+    let res = [];
+
+
+  const changedGroups: string[] = groupid ? [groupid] : await 
+  (onlineGroups, offlineGroups);
 
   if (changedGroups.length === 0) {
     console.log('found no changed group, so not fetching group data');
   } else {
     console.log('changed group count: ', changedGroups.length);
+
+    console.log('changed  groups: ', changedGroups);
+    let allChangedGroupsData = await Promise.all(
+      changedGroups.map(changedGroup => fetchGroupData({ ...args, group_id: changedGroup }))
+    );
+    //@ts-ignore
+
 
     const allChangedGroupsData = await Promise.all(
       changedGroups.map((changedGroup) => fetchGroupData({ ...args, group_id: changedGroup })),
@@ -2816,12 +3387,19 @@ const syncToLocalDB = async (args: any) => {
   const changedGroupsArray = groupid ? [groupid] : Object.keys(onlineGroups);
 
   const changedItemsForGroups = await Promise.all(
-    changedGroupsArray.map((group) =>
-      getChangedItemsForGroup({ ...args, group, version: offlineItemsVersion[group] || 0 }),
-    ),
+
+    changedGroupsArray.map(group =>
+      getChangedItemsForGroup({
+        ...args,
+        group,
+        version: offlineItemsVersion[group] || 0,
+      })
+    )
   );
 
   const totalToBeSynced = changedItemsForGroups.reduce((a, c) => a + Object.keys(c).length, 0);
+  // console.log('changed items for groups: ', changedItemsForGroups);
+
   console.log('Total items to be synced: ', totalToBeSynced);
 
   if (totalToBeSynced > 0) {
@@ -2831,6 +3409,101 @@ const syncToLocalDB = async (args: any) => {
     }));
 
     for (let group of chunckedItemsByGroup) {
+
+      console.log('group length: ', group.itemIds.length);
+
+      for (let itemIds of group.itemIds) {
+        // console.log(itemIds);
+        // @ts-ignore
+        try {
+          //console.log('fetching items: ', itemIds);
+
+          const res = await axios.get(
+            `https://api.zotero.org/groups/${group.group}/items/?itemKey=${itemIds}&includeTrashed=1
+            `,
+            {
+              headers: {
+                Authorization: `Bearer ${args.api_key}`,
+              },
+            }
+          );
+
+          itemsLastModifiedVersion[group.group] = res.headers['last-modified-version'];
+
+          await res.data.forEach(async item => {
+            if (typeof item.links['attachment'] !== 'undefined') {
+              if (!fs.existsSync(`./attachments/`)) fs.mkdirSync(`./attachments/`);
+              if (!fs.existsSync(`./attachments/${args.database}-${group.group}`))
+                fs.mkdirSync(`./attachments/${args.database}-${group.group}`);
+              // const attachments = await axios.get(
+              //   `https://api.zotero.org/groups/${group.group}/items/${item.key}/children`,
+              //   {
+              //     headers: { Authorization: `Bearer ${args.api_key}` },
+              //   },
+              // );
+
+              // for (const attachment of attachments.data.filter(
+              //   (i) => i.data.itemType === 'attachment',
+              // )) {
+              //   try {
+              //     const response = await axios({
+              //       url: `https://api.zotero.org/groups/${group.group}/items/${attachment.key}/file`,
+              //       method: 'GET',
+              //       responseType: 'stream',
+              //       headers: { Authorization: `Bearer ${args.api_key}` },
+              //     });
+              //     const filepath = `./attachments/${args.database}-${group.group}/${attachment.key}:${group.group} | ${attachment.data.filename}`;
+              //     const file = fs.createWriteStream(filepath);
+              //     response.data.pipe(file);
+              //     file.on('finish', () => {
+              //       file.close();
+              //     });
+              //   } catch (error) {}
+              // }
+            }
+            // get children
+            if (item.data.parentItem) {
+              childrenMap[item.data.parentItem] = [
+                ...(childrenMap[item.data.parentItem] || []),
+                item.key,
+              ];
+            }
+            // get references
+            if ((item.data.extra || '').includes('KerkoCite.ItemAlsoKnownAs:')) {
+              const kerkoLine = item.data.extra.split('\n').find(i => i.startsWith('KerkoCite'));
+              const [, ...refs] = kerkoLine.split(' ');
+              refs
+                .filter(i => !i.includes('zenodo') && i.includes(':'))
+                .forEach(ref => {
+                  const srcKey = ref.split(':')[1];
+                  referenceMap[srcKey] = [...(referenceMap[srcKey] || []), srcKey];
+                });
+            }
+          });
+
+          // console.log('res', res);
+          // @ts-ignore
+          allItems.push(res.data);
+
+          if (++counter % 10 === 0) {
+            console.log('counter: ', counter);
+          }
+        } catch (error) {
+          console.log('error', error);
+        }
+      }
+      let allFetchedItems = allItems.map(async groupItems =>
+        groupItems.map(async chunkedItem => {
+          chunkedItem.children = childrenMap[chunkedItem.key];
+          chunkedItem.referencedBy = [...new Set(referenceMap[chunkedItem.key])];
+
+          chunkedItem.inconsistent = Boolean(
+            (chunkedItem.children || []).length && (chunkedItem.referencedBy || []).length
+          );
+
+          return chunkedItem;
+        })
+
       console.log('group: ', group.group, 'item count: ', group.itemIds.length);
       if (group.itemIds.length === 0) continue;
       //@ts-ignore
@@ -2841,6 +3514,7 @@ const syncToLocalDB = async (args: any) => {
 
           return { data, headers };
         }),
+
       );
 
       //@ts-ignore
@@ -2848,7 +3522,16 @@ const syncToLocalDB = async (args: any) => {
       //@ts-ignore
       const groupItems = resItems.map((item) => item.data);
 
+
+        await test(allFetchedItems, itemsLastModifiedVersion, group.group).then(() =>
+          console.log('group saved into db ', group.group)
+        );
+      }
+      // sleep for 1 second
+      await new Promise(resolve => setTimeout(resolve, 0));
+
       // console.log('group items fetched: ', Object.keys(resItems));
+
 
       const itemsLastModifiedVersion = {}; // Extend this as needed
       //@ts-ignore

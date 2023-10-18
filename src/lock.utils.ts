@@ -9,9 +9,7 @@ export async function checkForValidLockFile(lockfile, lockTimeout) {
     return false;
   }
 
-  const hasValidLockFile = stat(lockfile).then(
-    (filestats) => threshold < filestats.mtimeMs,
-  );
+  const hasValidLockFile = stat(lockfile).then(filestats => threshold < filestats.mtimeMs);
 
   if (!hasValidLockFile) {
     await removeLockFile(lockfile);

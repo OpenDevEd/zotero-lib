@@ -402,7 +402,7 @@ subParsersMap.set('attach-link', function (subparsers, subCmdName) {
   });
   // TODO: There's a problem here... the following just offer docorations. We need to have inputs too...
   // This should probably just be the title used if there is no title, or --decorate is given.
-  Object.keys(decorations).forEach((option) => {
+  Object.keys(decorations).forEach(option => {
     const extra_text =
       option === 'kerko_site_url'
         ? ' The item key will be added automatically.'
@@ -415,7 +415,7 @@ subParsersMap.set('attach-link', function (subparsers, subCmdName) {
       help: `Provide a specific URL for '${option}'.${extra_text} The prefix '${
         decorations[option].title
       }' will be added to a title (if provided) and the following tags are added: ${JSON.stringify(
-        decorations[option].tags,
+        decorations[option].tags
       )}`,
     });
   });

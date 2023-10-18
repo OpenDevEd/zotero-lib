@@ -9,7 +9,7 @@ export function readConfigFile(args: any) {
     args.config,
     'zotero-cli.toml',
     `${os.homedir()}/.config/zotero-cli/zotero-cli.toml`,
-  ].find((cfg) => fs.existsSync(cfg));
+  ].find(cfg => fs.existsSync(cfg));
 
   if (configPath) {
     config = toml.parse(fs.readFileSync(configPath, 'utf-8'));

@@ -15,7 +15,8 @@ async function main() {
   //const zotero = new Zotero({verbose: true})
 
   // Specify group via constructor
-  const zotero = new Zotero();
+  const zotero = new Zotero({ verbose: false, 'group-id': 2259720 });
+
   const response = await zotero.item({ key: 'YH7GFG6L' });
   console.log('response = ' + JSON.stringify(response, null, 2));
   // TODO: Have automated test to see whether successful.

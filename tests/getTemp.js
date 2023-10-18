@@ -1,7 +1,6 @@
 const Zotero = require('../build/zotero-lib');
 
 (async () => {
-
   // get collection and generate sub collections
   const zotero = new Zotero({ verbose: true, 'group-id': 4830191 });
 
@@ -15,12 +14,8 @@ const Zotero = require('../build/zotero-lib');
     key: '7I6TFI8X',
     terse: true,
   });
-  
+
   console.log(children);
-
-
-
-
 
   // get arguments from command line
   // let args = process.argv.slice(2);
@@ -34,7 +29,7 @@ const Zotero = require('../build/zotero-lib');
   // for (let i = 0; i < types.length; i++) {
   //   const element = types[i];
   //   let temp = await zotero.create_item({template: element.itemType});
-  //   //get all keys 
+  //   //get all keys
   //   let keys = Object.keys(temp);
   //   // add unique keys to keys array
   //   if(element.itemType ==='report')
@@ -45,8 +40,6 @@ const Zotero = require('../build/zotero-lib');
   //     }
   //   }
 
-   
-    
   //   // get all keys
   //    keys = Object.keys(temp);
   //   // search inside each key in keys for arg0 with indexOf
@@ -63,11 +56,9 @@ const Zotero = require('../build/zotero-lib');
   //     if (key.indexOf(args[0]) > -1) {
   //       console.log("",key);
   //     }
-      
+
   //   }
-    
-    
-    
+
   // }
   // const fs = require('fs');
   // // save list to file

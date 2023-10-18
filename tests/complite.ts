@@ -16,7 +16,8 @@ const zotero = new Zotero({ 'group-id': '2129771', verbose: false });
 (async () => {
   let item = await zotero.item({ key: itemKey, verbose: false });
   console.log(item.extra.split('\n'));
-  let doi = item.extra.split('\n').filter((i) => i.includes('DOI'));
+  let doi = item.extra.split('\n').filter(i => i.includes('DOI'));
+
   console.log(doi);
 })();
 

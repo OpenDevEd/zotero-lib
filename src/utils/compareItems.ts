@@ -13,14 +13,22 @@ export default async function compare(item, item2, args): Promise<deduplicate_fu
   // process.exit(0);
 
   // compare the two objects
-  if (!args.mode) {
-    if ((await CompareAllFields(temp, temp2)) && (await compareCreators(temp.creators, temp2.creators)))
+
+    if (
+      (await CompareAllFields(temp, temp2)) &&
+      (await compareCreators(temp.creators, temp2.creators))
+    )
       return { result: true, reason: 'identical' };
-    else if ((await CompareAllFieldsLowerCase(temp, temp2)) && (await compareCreators(temp.creators, temp2.creators)))
+    else if (
+      (await CompareAllFieldsLowerCase(temp, temp2)) &&
+      (await compareCreators(temp.creators, temp2.creators))
+    )
       return { result: true, reason: 'identical_in_lowercase' };
     else if (await compareIdenticalInSeveralFields(temp, temp2))
       return { result: true, reason: 'identicalInTitleAndAuthors' };
-    else if (await compareDIO(temp, temp2)) return { result: true, reason: 'same_doi_but_other_variations' };
+    else if (await compareDIO(temp, temp2))
+      return { result: true, reason: 'same_doi_but_other_variations' };
+
   } else {
     if (
       (await CompareAllFields(temp, temp2)) &&
@@ -34,7 +42,10 @@ export default async function compare(item, item2, args): Promise<deduplicate_fu
       args.mode === 'identical_in_lowercase'
     )
       return { result: true, reason: 'identical_in_lowercase' };
-    else if ((await compareIdenticalInSeveralFields(temp, temp2)) && args.mode === 'identical_in_several_fields')
+    else if (
+      (await compareIdenticalInSeveralFields(temp, temp2)) &&
+      args.mode === 'identical_in_several_fields'
+    )
       return { result: true, reason: 'identicalInTitleAndAuthors' };
     else if ((await compareDIO(temp, temp2)) && args.mode === 'same_doi')
       return { result: true, reason: 'same_doi_but_other_variations' };
@@ -47,8 +58,20 @@ export default async function compare(item, item2, args): Promise<deduplicate_fu
 async function compareCreators(creators, creators2) {
   try {
     // check if both are empty
-    if ((creators === undefined || creators === null) && (creators2 === undefined || creators2 === null)) return true;
-    if (creators === undefined || creators === null || creators2 === undefined || creators2 === null) return false;
+
+    if (
+      (creators === undefined || creators === null) &&
+      (creators2 === undefined || creators2 === null)
+    )
+      return true;
+    if (
+      creators === undefined ||
+      creators === null ||
+      creators2 === undefined ||
+      creators2 === null
+    )
+      return false;
+
     if (creators.length === 0 && creators2.length === 0) return true;
 
     if (creators.length === creators2.length) {
@@ -183,6 +206,7 @@ async function CompareAllFieldsLowerCase(item, item2) {
 //   return false;
 // }
 
+
 /**
  * This function compares two objects based on identical values in specific fields and returns a
  * boolean indicating if there are at least two matches.
@@ -192,6 +216,7 @@ async function CompareAllFieldsLowerCase(item, item2) {
  * (`item`) for identical values in several fields.
  * @returns A boolean value is being returned.
  */
+
 async function compareIdenticalInSeveralFields(item: any, item2: any): Promise<boolean> {
   const keys1 = Object.keys(item);
   const keys2 = Object.keys(item2);
