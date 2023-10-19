@@ -2740,9 +2740,21 @@ export default class Zotero {
   }
   public async findEmptyItems(args) {
     let path = args.output ? args.output : './empty_items.json';
-    let emptyItems = await FindEmptyItemsFromDatabase(args['group-id']);
+    let emptyItems: any[] = await FindEmptyItemsFromDatabase(args['group-id']);
+    if (args.delete) {
+      await emptyItems.forEach(async (item) => {
+        await this.update_item({
+          key: item.data.key,
+          json: {
+            deleted: 1,
+            // title: `deleted ${deletedItem.result.data.title}`,
+          },
+        });
+      });
+    }
     if (args.onlykeys) emptyItems = emptyItems.map((item) => item.data.key);
     fs.writeFileSync(path, JSON.stringify(emptyItems, null, 2));
+    console.log(`found ${emptyItems.length} empty items`);
     console.log(`Empty items written to ${path}`);
   }
 

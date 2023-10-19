@@ -340,6 +340,8 @@ export async function FindEmptyItemsFromDatabase(group_id: string) {
         path: ['data', 'title'],
         equals: '',
       },
+      isDeleted: false,
+      group_id: group_id,
     },
   });
   return items;
