@@ -24,6 +24,7 @@ customCmdHandlers.set('resolve', 'resolvefunc');
 customCmdHandlers.set('deduplicate', 'deduplicate_func');
 customCmdHandlers.set('movetocollection', 'Move_deduplicate_to_collection');
 customCmdHandlers.set('merge', 'merge_func');
+customCmdHandlers.set('find-empty-items', 'findEmptyItems');
 
 function getFuncName(subCmdName) {
   if (customCmdHandlers.has(subCmdName)) {
@@ -898,6 +899,27 @@ subParsersMap.set('merge', function (subparsers, subCmdName) {
     required: true,
   });
 });
+
+subParsersMap.set('find-empty-items', function (subparsers, subCmdName) {
+  const argparser = subparsers.add_parser(subCmdName, {
+    help: 'Deduplicate items in a collection.',
+  });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
+
+  argparser.add_argument('--delete', {
+    action: 'store_true',
+    help: 'delete empty items',
+  });
+  argparser.add_argument('--output', {
+    action: 'store',
+    help: 'store the empty items result in json file default is ./empty_items.json',
+  });
+  argparser.add_argument('--onlykeys', {
+    action: 'store_true',
+    help: "store only keys of empty items it's required to use with --output",
+  });
+});
+
 export function configAllParsers(subparsers) {
   subParsersMap.forEach((subparserFn, key) => {
     subparserFn(subparsers, key);

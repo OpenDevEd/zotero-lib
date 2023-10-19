@@ -1,3 +1,4 @@
+// import path from 'path';
 export async function getAllGroups() {
   const { PrismaClient } = require('@prisma/client');
   const prisma = new PrismaClient();
@@ -323,6 +324,21 @@ export async function lookupItems(keys) {
     where: {
       id: {
         in: keys.keys,
+      },
+    },
+  });
+  return items;
+}
+
+export async function FindEmptyItemsFromDatabase(group_id: string) {
+  const { PrismaClient } = require('@prisma/client');
+  const prisma = new PrismaClient();
+
+  const items = await prisma.items.findMany({
+    where: {
+      data: {
+        path: ['data', 'title'],
+        equals: '',
       },
     },
   });

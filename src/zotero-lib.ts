@@ -28,12 +28,14 @@ import {
   // saveZoteroItems,
   saveZoteroItems,
   lookupItems,
+  FindEmptyItemsFromDatabase,
 } from './local-db/db';
 // import saveToFile from './local-db/saveToFile';
 import { checkForValidLockFile, removeLockFile } from './lock.utils';
 import axios from 'axios';
 import { merge_items } from './utils/merge';
 import webSocket from 'ws';
+import path from 'path';
 // import printJSON from './utils/printJSON';
 
 require('dotenv').config();
@@ -42,12 +44,11 @@ const _ = require('lodash');
 const he = require('he');
 const convert = require('xml-js');
 const fs = require('fs');
-const path = require('path');
 const LinkHeader = require('http-link-header');
 
 const ajv = new Ajv();
 
-class Zotero {
+export default class Zotero {
   // The following config keys are expected/allowed,
   // with both "-" and "_". The corresponding variables have _
   config_keys = [
@@ -2737,6 +2738,13 @@ class Zotero {
     const data = {};
     return this.message(0, 'exit status', data);
   }
+  public async findEmptyItems(args) {
+    let path = args.output ? args.output : './empty_items.json';
+    let emptyItems = await FindEmptyItemsFromDatabase(args['group-id']);
+    if (args.onlykeys) emptyItems = emptyItems.map((item) => item.data.key);
+    fs.writeFileSync(path, JSON.stringify(emptyItems, null, 2));
+    console.log(`Empty items written to ${path}`);
+  }
 
   // private methods
   formatMessage(m) {
@@ -2908,4 +2916,4 @@ async function websocket(args, config) {
     console.log('WebSocket connection closed');
   });
 }
-export = Zotero;
+// export = Zotero;
