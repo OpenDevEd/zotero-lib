@@ -3,7 +3,7 @@
 import formatAsXMP from './utils/formatAsXMP';
 import formatAsCrossRefXML from './utils/formatAsCrossRefXML';
 import printJSON from './utils/printJSON';
-import { Zotero } from './zotero-lib';
+import Zotero from './zotero-lib';
 import { ArgumentParser } from 'argparse';
 import formatAsZenodoJson from './utils/formatAsZenodoJson';
 import logger from './logger';
@@ -128,7 +128,7 @@ async function main() {
 // local functions
 function getVersion() {
   const pjson = require('../package.json');
-  if (pjson.version) logger.info(`zenodo-lib version=${pjson.version}`);
+  if (pjson.version) logger.info(`zotero-lib version=${pjson.version}`);
   return pjson.version;
 }
 

@@ -21,7 +21,6 @@ backup5.json
 attachments/*
 src/local-db/db copy.ts
 src/zotero-lib copy.ts
-
 # Created by https://www.toptal.com/developers/gitignore/api/node
 # Edit at https://www.toptal.com/developers/gitignore?templates=node
 
@@ -187,3 +186,4 @@ after*.json
 item.json
 before*.json
 keys*.txt
+empty_items.json

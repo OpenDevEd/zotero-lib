@@ -26,15 +26,16 @@ import {
   getAllGroups,
   saveGroup,
   // saveZoteroItems,
-  saveZoteroItems2,
+  saveZoteroItems,
   lookupItems,
+  FindEmptyItemsFromDatabase,
 } from './local-db/db';
 // import saveToFile from './local-db/saveToFile';
 import { checkForValidLockFile, removeLockFile } from './lock.utils';
 import axios from 'axios';
 import { merge_items } from './utils/merge';
 import webSocket from 'ws';
-// import { log } from 'console';
+import path from 'path';
 // import printJSON from './utils/printJSON';
 
 require('dotenv').config();
@@ -43,12 +44,11 @@ const _ = require('lodash');
 const he = require('he');
 const convert = require('xml-js');
 const fs = require('fs');
-const path = require('path');
 const LinkHeader = require('http-link-header');
 
 const ajv = new Ajv();
 
-export class Zotero {
+export default class Zotero {
   // The following config keys are expected/allowed,
   // with both "-" and "_". The corresponding variables have _
   config_keys = [
@@ -1683,6 +1683,8 @@ export class Zotero {
     const prisma = new PrismaClient();
     await prisma.$connect();
     let group_id = args.group_id;
+    console.log('api_key: ', args.api_key);
+
     // get first item
     // let item = await prisma.items.findFirst({
     //   where: {
@@ -1690,6 +1692,8 @@ export class Zotero {
     //     id:'MAN2TFDG'
     //   }});
     // first is to get all items from the group
+    logger.info('started finding duplicates process');
+    logger.info(`fetching data for : ${group_id}`);
     let allItems = await prisma.items.findMany({
       where: {
         group_id,
@@ -1699,6 +1703,8 @@ export class Zotero {
     // slip into object by item.data.data.itemType
     let types = [];
     let itemsByType = {};
+    logger.info(`fetching data end for : ${group_id}`);
+    logger.info(`started filtering duplicates by type : ${group_id}`);
     for (let item of allItems) {
       let itemType = item.data.data.itemType;
       if (!['attachment', 'note', 'annotation'].includes(itemType)) {
@@ -1711,7 +1717,7 @@ export class Zotero {
         if (!types.includes(itemType)) types.push(itemType);
       }
     }
-    console.log('itemsByType: ', types);
+    logger.info(`filtering duplicates by type end : ${group_id}`);
 
     // show length of each key
     // for (let key in itemsByType) {
@@ -1729,8 +1735,7 @@ export class Zotero {
     }
 
     let duplicatesInType = [];
-
-    if (items.length > 0 && !args.files.length) {
+    if (items.length > 0 && !args.files?.length) {
       for (let i = 0; i < items.length; i++) {
         let isDuplicate = false;
         let item1 = items[i].data.data;
@@ -2733,6 +2738,25 @@ export class Zotero {
     const data = {};
     return this.message(0, 'exit status', data);
   }
+  public async findEmptyItems(args) {
+    let path = args.output ? args.output : './empty_items.json';
+    let emptyItems: any[] = await FindEmptyItemsFromDatabase(args['group-id']);
+    if (args.delete) {
+      await emptyItems.forEach(async (item) => {
+        await this.update_item({
+          key: item.data.key,
+          json: {
+            deleted: 1,
+            // title: `deleted ${deletedItem.result.data.title}`,
+          },
+        });
+      });
+    }
+    if (args.onlykeys) emptyItems = emptyItems.map((item) => item.data.key);
+    fs.writeFileSync(path, JSON.stringify(emptyItems, null, 2));
+    console.log(`found ${emptyItems.length} empty items`);
+    console.log(`Empty items written to ${path}`);
+  }
 
   // private methods
   formatMessage(m) {
@@ -2850,7 +2874,7 @@ const syncToLocalDB = async (args: any) => {
       //@ts-ignore
       itemsLastModifiedVersion[group.group] = lastModifiedVersion;
 
-      await saveZoteroItems2(groupItems, itemsLastModifiedVersion, group.group, args.no_archive);
+      await saveZoteroItems(groupItems, itemsLastModifiedVersion, group.group);
       // Saving logic here...
       console.log('group saved into db ', group.group);
 
@@ -2868,39 +2892,40 @@ async function websocket(args, config) {
   const groups = await getAllGroups();
   const groupIds: string[] = groups.map((group) => `/groups/${group.id}`);
   var ws: webSocket = new webSocket('wss://stream.zotero.org');
-  console.log(args);
 
   ws.on('open', async () => {
     console.log('WebSocket connection opened');
-    const groupChunks = _.chunk(groupIds, 2);
-    for (const groupChunk of groupChunks) {
-      await ws.send(
-        JSON.stringify({
-          action: 'createSubscriptions',
-          subscriptions: [
-            {
-              apiKey: config.api_key,
-              topics: groupChunk,
-            },
-          ],
-        }),
-      );
-    }
   });
 
   ws.on('message', async (data) => {
     console.log('Received message:', data);
     data = JSON.parse(data);
     console.log(data.event);
+    if (data.event === 'connected') {
+      const groupChunks = _.chunk(groupIds, 2);
+
+      await ws.send(
+        JSON.stringify({
+          action: 'createSubscriptions',
+          subscriptions: [
+            {
+              apiKey: config.api_key,
+              topics: groupChunks,
+            },
+          ],
+        }),
+      );
+    }
 
     if (['topicUpdated', 'topicAdded', 'topicRemoved'].includes(data.event)) {
       await syncToLocalDB({ ...args, ...config });
     }
   });
   ws.on('error', (err) => {
-    console.log('WebSocket error', err);
+    console.log('WebSocket error ', err.message);
   });
   ws.on('close', () => {
     console.log('WebSocket connection closed');
   });
 }
+// export = Zotero;

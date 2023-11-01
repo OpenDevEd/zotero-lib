@@ -1,4 +1,4 @@
-import { Zotero } from '../zotero-lib';
+import Zotero from '../zotero-lib';
 
 async function getItems(items: string[]): Promise<{}> {
   const { PrismaClient } = require('@prisma/client');
@@ -133,11 +133,21 @@ async function mergeTwoItems(groupid, base, deleted) {
   // add or replace relations to base item
   baseItem.result.data.relations['dc:replaces'] = relations['dc:replaces'];
   let note = null;
+  baseItem.result.data.tags.push({
+    tag: 'auto_merged',
+  });
+  deletedItem.result.data.tags.push({
+    tag: 'merged',
+  });
+  deletedItem.result.data.tags.push({
+    tag: 'deleted',
+  });
   try {
     //update deleted item
     await zotero.update_item({
       key: deletedItem.result.key,
       json: {
+        tags: deletedItem.result.data.tags,
         deleted: 1,
         // title: `deleted ${deletedItem.result.data.title}`,
       },
@@ -147,6 +157,7 @@ async function mergeTwoItems(groupid, base, deleted) {
       key: baseItem.result.key,
       json: {
         relations: baseItem.result.data.relations,
+        tags: baseItem.result.data.tags,
       },
     });
     note = await zotero.attachNoteToItem(baseItem.result.key, {
