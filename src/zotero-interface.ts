@@ -4,54 +4,52 @@
 
 namespace ZoteroTypes {
   export interface zoterocongif {
-    'user-id'?: string;
-    'group-id'?: string;
-    'library-type'?: string;
-    'api-key'?: string;
+    user_id?: string;
+    group_id?: string;
+    library_type?: string;
+    api_key?: string;
     indent?: boolean;
     verbose?: boolean;
     debug?: boolean;
     config?: string;
-    'config-json'?: string;
-    'zotero-schema'?: string;
+    config_json?: string;
+    zotero_schema?: string;
   }
 
-  export type __getArgs = {
+  export interface __getArgs extends zoterocongif {
     root?: boolean;
     uri: string[];
     show?: boolean;
-  };
+  }
 
-  export type __postArgs = {
+  export interface __postArgs extends zoterocongif {
     uri: string;
     data: string;
-  };
+  }
 
-  export type __putArgs = {
+  export interface __putArgs extends zoterocongif {
     uri: string;
     data: string;
-  };
+  }
 
-  export type __patchArgs = {
+  export interface __patchArgs extends zoterocongif {
     uri: string;
     data: string;
     version: string;
-  };
+  }
 
-  export type __deleteArgs = {
+  export interface __deleteArgs extends zoterocongif {
     uri: string[];
-  };
+  }
 
-  export type keyArgs = {
+  export interface keyArgs extends zoterocongif {
     key: string;
     groups?: boolean;
     terse?: boolean;
-    api_key?: string;
-  };
+  }
 
-  export type CollectionsArgs = {
+  export interface CollectionsArgs extends zoterocongif {
     key: string;
-    verbose?: boolean;
     dryrun?: boolean;
     show?: boolean;
     version?: boolean;
@@ -59,12 +57,10 @@ namespace ZoteroTypes {
     create_child?: string[];
     func?: string;
     terse?: boolean;
-    group_id?: string;
-  };
+  }
 
-  export type CollectionArgs = {
+  export interface CollectionArgs extends zoterocongif {
     key: string;
-    verbose?: boolean;
     dryrun?: boolean;
     show?: boolean;
     version?: boolean;
@@ -73,12 +69,10 @@ namespace ZoteroTypes {
     itemkeys?: string[];
     add?: string[];
     remove?: string[];
-    group_id?: string;
-  };
+  }
 
-  export  interface ItemArgs extends zoterocongif  {
+  export interface ItemArgs extends zoterocongif {
     key: string;
-    verbose?: boolean;
     dryrun?: boolean;
     show?: boolean;
     version?: boolean;
@@ -103,20 +97,18 @@ namespace ZoteroTypes {
     validate?: boolean;
     validate_with?: string;
     switchNames?: boolean;
-    debug?: boolean;
     fullresponse?: boolean;
-    group_id?: string;
-  };
+  }
 
-  export type create_itemArgs = {
+  export interface create_itemArgs extends zoterocongif {
     template?: string;
     files?: string[];
     item?: any;
     items?: any;
     fullresponse?: boolean;
-  };
+  }
 
-  export type update_itemArgs = {
+  export interface update_itemArgs extends zoterocongif {
     key: string;
     replace?: boolean;
     json?: any;
@@ -124,18 +116,17 @@ namespace ZoteroTypes {
     version?: string; // was a number in initialization
     show?: boolean;
     fullresponse?: boolean;
-  };
+  }
 
-  export type enclose_item_in_collectionArgs = {
+  export interface enclose_item_in_collectionArgs extends zoterocongif {
     key?: string;
     collection?: string;
-    group_id?: string;
     title?: string;
-  };
+  }
 
-  export type get_doiArgs = ZoteroTypes.ItemArgs;
+  export interface get_doiArgs extends ZoteroTypes.ItemArgs {}
 
-  export type manageLocalDBArgs = {
+  export interface manageLocalDBArgs extends zoterocongif {
     database: string;
     sync?: boolean;
     lookup?: boolean;
@@ -147,19 +138,17 @@ namespace ZoteroTypes {
     lock_timeout?: string;
     fullresponse?: boolean;
     key?: string;
-    verbose?: boolean;
     websocket?: boolean;
-  };
+  }
 
-  export type update_doiArgs = {
+  export interface update_doiArgs extends zoterocongif {
     key: string;
     doi?: string;
     zenodoRecordID?: string;
     fullresponse?: boolean;
-    verbose?: boolean;
-  };
+  }
 
-  export type attach_linkArgs = {
+  export interface attach_linkArgs extends zoterocongif {
     key: string;
     url?: string;
     update_url_field?: boolean;
@@ -174,29 +163,16 @@ namespace ZoteroTypes {
     deposit?: string;
     record?: string;
     doi?: string;
-    group_id?: string;
-  };
-
-  export type fieldArgs = ZoteroTypes.ItemArgs & {
-    field: string;
-    value?: string;
-  };
-
-  
-  export interface tes extends fieldArgs {
-    name: string;
-    yes: boolean;
   }
 
-  const tes: tes = {
-    key: 'value',
-    name: 'tes',
-    yes: true,
-    field: 'field',
-  };
-  export type update_urlArgs = ZoteroTypes.update_itemArgs & {
+  export interface fieldArgs extends ZoteroTypes.ItemArgs {
+    field: string;
+    value?: string;
+  }
+
+  export interface update_urlArgs extends ZoteroTypes.update_itemArgs {
     value: string;
-  };
+  }
 }
 
 export { ZoteroTypes };
