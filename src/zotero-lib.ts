@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { ZoteroTypes } from './zotero-interface';
 
 import Ajv from 'ajv';
 import logger from './logger';
@@ -287,7 +288,7 @@ export default class Zotero {
    * Expose 'get'
    * Make a direct query to the API using 'GET uri'.
    */
-  public async __get(args) {
+  public async __get(args: ZoteroTypes.__getArgs): Promise<any> {
     const out = [];
     for (const uri of args.uri) {
       const res = await this.http.get(uri, { userOrGroupPrefix: !args.root }, this.config);
@@ -306,7 +307,7 @@ export default class Zotero {
    * Expose 'post'. Make a direct query to the API using
    * 'POST uri [--data data]'.
    */
-  public async __post(args) {
+  public async __post(args: ZoteroTypes.__postArgs): Promise<any> {
     const res = await this.http.post(args.uri, args.data, {}, this.config);
     this.print(res);
     return res;
@@ -316,7 +317,7 @@ export default class Zotero {
    * Make a direct query to the API using
    * 'PUT uri [--data data]'.
    */
-  public async __put(args) {
+  public async __put(args: ZoteroTypes.__putArgs): Promise<any> {
     const res = await this.http.put(args.uri, args.data, this.config);
     this.print(res);
     return res;
@@ -326,7 +327,7 @@ export default class Zotero {
    * Make a direct query to the API using
    * 'PATCH uri [--data data]'.
    */
-  public async __patch(args) {
+  public async __patch(args: ZoteroTypes.__patchArgs): Promise<any> {
     const res = await this.http.patch(args.uri, args.data, args.version, this.config);
     this.print(res);
     return res;
@@ -336,7 +337,7 @@ export default class Zotero {
    * Make a direct delete query to the API using
    * 'DELETE uri'.
    */
-  public async __delete(args) {
+  public async __delete(args: ZoteroTypes.__deleteArgs): Promise<any> {
     const output = [];
     for (const uri of args.uri) {
       const response = await this.http.get(uri, undefined, this.config);
@@ -350,7 +351,7 @@ export default class Zotero {
    * Show details about this API key.
    * (API: /keys )
    */
-  public async key(args) {
+  public async key(args: ZoteroTypes.keyArgs): Promise<any> {
     if (!args.api_key) {
       args.api_key = this.config.api_key;
     }
@@ -524,7 +525,7 @@ export default class Zotero {
    * <userOrGroupPrefix>/collections/<collectionKey>/collections Subcollections within a specific collection in the library
    * TODO: --create-child should go into 'collection'.
    */
-  public async collections(args) {
+  public async collections(args: ZoteroTypes.CollectionsArgs): Promise<any> {
     // TODO: args parsing code
     if (args.key) {
       args.key = this.extractKeyAndSetGroup(as_value(args.key));
@@ -612,7 +613,7 @@ export default class Zotero {
    * DONE: Why is does the setup for --add and --remove differ? Should 'add' not be "nargs: '*'"? Remove 'itemkeys'?
    * TODO: Add option "--output file.json" to pipe output to file.
    */
-  async collection(args) {
+  async collection(args: ZoteroTypes.CollectionArgs): Promise<any> {
     // TODO: args parsing code
     if (args.key) {
       args.key = this.extractKeyAndSetGroup(args.key);
@@ -779,7 +780,7 @@ export default class Zotero {
    * <userOrGroupPrefix>/items/<itemKey> A specific item in the library
    * <userOrGroupPrefix>/items/<itemKey>/children Child items under a specific item
    */
-  public async item(args) {
+  public async item(args: ZoteroTypes.ItemArgs): Promise<any> {
     const output = [];
 
     // TODO: args parsing code
@@ -1106,7 +1107,7 @@ export default class Zotero {
    * [single item](https://www.zotero.org/support/dev/web_api/v3/write_requests#_an_item) OR
    * [multiple items](https://www.zotero.org/support/dev/web_api/v3/write_requests#creating_multiple_items)
    */
-  public async create_item(args) {
+  public async create_item(args: ZoteroTypes.create_itemArgs): Promise<any> {
     //
 
     if (args.template) {
@@ -1210,7 +1211,7 @@ export default class Zotero {
    *
    * [see api docs](https://www.zotero.org/support/dev/web_api/v3/write_requests#updating_an_existing_item)
    */
-  public async update_item(args) {
+  public async update_item(args: ZoteroTypes.update_itemArgs): Promise<any> {
     //TODO: args parsing code
     args.replace = args.replace || false;
 
@@ -1231,7 +1232,7 @@ export default class Zotero {
       logger.info(msg);
     }
 
-    let originalItemVersion = 0;
+    let originalItemVersion = ''; // was 0 before
     //TODO: args parsing code
     if (args.version) {
       originalItemVersion = args.version;
@@ -1420,7 +1421,7 @@ export default class Zotero {
    * Utility functions.
    */
 
-  public async enclose_item_in_collection(args) {
+  public async enclose_item_in_collection(args: ZoteroTypes.enclose_item_in_collectionArgs): Promise<any> {
     const output = [];
     //TODO: args parsing code
     if (!args.key) {
@@ -1570,7 +1571,7 @@ export default class Zotero {
    * @param subparsers
    * @returns
    */
-  public async get_doi(args) {
+  public async get_doi(args: ZoteroTypes.get_doiArgs): Promise<any> {
     // We dont know what kind of item this is - gotta get the item to see
 
     args.fullresponse = false;
@@ -1595,7 +1596,7 @@ export default class Zotero {
     return doi;
   }
 
-  public async manageLocalDB(args) {
+  public async manageLocalDB(args: ZoteroTypes.manageLocalDBArgs): Promise<any> {
     console.log('args: ', { ...args }, this.config);
     if (args.lookup && !args.keys) {
       logger.error('You must provide keys to lookup');
@@ -2178,7 +2179,7 @@ export default class Zotero {
   /**
    * Update the DOI of the item provided.
    */
-  public async update_doi(args) {
+  public async update_doi(args: ZoteroTypes.update_doiArgs): Promise<any> {
     //TODO: args parsing code
     args.fullresponse = false;
     //TODO: args parsing code
@@ -2251,7 +2252,7 @@ export default class Zotero {
   }
 
   // TODO: Implement
-  public async attach_link(args) {
+  public async attach_link(args: ZoteroTypes.attach_linkArgs): Promise<any> {
     // TODO: There's a problem here... the following just offer docorations. We need to have inputs too...
 
     // TODO: Make this consistent
@@ -2337,7 +2338,7 @@ export default class Zotero {
     return this.message(0, 'exist status', dataout);
   }
 
-  public async field(args) {
+  public async field(args: ZoteroTypes.fieldArgs): Promise<any> {
     //TODO: args parsing code
     if (!args.field) {
       logger.info('args.field is required.');
@@ -2389,7 +2390,7 @@ export default class Zotero {
     return this.message(0, 'exit status', data);
   }
 
-  public async update_url(args) {
+  public async update_url(args: ZoteroTypes.update_urlArgs): Promise<any> {
     //TODO: args parsing code
     args.json = {
       url: args.value,
