@@ -1,7 +1,7 @@
 /*
 Testing item functions.
 */
-const Zotero = require('../build/zotero-lib');
+const Zotero = require('../build/zotero-lib').default;
 const fs = require('fs');
 
 async function main() {
@@ -15,26 +15,26 @@ async function main() {
   //const zotero = new Zotero({verbose: true})
 
   // Specify group via constructor
-  const zotero = new Zotero({ verbose: false });
-  const response = await zotero.item({
-    zotero_config: 'zotero-cli.toml',
-    zenodo_config: 'config.json',
-    zenodo_sandbox: false,
-    verbose: false,
-    debug: true,
-    show: false,
-    open: false,
-    oapp: false,
-    dump: false,
-    dryrun: false,
-    version: false,
-    key: 'HTCRZNIB',
-    link: false,
-    group_id: '2129771',
-  });
-  console.log('response = ' + JSON.stringify(response, null, 2));
+  const zotero = new Zotero({ group_id: '5088290' });
+  // const response = await zotero.item({ key: '5WFFQKDR' });
+
+  const options = {
+    key: '5WFFQKDR',
+    xmp: false,
+    crossref: true,
+    crossref_submit: true,
+    crossref_no_confirm: false,
+    zenodo: false,
+    switchNames: false,
+    organise_extra: false,
+    children: false,
+    validate: false,
+    fullresponse: false,
+  };
+  const result = await zotero.item(options);
+  console.log(result);
   // TODO: Have automated test to see whether successful.
-  if (!response) {
+  if (!result) {
     console.log('1 - item not found - item does not exist');
   }
   return 0;

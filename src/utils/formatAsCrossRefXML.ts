@@ -1,13 +1,11 @@
-import logger from "../logger";
+import logger from '../logger';
 
 const fs = require('fs');
 const os = require('os');
 const Sugar = require('sugar');
 const xmlescape = require('xml-escape');
 
-type Creator =
-  | { name: string; creatorType: string }
-  | { firstName: string; lastName: string; creatorType: string };
+type Creator = { name: string; creatorType: string } | { firstName: string; lastName: string; creatorType: string };
 interface ZoteroItem {
   creators?: [];
   rights: any;
@@ -20,7 +18,6 @@ interface ZoteroItem {
   abstractNote: string;
   date: string;
 }
-
 
 /*
             parser_item.add_argument('--crossref-user', {
@@ -67,27 +64,27 @@ export default async function formatAsCrossRefXML(item: ZoteroItem = {} as Zoter
   }
   */
 
-  let authorDataExpanded = {}
+  let authorDataExpanded = {};
   for (const key in authorData) {
-    authorDataExpanded[key] = authorData[key]
+    authorDataExpanded[key] = authorData[key];
     for (const variation in authorData[key].aliases) {
-      authorDataExpanded[authorData[key].aliases[variation]] = authorData[key]
+      authorDataExpanded[authorData[key].aliases[variation]] = authorData[key];
     }
   }
 
-  let seq = "first"
+  let seq = 'first';
   const creatorsList = creators
     .map((c: Creator) => {
-      let person = ""
-      let orcid = ""
-      let org = ""
+      let person = '';
+      let orcid = '';
+      let org = '';
       const fullname = 'name' in c ? c.name : `${c.firstName} ${c.lastName}`;
       if (fullname in authorDataExpanded) {
-        if (authorDataExpanded[fullname]["orcid"]) {
-          orcid = `<ORCID>${authorDataExpanded[fullname]["orcid"]}</ORCID>`;
+        if (authorDataExpanded[fullname]['orcid']) {
+          orcid = `<ORCID>${authorDataExpanded[fullname]['orcid']}</ORCID>`;
         }
-        if (authorDataExpanded[fullname]["organization"]) {
-          org = `<organization sequence='${seq}' contributor_role='${c.creatorType}'>${authorDataExpanded[fullname]["organization"]}</organization>`;
+        if (authorDataExpanded[fullname]['organization']) {
+          org = `<organization sequence='${seq}' contributor_role='${c.creatorType}'>${authorDataExpanded[fullname]['organization']}</organization>`;
         }
       }
       if ('name' in c) {
@@ -99,15 +96,15 @@ export default async function formatAsCrossRefXML(item: ZoteroItem = {} as Zoter
         person = `<person_name sequence='${seq}' contributor_role='${c.creatorType}'>
       <given_name>${c.firstName}</given_name>
       <surname>${c.lastName}</surname>${orcid}
-</person_name>${org}`
+</person_name>${org}`;
       }
-      seq = "additional"
-      return person
+      seq = 'additional';
+      return person;
     })
     .join('\n');
   // <ORCID>https://orcid.org/...</ORCID>
 
-  const today = Sugar.Date.format(new Date(), '%Y%m%d%H%M%S') + "000"; // "[THEDATE]" // new Date().toDateString('DD-MMM-YYYY')
+  const today = Sugar.Date.format(new Date(), '%Y%m%d%H%M%S') + '000'; // "[THEDATE]" // new Date().toDateString('DD-MMM-YYYY')
   //const ModifyDate = today;
   const CreateDate = today;
   //const MetadataDate = today;
@@ -122,14 +119,16 @@ export default async function formatAsCrossRefXML(item: ZoteroItem = {} as Zoter
     'crossref-user.json',
     `${os.homedir()}/.config/zotero-cli/crossref-user.json`,
   ].find((cfg) => fs.existsSync(cfg));
-  const crossRefUser = crossRefUserIn ? JSON.parse(fs.readFileSync(crossRefUserIn, 'utf-8')) : { depositor_name: "NAME:ROLE", email_address: "EMAIL" };
+  const crossRefUser = crossRefUserIn
+    ? JSON.parse(fs.readFileSync(crossRefUserIn, 'utf-8'))
+    : { depositor_name: 'NAME:ROLE', email_address: 'EMAIL' };
   // console.log("TEMPORARY="+JSON.stringify(   crossRefUser         ,null,2))
 
   const extra = item.extra;
-  let doi = ""
+  let doi = '';
   if ('doi' in item) {
     doi = item.doi;
-    console.log(`DOI from item.doi: ${doi}`)
+    console.log(`DOI from item.doi: ${doi}`);
   } else {
     extra.split('\n').forEach((element) => {
       var mymatch = element.match(/^DOI\:\s*(.*?)\s*$/);
@@ -137,27 +136,29 @@ export default async function formatAsCrossRefXML(item: ZoteroItem = {} as Zoter
         doi = mymatch[1];
       }
     });
-    if (doi) { console.log(`DOI from item.extra: ${doi}`) }
+    if (doi) {
+      console.log(`DOI from item.extra: ${doi}`);
+    }
   }
   /*
   if (!doi && item.callNumber != "") {
     doi = `${crossRefUser.doi_prefix}/edtechhub.${item.callNumber}`;
     console.log(`DOI from item.callNumber: ${doi}`) 
   } */
-  const url = item.url
-  const institution = item.institution
+  const url = item.url;
+  const institution = item.institution;
   // console.log("TEMPORARY="+JSON.stringify(   item         ,null,2))
 
   let itemdate = item.date;
-  const match = item.date.match(/(\d\d?)\/(\d\d?)\/(\d\d\d\d)/)
+  const match = item.date.match(/(\d\d?)\/(\d\d?)\/(\d\d\d\d)/);
   if (match) {
-    itemdate = match[3] + "-" + match[2] + "-" + match[1]
+    itemdate = match[3] + '-' + match[2] + '-' + match[1];
   }
-  logger.info("DATE: " + itemdate)
+  logger.info('DATE: ' + itemdate);
   try {
-    itemdate = Sugar.Date.create(itemdate)
+    itemdate = Sugar.Date.create(itemdate);
   } catch (error) {
-    itemdate = Sugar.Date.format(new Date(), '%Y-%m-%d')
+    itemdate = Sugar.Date.format(new Date(), '%Y-%m-%d');
   }
 
   const year = Sugar.Date.format(itemdate, '%Y');
@@ -207,20 +208,27 @@ export default async function formatAsCrossRefXML(item: ZoteroItem = {} as Zoter
   </body>
   </doi_batch>
 `;
-
+  let status = 0;
   if (args.crossref_submit) {
-    const fname = await crossref_submit(CreateDate, result, crossRefUser)
+    const fname = await crossref_submit(CreateDate, result, crossRefUser);
     if (!args.crossref_no_confirm) {
-      await crossref_confirm(fname, doi, crossRefUser)
+      status = await crossref_confirm(fname, doi, crossRefUser);
     }
   } else {
-    await fs.writeFile("crossref.xml", result, 'utf-8', function (err) {
+    await fs.writeFile('crossref.xml', result, 'utf-8', function (err) {
       if (err) return console.log(err);
-    })
-    console.log(`You can submit your data like this:\ncurl -F 'operation=doMDUpload'  -F 'login_id=${crossRefUser.depositor_name.replace(':', '/')}' -F 'login_passwd=${crossRefUser.password}' -F 'fname=@crossref.xml' https://doi.crossref.org/servlet/deposit`);
-    console.log("You can check your xml at https://www.crossref.org/02publishers/parser.html\nor check the uploaded record here:\nhttps://doi.crossref.org/servlet/submissionAdmin")
+    });
+    console.log(
+      `You can submit your data like this:\ncurl -F 'operation=doMDUpload'  -F 'login_id=${crossRefUser.depositor_name.replace(
+        ':',
+        '/',
+      )}' -F 'login_passwd=${crossRefUser.password}' -F 'fname=@crossref.xml' https://doi.crossref.org/servlet/deposit`,
+    );
+    console.log(
+      'You can check your xml at https://www.crossref.org/02publishers/parser.html\nor check the uploaded record here:\nhttps://doi.crossref.org/servlet/submissionAdmin',
+    );
   }
-  return result;
+  return { result: result, status: status };
 }
 
 async function crossref_submit(CreateDate, result, crossRefUser) {
@@ -249,7 +257,7 @@ async function crossref_submit(CreateDate, result, crossRefUser) {
   const fname = `crossref-${CreateDate}.xml`;
   await fs.writeFile(fname, result, 'utf-8', function (err) {
     if (err) return console.log(err);
-  })
+  });
   const { Curl } = require('node-libcurl');
   try {
     const curl = new Curl();
@@ -265,32 +273,32 @@ async function crossref_submit(CreateDate, result, crossRefUser) {
     // curl.setOpt(Curl.option.POST, true)
 
     curl.on('end', function (statusCode, data, headers) {
-      console.log("******** SUBMISSION **** Status code " + statusCode);
+      console.log('******** SUBMISSION **** Status code ' + statusCode);
       // console.log("***");
       // console.log("Our response: " + data);
       // console.log("***");
       // console.log("Length: " + data.length);
       /// console.log("***");
       // TODO: What if this fails?
-      console.log("Total time taken: " + this.getInfo("TOTAL_TIME"));
+      console.log('Total time taken: ' + this.getInfo('TOTAL_TIME'));
       this.close();
     });
     curl.on('error', function () {
-      console.log("CURL ERROR");
+      console.log('CURL ERROR');
       this.close();
     });
     await curl.perform();
     /* This await doesn't work. */
-    console.log("DONE!")
+    console.log('DONE!');
   } catch (error) {
-    console.log("ERROR! [in submission]" + error)
+    console.log('ERROR! [in submission]' + error);
   }
   return fname;
 }
 
 async function crossref_confirm(fname, doi, crossRefUser) {
   const { Curl } = require('node-libcurl');
-  console.log("Checking submission progress.")
+  console.log('Checking submission progress.');
   function sleep(ms) {
     return new Promise((resolve) => {
       setTimeout(resolve, ms);
@@ -298,17 +306,17 @@ async function crossref_confirm(fname, doi, crossRefUser) {
   }
   // console.log("Confirming...")
   // Adding a sleep here - the await above doesn't work.
-  await sleep(3000)
-  let loopit = true
-  let counter = 0
-  // We want to check (every 3 secs) for 
+  await sleep(3000);
+  let loopit = true;
+  let counter = 0;
+  // We want to check (every 3 secs) for
   // https://doi.crossref.org/servlet/submissionDownload?usr=name@someplace.com/role&pwd=_password_&doi_batch_id=_doi batch id_&file_name=filename&type=_submission type_
   // https://doi.crossref.org/servlet/submissionDownload?usr=_role_&pwd=_password_&doi_batch_id=_doi batch id_&file_name=filename&type=_submission type_
   while (loopit) {
     counter++;
-    console.log(counter)
+    console.log(counter);
     const curl = new Curl();
-    // const close = curl.close.bind(curl);      
+    // const close = curl.close.bind(curl);
     curl.setOpt(Curl.option.URL, 'https://doi.crossref.org/servlet/submissionDownload');
     curl.setOpt(Curl.option.HTTPPOST, [
       { name: 'usr', contents: crossRefUser.depositor_name.replace(':', '/') },
@@ -318,9 +326,9 @@ async function crossref_confirm(fname, doi, crossRefUser) {
     ]);
     curl.on('end', function (statusCode, data, headers) {
       // console.log("*** CHECKING BATCH " + statusCode);
-      const stat = data.match("doi_batch_diagnostic status=\"(.*?)\"")
+      const stat = data.match('doi_batch_diagnostic status="(.*?)"');
       if (stat) {
-        console.log("Batch Status: " + stat[1]);
+        console.log('Batch Status: ' + stat[1]);
       }
       /* console.log("***");
       console.log("Our response: " + data);
@@ -340,18 +348,18 @@ async function crossref_confirm(fname, doi, crossRefUser) {
       */
       // FIXED: If there's a problem, the process will never exit - process now terminates on error.
       const recordCountStr = data.match(/<record_count>(\d+)<\/record_count>/);
-      let recordCount = "0";
+      let recordCount = '0';
       if (recordCountStr) {
         recordCount = recordCount[2];
         console.log(`recordCount = ${recordCount}`);
       }
       const successCountStr = data.match(/<success_count>(\d+)<\/success_count>/);
-      let successCount = "0";
+      let successCount = '0';
       if (successCountStr) {
         successCount = successCountStr[2];
         if (successCount == recordCount) {
           loopit = false;
-        };
+        }
         console.log(`successCount = ${successCount}`);
       } else {
         // console.log("Doing another iteration.")
@@ -366,27 +374,28 @@ async function crossref_confirm(fname, doi, crossRefUser) {
       }
     });
     curl.on('error', function () {
-      console.log("CURL ERROR");
+      console.log('CURL ERROR');
       // await sleep(1000);
       this.close();
     });
     await curl.perform();
-    if (loopit)
-      await sleep(3000);
+    if (loopit) await sleep(3000);
   }
-  // We want to check (every 3 secs) for 
-  const doiorg = `https://doi.org/${doi}`
-  console.log(`DOI with link: ${doiorg}`)
-  loopit = true
+  // We want to check (every 3 secs) for
+  const doiorg = `https://doi.org/${doi}`;
+  console.log(`DOI with link: ${doiorg}`);
+  loopit = true;
+  let status = 0;
   while (loopit) {
     counter++;
-    console.log(counter)
+    console.log(counter);
     const curl = new Curl();
-    // const close = curl.close.bind(curl);      
+    // const close = curl.close.bind(curl);
     curl.setOpt(Curl.option.URL, doiorg);
     curl.setOpt('FOLLOWLOCATION', true);
     curl.on('end', function (statusCode, data, headers) {
-      console.log("*** CHECKING DOI: Status code " + statusCode);
+      console.log('*** CHECKING DOI: Status code ' + statusCode);
+      status = statusCode;
       //console.log("***");
       //console.log("Our response: " + data);
       //console.log("***");
@@ -395,23 +404,26 @@ async function crossref_confirm(fname, doi, crossRefUser) {
       // console.log("Total time taken: " + this.getInfo("TOTAL_TIME"));
       this.close();
       if (statusCode == 200) {
-        console.log("Success!")
-        loopit = false
+        console.log('Success!');
+        loopit = false;
+      }
+      if (statusCode == 404) {
+        console.log('Not found!');
+        loopit = false;
       } else {
         // await sleep(1000);
       }
     });
     curl.on('error', function () {
-      console.log("CURL ERROR");
+      console.log('CURL ERROR');
       // await sleep(1000);
       this.close();
     });
     await curl.perform();
-    console.log("X")
-    if (loopit)
-      await sleep(2000);
-    console.log("Y")
+    console.log('X');
+    if (loopit) await sleep(2000);
+    console.log('Y');
   }
-  console.log("Done")
+  console.log('Done');
+  return status;
 }
-
