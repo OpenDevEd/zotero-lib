@@ -114,14 +114,17 @@ export default async function formatAsCrossRefXML(item: ZoteroItem = {} as Zoter
   //const Producer = '';
 
   // help: 'Supply a json file with user data for crossref: {depositor_name: "user@domain:role", email_address: "user@domain"}. If --crossref is specified without --crossref-user, default settings in your configuration directory are checked: ~/.config/zotero-cli/crossref-user.json',
+  console.log(args.crossref_user);
   const crossRefUserIn: string = [
     args.crossref_user,
     'crossref-user.json',
     `${os.homedir()}/.config/zotero-cli/crossref-user.json`,
   ].find((cfg) => fs.existsSync(cfg));
-  const crossRefUser = crossRefUserIn
+
+  let crossRefUser = crossRefUserIn
     ? JSON.parse(fs.readFileSync(crossRefUserIn, 'utf-8'))
     : { depositor_name: 'NAME:ROLE', email_address: 'EMAIL' };
+  if (args.crossref_user_json) crossRefUser = args.crossref_user_json;
   // console.log("TEMPORARY="+JSON.stringify(   crossRefUser         ,null,2))
 
   const extra = item.extra;

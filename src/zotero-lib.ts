@@ -49,7 +49,7 @@ const LinkHeader = require('http-link-header');
 
 const ajv = new Ajv();
 
-export default class Zotero {
+class Zotero {
   // The following config keys are expected/allowed,
   // with both "-" and "_". The corresponding variables have _
   config_keys = [
@@ -2933,4 +2933,4 @@ async function websocket(args, config) {
     console.log('WebSocket connection closed');
   });
 }
-// export = Zotero;
+export = Zotero;
