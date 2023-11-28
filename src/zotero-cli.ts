@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 
-import formatAsXMP from './utils/formatAsXMP';
-import formatAsCrossRefXML from './utils/formatAsCrossRefXML';
-import printJSON from './utils/printJSON';
-import Zotero from './zotero-lib';
 import { ArgumentParser } from 'argparse';
-import formatAsZenodoJson from './utils/formatAsZenodoJson';
 import logger from './logger';
 import { configAllParsers } from './sub-commands';
-const fs = require('fs');
+import formatAsCrossRefXML from './utils/formatAsCrossRefXML';
+import formatAsXMP from './utils/formatAsXMP';
+import formatAsZenodoJson from './utils/formatAsZenodoJson';
+import printJSON from './utils/printJSON';
 import { configSetup } from './utils/setupConfig';
+import Zotero from './zotero-lib';
+const fs = require('fs');
 
 let zoteroLib = new Zotero({});
 

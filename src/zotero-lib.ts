@@ -2,19 +2,15 @@
 import { ZoteroTypes } from './zotero-interface';
 
 import Ajv from 'ajv';
+import cron from 'node-cron';
 import logger from './logger';
 import sleep from './utils/sleep';
-import cron from 'node-cron';
 
-import processExtraField from './utils/processExtraField';
 import newVanityDOI from './utils/newVanityDOI';
+import processExtraField from './utils/processExtraField';
 
-import compare from './utils/compareItems';
-import { createHttpClient } from './http.client';
-import { as_array, as_value, catchme, colophon, getCanonicalURL, isomessage, urlify } from './utils';
 import decorations from './decorations';
-import { readConfigFile } from './readConfigFile';
-import md5File from './utils/md5-file';
+import { createHttpClient } from './http.client';
 import {
   fetchCurrentKey,
   fetchGroupData,
@@ -23,20 +19,25 @@ import {
   getChangedItemsForGroup,
 } from './local-db/api';
 import {
+  FindEmptyItemsFromDatabase,
   // fetchAllItems,
   getAllGroups,
+  lookupItems,
   saveGroup,
   // saveZoteroItems,
   saveZoteroItems,
-  lookupItems,
-  FindEmptyItemsFromDatabase,
 } from './local-db/db';
+import { readConfigFile } from './readConfigFile';
+import { as_array, as_value, catchme, colophon, getCanonicalURL, isomessage, urlify } from './utils';
+import compare from './utils/compareItems';
+import md5File from './utils/md5-file';
 // import saveToFile from './local-db/saveToFile';
-import { checkForValidLockFile, removeLockFile } from './lock.utils';
 import axios from 'axios';
-import { merge_items } from './utils/merge';
-import webSocket from 'ws';
 import path from 'path';
+import webSocket from 'ws';
+import { checkForValidLockFile, removeLockFile } from './lock.utils';
+import formatAsCrossRefXML from './utils/formatAsCrossRefXML';
+import { merge_items } from './utils/merge';
 // import printJSON from './utils/printJSON';
 
 require('dotenv').config();
@@ -49,7 +50,7 @@ const LinkHeader = require('http-link-header');
 
 const ajv = new Ajv();
 
-export default class Zotero {
+class Zotero {
   // The following config keys are expected/allowed,
   // with both "-" and "_". The corresponding variables have _
   config_keys = [
@@ -829,6 +830,10 @@ export default class Zotero {
               }
             }),
         );
+      }
+      if (args.crossref) {
+        let result = await formatAsCrossRefXML(item.data, args);
+        return result;
       }
 
       //TODO: extract UploadItem class
@@ -2929,4 +2934,4 @@ async function websocket(args, config) {
     console.log('WebSocket connection closed');
   });
 }
-// export = Zotero;
+export = Zotero;

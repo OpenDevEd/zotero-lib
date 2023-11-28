@@ -1,8 +1,8 @@
 /*
 Testing item functions.
 */
-const Zotero = require('../build/zotero-lib')
-const fs = require('fs')
+const Zotero = require('../build/zotero-lib');
+const fs = require('fs');
 
 async function main() {
   /*
@@ -15,32 +15,29 @@ async function main() {
   //const zotero = new Zotero({verbose: true})
 
   // Specify group via constructor
-  const zotero = new Zotero({verbose: false})
+  const zotero = new Zotero({ verbose: false });
   const response = await zotero.item({
-  "zotero_config": "zotero-cli.toml",
-  "zenodo_config": "config.json",
-  "zenodo_sandbox": false,
-  "verbose": false,
-  "debug": true,
-  "show": false,
-  "open": false,
-  "oapp": false,
-  "dump": false,
-  "dryrun": false,
-  "version": false,
-  "key": "HTCRZNIB",
-  "link": false,
-    "group_id": "2129771"
-
-  })
-  console.log("response = " + JSON.stringify(response, null, 2))
+    zotero_config: 'zotero-cli.toml',
+    zenodo_config: 'config.json',
+    zenodo_sandbox: false,
+    verbose: false,
+    debug: true,
+    show: false,
+    open: false,
+    oapp: false,
+    dump: false,
+    dryrun: false,
+    version: false,
+    key: 'HTCRZNIB',
+    link: false,
+    group_id: '2129771',
+  });
+  console.log('response = ' + JSON.stringify(response, null, 2));
   // TODO: Have automated test to see whether successful.
   if (!response) {
-    console.log("1 - item not found - item does not exist")
+    console.log('1 - item not found - item does not exist');
   }
-  return 0
+  return 0;
 }
 
-
-main()
-
+main();
