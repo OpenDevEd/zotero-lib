@@ -1683,7 +1683,7 @@ class Zotero {
     // }
   }
 
-  public async deduplicate_func(args: any) {
+  public async deduplicate_func(args: ZoteroTypes.deduplicate_func_Args) {
     const { PrismaClient } = require('@prisma/client');
     //@ts-ignore
     const prisma = new PrismaClient();
@@ -1813,7 +1813,7 @@ class Zotero {
     }
   }
 
-  public async Move_deduplicate_to_collection(args: any) {
+  public async Move_deduplicate_to_collection(args: ZoteroTypes.Move_deduplicate_to_collection_Args) {
     // read deduplicate json file
 
     if (!fs.existsSync(args.file)) {
@@ -1965,7 +1965,7 @@ class Zotero {
     }
   }
 
-  public async merge_func(args: any) {
+  public async merge_func(args: ZoteroTypes.merge_func_Args) {
     if (!fs.existsSync(args.data)) {
       console.log('file not found');
       process.exit(1);
@@ -1991,7 +1991,7 @@ class Zotero {
     }
   }
   //@ts-ignore
-  private async getItems(items) {
+  private async getItems(items: string[]) {
     const { PrismaClient } = require('@prisma/client');
     const prisma = new PrismaClient();
     // get all items from the items
@@ -2006,7 +2006,7 @@ class Zotero {
     // check if file exists using fs
   }
 
-  public async resolvefunc(args: any) {
+  public async resolvefunc(args: ZoteroTypes.resolvefunc_Args) {
     const { PrismaClient } = require('@prisma/client');
     const prisma = new PrismaClient();
 
@@ -2403,7 +2403,7 @@ class Zotero {
     return this.update_item(args);
   }
 
-  public async KerkoCiteItemAlsoKnownAs(args) {
+  public async KerkoCiteItemAlsoKnownAs(args: ZoteroTypes.KerkoCiteItemAlsoKnownAs_Args) {
     //TODO: args parsing code
     args.fullresponse = false;
     let thisversion = '';
@@ -2472,7 +2472,7 @@ class Zotero {
   }
 
   // TODO: Implement
-  public async getbib(args) {
+  public async getbib(args: ZoteroTypes.getbib_args) {
     let output;
     try {
       output = await this.getZoteroDataX(args);
@@ -2489,7 +2489,7 @@ class Zotero {
   }
 
   /* START FUcntionS FOR GETBIB */
-  async getZoteroDataX(args) {
+  async getZoteroDataX(args: ZoteroTypes.getZoteroDataX_args) {
     //logger.info("Hello")
     let d = new Date();
     let n = d.getTime();
@@ -2601,7 +2601,7 @@ class Zotero {
     }
   }
 
-  async makeZoteroQuery(arg) {
+  async makeZoteroQuery(arg: ZoteroTypes.makeZoteroQuery_args) {
     var response = [];
     logger.info('hello');
     // The limit is 25 results at a time - so need to check that arg.keys is not too long.
@@ -2654,7 +2654,7 @@ class Zotero {
     return { status: 0, message: 'Success', data: response };
   }
 
-  async makeMultiQuery(args) {
+  async makeMultiQuery(args: ZoteroTypes.makeMultiQuery_args) {
     // logger.info("Multi query 1")
     let mykeys;
     try {
@@ -2707,7 +2707,7 @@ class Zotero {
   /* END Fucntions FOR GETBIB */
 
   // TODO: Implement
-  public async attach_note(args) {
+  public async attach_note(args: ZoteroTypes.attach_noteArgs) {
     //TODO: args parsing code
     args.notetext = as_value(args.notetext);
     args.key = this.extractKeyAndSetGroup(as_value(args.key));
@@ -2744,7 +2744,7 @@ class Zotero {
     const data = {};
     return this.message(0, 'exit status', data);
   }
-  public async findEmptyItems(args) {
+  public async findEmptyItems(args: ZoteroTypes.findEmptyItemsArgs) {
     let path = args.output ? args.output : './empty_items.json';
     let emptyItems: any[] = await FindEmptyItemsFromDatabase(args['group-id']);
     if (args.delete) {

@@ -173,6 +173,67 @@ namespace ZoteroTypes {
   export interface update_urlArgs extends ZoteroTypes.update_itemArgs {
     value: string;
   }
+
+  export interface deduplicate_func_Args extends ZoteroTypes.zoterocongif {
+    files?: string[];
+    collection?: string;
+  }
+  export interface Move_deduplicate_to_collection_Args extends ZoteroTypes.zoterocongif {
+    file?: string;
+    collection?: string;
+  }
+  //merge_func_Args
+  export interface merge_func_Args extends ZoteroTypes.zoterocongif {
+    data?: string;
+    options?: string;
+  }
+  //resolvefunc_Args
+  export interface resolvefunc_Args extends ZoteroTypes.zoterocongif {
+    groupid?: string;
+    keys?: string[];
+  }
+  //KerkoCiteItemAlsoKnownAs_Args
+  export interface KerkoCiteItemAlsoKnownAs_Args extends ZoteroTypes.ItemArgs {
+    fullresponse?: boolean;
+    add?: string[];
+  }
+  //getbib_Args
+  export interface getZoteroDataX_args extends ZoteroTypes.zoterocongif {
+    key?: string;
+    keys?: string[];
+    zgroup?: string;
+    zkey?: string;
+    openinzotero?: boolean;
+    test?: boolean;
+    json?: boolean;
+    groupkeys?: string;
+  }
+  export interface getbib_args extends ZoteroTypes.getZoteroDataX_args {
+    xml?: boolean;
+  }
+  //makeZoteroQuery_args
+  export interface makeZoteroQuery_args extends ZoteroTypes.zoterocongif {
+    key?: string;
+    keys?: string[];
+    group?: string;
+  }
+  //makeMultiQuery_args
+  export interface makeMultiQuery_args extends ZoteroTypes.zoterocongif {
+    groupkeys?: string;
+  }
+  //attach_noteArgs
+  export interface attach_noteArgs extends ZoteroTypes.zoterocongif {
+    notetext: string;
+    key?: string;
+    notefile?: string;
+    tags?: string[];
+  }
+  //findEmptyItemsArgs
+  export interface findEmptyItemsArgs extends ZoteroTypes.zoterocongif {
+    output?: string;
+    delete?: boolean;
+    onlykeys?: boolean;
+  }
 }
 
 export { ZoteroTypes };
