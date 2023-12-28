@@ -17,26 +17,18 @@ export async function fetchCurrentKey(options: RequestArgs = { api_key: '' }) {
 
   const headers = { Authorization: `Bearer ${api_key}` };
 
-  return axios
-    .get(getZoteroURL('keys/current'), { headers })
-    .then((res) => res.data);
+  return axios.get(getZoteroURL('keys/current'), { headers }).then((res) => res.data);
 }
 
-export async function fetchGroups(
-  options: RequestArgs = { api_key: '', user_id: '' },
-) {
+export async function fetchGroups(options: RequestArgs = { api_key: '', user_id: '' }) {
   const { api_key, user_id } = options;
 
   const headers = { Authorization: `Bearer ${api_key}` };
 
-  return axios
-    .get(getZoteroURL(`users/${user_id}/groups/?format=versions`), { headers })
-    .then((res) => res.data);
+  return axios.get(getZoteroURL(`users/${user_id}/groups/?format=versions`), { headers }).then((res) => res.data);
 }
 
-export async function fetchGroupData(
-  options: RequestArgs = { api_key: '', user_id: '' },
-) {
+export async function fetchGroupData(options: RequestArgs = { api_key: '', user_id: '' }) {
   const { api_key, group_id } = options;
 
   const headers = { Authorization: `Bearer ${api_key}` };
@@ -52,26 +44,21 @@ export async function getChangedItemsForGroup(options) {
   const headers = { Authorization: `Bearer ${api_key}` };
 
   return axios
-    .get(
-      getZoteroURL(
-        `groups/${group}/items?since=${version}&format=versions&includeTrashed=1`,
-      ),
-      { headers },
-    )
+    .get(getZoteroURL(`groups/${group}/items?since=${version}&format=versions&includeTrashed=1`), { headers })
     .then((res) => res.data);
 }
 
-const superagent = require('superagent');
+// const superagent = require('superagent');
 
-export async function fetchItemsByIds(options) {
-  const { api_key, group, itemIds } = options;
-  const headers = { Authorization: `Bearer ${api_key}` };
+// export async function fetchItemsByIds(options) {
+//   const { api_key, group, itemIds } = options;
+//   const headers = { Authorization: `Bearer ${api_key}` };
 
-  return superagent
-    .get(getZoteroURL(`groups/${group}/items/?itemKey=${itemIds}`))
-    .set(headers);
+//   return superagent
+//     .get(getZoteroURL(`groups/${group}/items/?itemKey=${itemIds}`))
+//     .set(headers);
 
-  return axios.get(getZoteroURL(`groups/${group}/items/?itemKey=${itemIds}`), {
-    headers,
-  });
-}
+//   return axios.get(getZoteroURL(`groups/${group}/items/?itemKey=${itemIds}`), {
+//     headers,
+//   });
+// }

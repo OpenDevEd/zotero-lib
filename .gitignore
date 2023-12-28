@@ -21,7 +21,6 @@ backup5.json
 attachments/*
 src/local-db/db copy.ts
 src/zotero-lib copy.ts
-
 # Created by https://www.toptal.com/developers/gitignore/api/node
 # Edit at https://www.toptal.com/developers/gitignore?templates=node
 
@@ -169,3 +168,22 @@ dist
 .svelte-kit
 
 # End of https://www.toptal.com/developers/gitignore/api/node
+
+
+#prisma migrations
+
+/prisma/migrations*
+
+/prisma/schema2.prisma
+
+duplicates.json
+
+#TODO: add task to notion
+
+tests/test_loop.js
+
+after*.json
+item.json
+before*.json
+keys*.txt
+empty_items.json

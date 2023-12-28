@@ -6,59 +6,96 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = "postgresql://postgres:1234@localhost:5432/test_backup1"
+  provider     = "postgresql"
+  url          = env("DATABASE_URL_POST")
+  relationMode = "prisma"
 }
 
 model groups {
-  id       Int      @id
-  version  Int      
-  itemsVersion  Int
-  createdAt DateTime 
-  updatedAt DateTime 
-  items items[]
-  alsoKnownAs alsoKnownAs[]
+  id           Int            @id
+  version      Int
+  itemsVersion Int
+  createdAt    DateTime
+  updatedAt    DateTime
+  items        items[]
+  alsoKnownAs  alsoKnownAs[]
+  itemsArchive itemsArchive[]
 }
 
 model items {
-  id       String      @id
-  version  Int      
-  data     Json
-  inconsistent Boolean
-  group_id Int
-  group groups @relation(fields: [group_id], references: [id])
-  createdAt DateTime 
-  updatedAt DateTime 
-  isDeleted Boolean @default(false)
+  id               String             @id
+  version          Int
+  data             Json
+  inconsistent     Boolean?
+  group_id         Int
+  group            groups             @relation(fields: [group_id], references: [id])
+  createdAt        DateTime
+  updatedAt        DateTime
+  isDeleted        Boolean            @default(false)
   collection_items collection_items[]
-  alsoKnownAs alsoKnownAs[]
+  alsoKnownAs      alsoKnownAs[]
+
+  @@index([group_id])
+}
+
+model itemsArchive {
+  row_id           Int                @id @default(autoincrement())
+  id               String
+  version          Int
+  data             Json
+  inconsistent     Boolean?           @default(false)
+  group_id         Int
+  group            groups             @relation(fields: [group_id], references: [id])
+  createdAt        DateTime
+  updatedAt        DateTime
+  isDeleted        Boolean            @default(false)
+  collection_items collection_items[]
+  alsoKnownAs      alsoKnownAs[]
+
+  @@index([group_id])
 }
 
 model collections {
-  id       String      @id
-  createdAt DateTime 
-  updatedAt DateTime 
+  id               String             @id
+  createdAt        DateTime
+  updatedAt        DateTime
   collection_items collection_items[]
 }
 
 model collection_items {
-  id       Int      @id @default(autoincrement())
-  createdAt DateTime 
-  updatedAt DateTime 
-  collection_id String
-  collection collections @relation(fields: [collection_id], references: [id])
-  item_id String
-  item items @relation(fields: [item_id], references: [id])
+  id                 Int           @id @default(autoincrement())
+  createdAt          DateTime
+  updatedAt          DateTime
+  collection_id      String
+  collection         collections   @relation(fields: [collection_id], references: [id])
+  item_id            String
+  item               items         @relation(fields: [item_id], references: [id])
+  itemsArchiveId     String?
+  itemsArchive       itemsArchive? @relation(fields: [itemsArchiveRow_id], references: [row_id])
+  itemsArchiveRow_id Int?
+
+  @@index([collection_id])
+  @@index([item_id])
+  @@index([itemsArchiveId])
+  @@index([itemsArchiveRow_id])
 }
 
 model alsoKnownAs {
-  id       Int      @id @default(autoincrement())
-  item_id String
-  item items @relation(fields: [item_id], references: [id], onDelete: Cascade)
-  group_id Int
-  group groups @relation(fields: [group_id], references: [id])
-  createdAt DateTime
-  updatedAt DateTime
-  data String
-  isDeleted Boolean @default(false)
+  id                 Int           @id @default(autoincrement())
+  item_id            String
+  item               items         @relation(fields: [item_id], references: [id], onDelete: Cascade)
+  group_id           Int
+  group              groups        @relation(fields: [group_id], references: [id])
+  createdAt          DateTime
+  updatedAt          DateTime
+  data               String
+  isDeleted          Boolean       @default(false)
+  itemsArchiveId     String?
+  itemsArchive       itemsArchive? @relation(fields: [itemsArchiveRow_id], references: [row_id])
+  itemsArchiveRow_id Int?
+
+  @@index([item_id])
+  @@index([group_id])
+  @@index([itemsArchiveId])
+  @@index([itemsArchiveRow_id])
 }
