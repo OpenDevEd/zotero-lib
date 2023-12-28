@@ -4,6 +4,7 @@ Testing record creation.
 const Zotero = require('../build/zotero-lib');
 const fs = require('fs');
 
+
 async function main(group_id) {
   const zotero = new Zotero({ verbose: true, 'group-id': group_id });
   let collections = await zotero.collections({
@@ -26,8 +27,12 @@ async function main(group_id) {
   };
   console.log('final=' + JSON.stringify(collections, null, 2));
   // write collections to file
-  fs.writeFileSync('collections_'+group_id+'.json', JSON.stringify(collections, null, 2));
+  // get current date with hours and minutes
+  const date = new Date();
+  const date_str = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() +'_' + date.getHours() + '.' + date.getMinutes() + '.' + date.getSeconds();
+  fs.writeFileSync('collections_'+group_id+'-'+date_str+'.json', JSON.stringify(collections, null, 2));
   return 0;
 }
 
-main(2405685);
+var args = process.argv.slice(2);
+main(args[0]);
