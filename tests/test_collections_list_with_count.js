@@ -27,11 +27,18 @@ async function main(coll) {
   // console.log('final=' + JSON.stringify(collections, null, 2));
   let arr = collections.map((collection) => ({ key: collection.key, name: collection.data.name }));
   const res = await Promise.all(arr.map(async (element) => {
+    /* Actually - we don't need this, because the collection has   "meta": {
+    "numCollections": 0,
+    "numItems": 0
+      },
+    */
     const c = await zotero.items({
       collection: element.key,
       top: true
     });
     // console.log(JSON.stringify(c, null, 2));
+    //write c to file
+    fs.writeFileSync("out_"+element.key + '.json', JSON.stringify(c, null, 2));
     return {key: element.key, name: element.name, items: c.length};
   }));
   console.log('final=' + JSON.stringify(res, null, 2));
