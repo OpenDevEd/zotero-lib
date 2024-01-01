@@ -359,7 +359,7 @@ subParsersMap.set('update-doi', function (subparsers, subCmdName) {
 });
 
 subParsersMap.set('TEMPLATE', function (subparsers, subCmdName) {
-  const argparser = subparsers.add_parser(subCmdName, { help: 'HELPTEXT' });
+  const argparser = subparsers.add_parser(subCmdName, { help: 'Dummy option to be used as tempate. No user-facing functionality.' });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--switch', {
     action: 'store_true',
@@ -460,9 +460,10 @@ subParsersMap.set('field', function (subparsers, subCmdName) {
     help: 'You have to supply the version of the item via the --version argument or else the latest version will be used.',
   });
 });
+// TODO: Fix help text and text fundtion.
 subParsersMap.set('extra-append', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser(subCmdName, {
-    help: 'HELPTEXT',
+    help: 'Utility function that appends text to the extra field of a specific item.',
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--switch', {
@@ -595,6 +596,8 @@ subParsersMap.set('attach-note', function (subparsers, subCmdName) {
     help: 'Tags to be attached to the note',
   });
 });
+
+// TODO: Fix help text and text function.
 subParsersMap.set('getValue', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser(subCmdName, { help: 'HELPTEXT' });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
@@ -608,6 +611,8 @@ subParsersMap.set('getValue', function (subparsers, subCmdName) {
     help: 'HELPTEXT',
   });
 });
+
+// TODO: Fix help text and text function.
 subParsersMap.set('collectionName', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser(subCmdName, {
     help: 'HELPTEXT',
@@ -624,6 +629,7 @@ subParsersMap.set('collectionName', function (subparsers, subCmdName) {
   });
 });
 
+// TODO: Fix help text and text function.
 subParsersMap.set('amendCollection', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser(subCmdName, {
     help: 'HELPTEXT',
