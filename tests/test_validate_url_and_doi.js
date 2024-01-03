@@ -4,7 +4,7 @@ const Zotero = require('../build/zotero-lib');
 const fs = require('fs');
 var request = require("request");
 const curl = require('sync-request-curl');
-const crossref = require('../build/utils/formatAsCrossRefXML');
+// const crossref = require('../build/utils/formatAsCrossRefXML');
 
 function getids(newlocation) {
   const res = newlocation.match(/^zotero\:\/\/select\/groups\/(library|\d+)\/(items|collections)\/([A-Z01-9]+)/);
@@ -37,7 +37,7 @@ async function main(coll) {
   // console.log('final=' + JSON.stringify(collections, null, 2));
   //  fs.writeFileSync("out_"+element.key + '.json', JSON.stringify(c, null, 2));
   // return {key: element.key, name: element.name, items: c.length};
-  console.log('final=' + JSON.stringify(arr, null, 2));
+  // console.log('final=' + JSON.stringify(arr, null, 2));
   // write collections to file
   // arr.forEach((element) => {
   //console.log(element.key + '\t'+ element.doi);
@@ -97,13 +97,13 @@ async function main(coll) {
     // console.log("->" + JSON.stringify(result) + "\t" + arr[i].key);
     if (result == "activate") {
       console.log("activate " + arr[i].key);
-      await crossref.formatAsCrossRefXML(
+      /* await crossref.formatAsCrossRefXML(
         arr[i].data,
         {
           crossref: true,
           crossref_submit: true,
-        });
-      process.exit(0);
+        }); */
+      //process.exit(0);
     };
   };
 };
