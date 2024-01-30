@@ -592,12 +592,20 @@ class Zotero {
       }
       if (args.recursive) {
         for (const collection of collections) {
+          if (collection.meta.numCollections == 0) {
+            console.log(`No subcollections in ${collection.data.name}`);
+            collection.children = [];
+            continue;
+          }
+
+          if (collection.key == '36S77JVF') continue;
           collection.children = await this.collections({ key: collection.key, recursive: true, isSub: true });
         }
       }
       if (args.isSub) {
         return collections;
       }
+      // fs.writeFileSync('collections.json', JSON.stringify(collections, null, 2));
       this.show(collections);
       this.finalActions(collections);
       if (args.terse) {
