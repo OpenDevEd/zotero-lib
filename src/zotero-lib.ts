@@ -590,6 +590,14 @@ class Zotero {
       } else {
         collections = await this.all(`/collections${args.top ? '/top' : ''}`);
       }
+      if (args.recursive) {
+        for (const collection of collections) {
+          collection.children = await this.collections({ key: collection.key, recursive: true, isSub: true });
+        }
+      }
+      if (args.isSub) {
+        return collections;
+      }
       this.show(collections);
       this.finalActions(collections);
       if (args.terse) {

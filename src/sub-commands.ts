@@ -359,7 +359,9 @@ subParsersMap.set('update-doi', function (subparsers, subCmdName) {
 });
 
 subParsersMap.set('TEMPLATE', function (subparsers, subCmdName) {
-  const argparser = subparsers.add_parser(subCmdName, { help: 'Dummy option to be used as tempate. No user-facing functionality.' });
+  const argparser = subparsers.add_parser(subCmdName, {
+    help: 'Dummy option to be used as tempate. No user-facing functionality.',
+  });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--switch', {
     action: 'store_true',
@@ -734,9 +736,13 @@ subParsersMap.set('collections', function (subparsers, subCmdName) {
     action: 'store_true',
     help: 'Show only collection at top level.',
   });
+
+  argparser.add_argument('--recursive', {
+    action: 'store_true',
+    help: 'Show all the child collections and sub-collections of collection with key recursively.',
+  });
   argparser.add_argument('--key', {
     nargs: 1,
-    required: true,
     help: 'Show all the child collections of collection with key. You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
   });
   argparser.add_argument('--create-child', {
