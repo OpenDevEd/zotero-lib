@@ -527,10 +527,14 @@ class Zotero {
    */
   public async collections(args) {
     // TODO: args parsing code
+    if (args.json && !args.json.endsWith('.json')) {
+      return this.message(0, 'Please provide a valid json file name');
+    }
     if (args.key) {
       args.key = this.extractKeyAndSetGroup(as_value(args.key));
     }
 
+    if (args.recursive && !args.key) args.top = true;
     // TODO: args parsing code
     // 'Unable to extract group/key from the string provided.',
     if (!args.key && !args.top) {
@@ -593,7 +597,7 @@ class Zotero {
       if (args.recursive) {
         for (const collection of collections) {
           if (collection.meta.numCollections == 0) {
-            console.log(`No subcollections in ${collection.data.name}`);
+            // console.log(`No subcollections in ${collection.data.name}`);
             collection.children = [];
             continue;
           }
@@ -605,7 +609,9 @@ class Zotero {
       if (args.isSub) {
         return collections;
       }
-      // fs.writeFileSync('collections.json', JSON.stringify(collections, null, 2));
+      if (args.json) {
+        fs.writeFileSync(args.json, JSON.stringify(collections, null, 2));
+      }
       this.show(collections);
       this.finalActions(collections);
       if (args.terse) {
@@ -700,6 +706,9 @@ class Zotero {
     if (typeof args.filter === 'string') {
       args.filter = JSON.parse(args.filter);
     }
+    if (args.json && !args.json.endsWith('.json')) {
+      return this.message(0, 'Please provide a valid json file name');
+    }
 
     // TODO: args parsing code
     if (args.count && args.validate) {
@@ -745,7 +754,10 @@ class Zotero {
     }
 
     if (args.show) this.show(items);
-    if (args.json) fs.writeFileSync('Items.json', JSON.stringify(items, null, 2));
+    if (args.json) {
+      fs.writeFileSync(args.json, JSON.stringify(items, null, 2));
+    }
+
     return items;
   }
 

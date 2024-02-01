@@ -72,8 +72,8 @@ subParsersMap.set('items', function (subparsers, subCmdName) {
     help: 'json-schema file for all itemtypes, or directory with schema files, one per itemtype.',
   });
   argparser.add_argument('--json', {
-    action: 'store_true',
-    help: 'Provide output in json format.',
+    action: 'store',
+    help: 'Provide output in json format E.g --json Items.json',
   });
 });
 
@@ -752,6 +752,10 @@ subParsersMap.set('collections', function (subparsers, subCmdName) {
   argparser.add_argument('--create-child', {
     nargs: '*',
     help: 'Create child collections of key (or at the top level if no key is specified) with the names specified.',
+  });
+  argparser.add_argument('--json', {
+    action: 'store',
+    help: 'Provide output in json format E.g --json Items.json',
   });
 });
 
