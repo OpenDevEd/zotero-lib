@@ -745,6 +745,7 @@ class Zotero {
     }
 
     if (args.show) this.show(items);
+    if (args.json) fs.writeFileSync('Items.json', JSON.stringify(items, null, 2));
     return items;
   }
 

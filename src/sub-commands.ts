@@ -71,6 +71,10 @@ subParsersMap.set('items', function (subparsers, subCmdName) {
     type: subparsers.path,
     help: 'json-schema file for all itemtypes, or directory with schema files, one per itemtype.',
   });
+  argparser.add_argument('--json', {
+    action: 'store_true',
+    help: 'Provide output in json format.',
+  });
 });
 
 subParsersMap.set('item', function (subparsers, subCmdName) {
