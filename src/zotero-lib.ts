@@ -1165,7 +1165,7 @@ class Zotero {
         //  all items are read into a single structure:
         const items = args.files.map((item) => JSON.parse(fs.readFileSync(item, 'utf-8')));
         const itemsflat = items.flat(1);
-        
+
         if (args.newcollection) {
           // create a new collection
           const collection = await this.http.post(
@@ -1198,36 +1198,25 @@ class Zotero {
         }
         let res = [];
         const batchSize = 50;
-        if (itemsflat.length <= batchSize) {
-          const result = await this.http.post('/items', JSON.stringify(itemsflat), {}, this.config);
-          res.push(result);
-          this.show(res);
-        } else {
-          /* items.length = 151
+        /* items.length = 151
         0..49 (end=50)
         50..99 (end=100)
         100..149 (end=150)
         150..150 (end=151)
         */
-          for (var start = 0; start < itemsflat.length; start += batchSize) {
-            const end = start + batchSize <= itemsflat.length ? start + batchSize : itemsflat.length + 1;
-            // Safety check - should always be true:
-            if (itemsflat.slice(start, end).length) {
-              logger.error(`Uploading objects ${start} to ${end}-1`);
-              logger.info(`Uploading objects ${start} to ${end}-1`);
-              logger.info(`${itemsflat.slice(start, end).length}`);
-              const result = await this.http.post(
-                '/items',
-                JSON.stringify(itemsflat.slice(start, end)),
-                {},
-                this.config,
-              );
-              res.push(result);
-            } else {
-              logger.error(`NOT Uploading objects ${start} to ${end}-1`);
-              logger.info(`NOT Uploading objects ${start} to ${end}-1`);
-              logger.info(`${itemsflat.slice(start, end).length}`);
-            }
+        for (var start = 0; start < itemsflat.length; start += batchSize) {
+          const end = start + batchSize <= itemsflat.length ? start + batchSize : itemsflat.length + 1;
+          // Safety check - should always be true:
+          if (itemsflat.slice(start, end).length) {
+            logger.error(`Uploading objects ${start} to ${end}-1`);
+            logger.info(`Uploading objects ${start} to ${end}-1`);
+            logger.info(`${itemsflat.slice(start, end).length}`);
+            const result = await this.http.post('/items', JSON.stringify(itemsflat.slice(start, end)), {}, this.config);
+            res.push(result);
+          } else {
+            logger.error(`NOT Uploading objects ${start} to ${end}-1`);
+            logger.info(`NOT Uploading objects ${start} to ${end}-1`);
+            logger.info(`${itemsflat.slice(start, end).length}`);
           }
         }
         // TODO: see how to use pruneData
