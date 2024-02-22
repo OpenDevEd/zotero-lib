@@ -1165,6 +1165,37 @@ class Zotero {
         //  all items are read into a single structure:
         const items = args.files.map((item) => JSON.parse(fs.readFileSync(item, 'utf-8')));
         const itemsflat = items.flat(1);
+        
+        if (args.newcollection) {
+          // create a new collection
+          const collection = await this.http.post(
+            '/collections',
+            JSON.stringify([{ name: args.newcollection[0] }]),
+            {},
+            this.config,
+          );
+          if (!args.collections) {
+            args.collections = [];
+          }
+          args.collections.push(collection.successful[0].key);
+        }
+
+        // get the collections key if it is a zotero:// link
+        if (args.collections) {
+          args.collections = args.collections.map((collection) => {
+            if (collection.includes('zotero://')) {
+              collection = collection.split('/').pop();
+              return collection;
+            }
+            return collection;
+          });
+        }
+        // add the collections key to the items collections
+        for (const item of itemsflat) {
+          if (args.collections) {
+            item.collections = [...args.collections, ...item.collections];
+          }
+        }
         let res = [];
         const batchSize = 50;
         if (itemsflat.length <= batchSize) {

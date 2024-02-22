@@ -193,6 +193,14 @@ subParsersMap.set('create', function (subparsers, subCmdName) {
     nargs: '*',
     help: 'JSON string(s) for the item(s) to be created.',
   });
+  argparser.add_argument('--collections', {
+    nargs: '*',
+    help: 'The key of the collection in which the new item is created. You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
+  });
+  argparser.add_argument('--newcollection', {
+    nargs: 1,
+    help: 'The title of the new collection in which the new item is created. You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
+  });
 });
 
 subParsersMap.set('update', function (subparsers, subCmdName) {
