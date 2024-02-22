@@ -71,6 +71,10 @@ subParsersMap.set('items', function (subparsers, subCmdName) {
     type: subparsers.path,
     help: 'json-schema file for all itemtypes, or directory with schema files, one per itemtype.',
   });
+  argparser.add_argument('--json', {
+    action: 'store',
+    help: 'Provide output in json format E.g --json Items.json',
+  });
 });
 
 subParsersMap.set('item', function (subparsers, subCmdName) {
@@ -188,6 +192,14 @@ subParsersMap.set('create', function (subparsers, subCmdName) {
   argparser.add_argument('--items', {
     nargs: '*',
     help: 'JSON string(s) for the item(s) to be created.',
+  });
+  argparser.add_argument('--collections', {
+    nargs: '*',
+    help: 'The key of the collection in which the new item is created. You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
+  });
+  argparser.add_argument('--newcollection', {
+    nargs: 1,
+    help: 'The title of the new collection in which the new item is created. You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
   });
 });
 
@@ -359,7 +371,9 @@ subParsersMap.set('update-doi', function (subparsers, subCmdName) {
 });
 
 subParsersMap.set('TEMPLATE', function (subparsers, subCmdName) {
-  const argparser = subparsers.add_parser(subCmdName, { help: 'Dummy option to be used as tempate. No user-facing functionality.' });
+  const argparser = subparsers.add_parser(subCmdName, {
+    help: 'Dummy option to be used as tempate. No user-facing functionality.',
+  });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--switch', {
     action: 'store_true',
@@ -734,14 +748,22 @@ subParsersMap.set('collections', function (subparsers, subCmdName) {
     action: 'store_true',
     help: 'Show only collection at top level.',
   });
+
+  argparser.add_argument('--recursive', {
+    action: 'store_true',
+    help: 'Show all the child collections and sub-collections of collection with key recursively.',
+  });
   argparser.add_argument('--key', {
     nargs: 1,
-    required: true,
     help: 'Show all the child collections of collection with key. You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
   });
   argparser.add_argument('--create-child', {
     nargs: '*',
     help: 'Create child collections of key (or at the top level if no key is specified) with the names specified.',
+  });
+  argparser.add_argument('--json', {
+    action: 'store',
+    help: 'Provide output in json format E.g --json Items.json',
   });
 });
 
