@@ -25,6 +25,7 @@ customCmdHandlers.set('deduplicate', 'deduplicate_func');
 customCmdHandlers.set('movetocollection', 'Move_deduplicate_to_collection');
 customCmdHandlers.set('merge', 'merge_func');
 customCmdHandlers.set('find-empty-items', 'findEmptyItems');
+customCmdHandlers.set('search', 'search');
 
 function getFuncName(subCmdName) {
   if (customCmdHandlers.has(subCmdName)) {
@@ -945,6 +946,40 @@ subParsersMap.set('find-empty-items', function (subparsers, subCmdName) {
   argparser.add_argument('--onlykeys', {
     action: 'store_true',
     help: "store only keys of empty items it's required to use with --output",
+  });
+});
+
+subParsersMap.set('search', function (subparsers, subCmdName) {
+  const argparser = subparsers.add_parser(subCmdName, {
+    help: 'Search the library.',
+  });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
+  argparser.add_argument('--itemKey', {
+    action: 'store',
+    help: 'The item key to search for',
+  });
+  argparser.add_argument('--itemtype', {
+    nargs: 1,
+    action: 'store',
+    help: 'The item type to search for',
+  });
+  argparser.add_argument('--snditemtype', {
+    nargs: 1,
+    action: 'store',
+    help: 'The second item type to search for',
+  });
+  argparser.add_argument('--tags', {
+    nargs: '*',
+    action: 'store',
+    help: 'The tags to search for',
+  });
+  argparser.add_argument('--itemtype_exclude', {
+    action: 'store',
+    help: 'The item type to exclude from search',
+  });
+  argparser.add_argument('--tag_exclude', {
+    action: 'store',
+    help: 'The tag to exclude from search',
   });
 });
 

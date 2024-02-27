@@ -688,6 +688,30 @@ class Zotero {
     return res;
   }
 
+  async search(args) {
+    console.log(args.tags);
+    let tags = '';
+    if (args.tags) {
+      for (let i = 0; i < args.tags.length - 1; i++) {
+        tags += `tag=${args.tags[i]}&`;
+      }
+      tags += `tag=${args.tags[args.tags.length - 1]}`;
+    }
+
+    const res = await this.http.get(
+      `/items?format=json&${args.tags ? `${tags}` : ''}${args.itemtype ? `&itemType=${args.itemtype}` : ''}${
+        args.itemtype && args.snditemtype ? ` || ${args.snditemtype}` : ''
+      }${args.itemtype_exclude ? `&itemType=-${args.itemtype_exclude}` : ''}${
+        args.tag_exclude ? `&tag=-${args.tag_exclude}` : ''
+      }`,
+      undefined,
+      this.config,
+    );
+    fs.writeFileSync('search.json', JSON.stringify(res, null, 2));
+
+    console.log('searching for items', res);
+  }
+
   /**
    * Retrieve list of items from API.
    * (API: /items, /items/top, /collections/COLLECTION/items/top).
