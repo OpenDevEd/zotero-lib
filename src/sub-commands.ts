@@ -954,10 +954,6 @@ subParsersMap.set('search', function (subparsers, subCmdName) {
     help: 'Search the library.',
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
-  argparser.add_argument('--itemKey', {
-    action: 'store',
-    help: 'The item key to search for',
-  });
   argparser.add_argument('--itemtype', {
     nargs: 1,
     action: 'store',
@@ -980,6 +976,11 @@ subParsersMap.set('search', function (subparsers, subCmdName) {
   argparser.add_argument('--tag_exclude', {
     action: 'store',
     help: 'The tag to exclude from search',
+  });
+  argparser.add_argument('--json', {
+    action: 'store',
+    help: 'Provide output in json format E.g --json Items.json',
+    default: 'search.json',
   });
 });
 

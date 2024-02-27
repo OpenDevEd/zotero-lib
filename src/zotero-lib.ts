@@ -689,7 +689,6 @@ class Zotero {
   }
 
   async search(args) {
-    console.log(args.tags);
     let tags = '';
     if (args.tags) {
       for (let i = 0; i < args.tags.length - 1; i++) {
@@ -707,9 +706,7 @@ class Zotero {
       undefined,
       this.config,
     );
-    fs.writeFileSync('search.json', JSON.stringify(res, null, 2));
-
-    console.log('searching for items', res);
+    fs.writeFileSync(args.json, JSON.stringify(res, null, 2));
   }
 
   /**
