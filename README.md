@@ -123,6 +123,58 @@ This sub-command can be used to fetch items with various filters
 zotero-lib items --filter '{"limit": 10}'
 ```
 
+### search
+
+The `zotero-lib search` command allows for detailed querying of items in a Zotero library via the command line, offering extensive filtering options to accurately target search results.
+
+##### Basic Search by Item Type
+
+Search for items of a specific type, like book sections, with the `--itemtype` option:
+
+```bash
+zotero-lib search --itemtype bookSection
+```
+
+##### Adding a Second Item Type to Your Search
+
+To search for items that are either one type or another (e.g., book sections or reports), add a second item type with `--snditemtype`:
+
+```bash
+zotero-lib search --itemtype bookSection --snditemtype report
+```
+
+##### Including Tags in Your Search
+
+Refine your search to include items tagged with specific keywords using the `--tags` option:
+
+```bash
+zotero-lib search --tags tag1 tag2
+```
+
+##### Excluding an Item Type from Your Search
+
+Exclude a certain item type from your search results with the `--itemtype_exclude` option:
+
+```bash
+zotero-lib search --itemtype_exclude bookSection
+```
+
+##### Excluding Tags from Your Search
+
+To exclude items tagged with certain keywords, use the `--tag_exclude` option:
+
+```bash
+zotero-lib search --tag_exclude tag1
+```
+
+##### Specifying the Output File Name
+
+The default output file is `search.json`. To specify a different file name, use the `--json
+
+```bash
+zotero-lib search --json search_results.json
+```
+
 ### collection
 
 ### collections
