@@ -400,6 +400,25 @@ class Zotero {
     return { key: res, groups: res2 };
   }
 
+  public getIds(args) {
+    if (!args?.newlocation) console.log('please provide a newlocation');
+    const newlocation = args.newlocation;
+    const res = newlocation.match(/^zotero\:\/\/select\/groups\/(library|\d+)\/(items|collections)\/([A-Z01-9]+)/);
+    let x: {
+      key: string;
+      type?: string;
+      group?: string;
+    } = { key: '' };
+    if (res) {
+      x.key = res[3];
+      x.type = res[2];
+      x.group = res[1];
+    } else {
+      x.key = newlocation;
+    }
+    return x;
+  }
+
   // End of standard API calls
 
   // Utility functions. private?
