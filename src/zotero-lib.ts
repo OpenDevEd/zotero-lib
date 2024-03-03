@@ -401,9 +401,9 @@ class Zotero {
   }
 
   public getIds(args) {
-    if (!args?.newlocation) console.log('please provide a newlocation');
-    const newlocation = args.newlocation;
-    const res = newlocation.match(/^zotero\:\/\/select\/groups\/(library|\d+)\/(items|collections)\/([A-Z01-9]+)/);
+    if (!args?.key) console.log('please provide a newlocation');
+    const key = args.key;
+    const res = key.match(/^zotero\:\/\/select\/groups\/(library|\d+)\/(items|collections)\/([A-Z01-9]+)/);
     let x: {
       key: string;
       type?: string;
@@ -414,7 +414,7 @@ class Zotero {
       x.type = res[2];
       x.group = res[1];
     } else {
-      x.key = newlocation;
+      x.key = key;
     }
     return x;
   }

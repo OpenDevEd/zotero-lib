@@ -955,7 +955,7 @@ subParsersMap.set('get-ids', function (subparsers, subCmdName) {
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
 
-  argparser.add_argument('--newlocation', {
+  argparser.add_argument('--key', {
     action: 'store',
     help: 'The ids of the items or collection.',
     required: true,
