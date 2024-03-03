@@ -1,19 +1,15 @@
 #!/usr/bin/env node
 
 import Ajv from 'ajv';
+import cron from 'node-cron';
 import logger from './logger';
 import sleep from './utils/sleep';
-import cron from 'node-cron';
 
-import processExtraField from './utils/processExtraField';
 import newVanityDOI from './utils/newVanityDOI';
+import processExtraField from './utils/processExtraField';
 
-import compare from './utils/compareItems';
-import { createHttpClient } from './http.client';
-import { as_array, as_value, catchme, colophon, getCanonicalURL, isomessage, urlify } from './utils';
 import decorations from './decorations';
-import { readConfigFile } from './readConfigFile';
-import md5File from './utils/md5-file';
+import { createHttpClient } from './http.client';
 import {
   fetchCurrentKey,
   fetchGroupData,
@@ -22,20 +18,25 @@ import {
   getChangedItemsForGroup,
 } from './local-db/api';
 import {
+  FindEmptyItemsFromDatabase,
   // fetchAllItems,
   getAllGroups,
+  lookupItems,
   saveGroup,
   // saveZoteroItems,
   saveZoteroItems,
-  lookupItems,
-  FindEmptyItemsFromDatabase,
 } from './local-db/db';
+import { readConfigFile } from './readConfigFile';
+import { as_array, as_value, catchme, colophon, getCanonicalURL, isomessage, urlify } from './utils';
+import compare from './utils/compareItems';
+import md5File from './utils/md5-file';
 // import saveToFile from './local-db/saveToFile';
-import { checkForValidLockFile, removeLockFile } from './lock.utils';
 import axios from 'axios';
-import { merge_items } from './utils/merge';
-import webSocket from 'ws';
 import path from 'path';
+import webSocket from 'ws';
+import { checkForValidLockFile, removeLockFile } from './lock.utils';
+import formatAsCrossRefXML from './utils/formatAsCrossRefXML';
+import { merge_items } from './utils/merge';
 // import printJSON from './utils/printJSON';
 
 require('dotenv').config();
@@ -48,7 +49,7 @@ const LinkHeader = require('http-link-header');
 
 const ajv = new Ajv();
 
-export default class Zotero {
+class Zotero {
   // The following config keys are expected/allowed,
   // with both "-" and "_". The corresponding variables have _
   config_keys = [
@@ -526,10 +527,14 @@ export default class Zotero {
    */
   public async collections(args) {
     // TODO: args parsing code
+    if (args.json && !args.json.endsWith('.json')) {
+      return this.message(0, 'Please provide a valid json file name');
+    }
     if (args.key) {
       args.key = this.extractKeyAndSetGroup(as_value(args.key));
     }
 
+    if (args.recursive && !args.key) args.top = true;
     // TODO: args parsing code
     // 'Unable to extract group/key from the string provided.',
     if (!args.key && !args.top) {
@@ -588,6 +593,24 @@ export default class Zotero {
         collections = await this.all(`/collections/${args.key}/collections`);
       } else {
         collections = await this.all(`/collections${args.top ? '/top' : ''}`);
+      }
+      if (args.recursive) {
+        for (const collection of collections) {
+          if (collection.meta.numCollections == 0) {
+            // console.log(`No subcollections in ${collection.data.name}`);
+            collection.children = [];
+            continue;
+          }
+
+          if (collection.key == '36S77JVF') continue;
+          collection.children = await this.collections({ key: collection.key, recursive: true, isSub: true });
+        }
+      }
+      if (args.isSub) {
+        return collections;
+      }
+      if (args.json) {
+        fs.writeFileSync(args.json, JSON.stringify(collections, null, 2));
       }
       this.show(collections);
       this.finalActions(collections);
@@ -683,6 +706,9 @@ export default class Zotero {
     if (typeof args.filter === 'string') {
       args.filter = JSON.parse(args.filter);
     }
+    if (args.json && !args.json.endsWith('.json')) {
+      return this.message(0, 'Please provide a valid json file name');
+    }
 
     // TODO: args parsing code
     if (args.count && args.validate) {
@@ -728,6 +754,10 @@ export default class Zotero {
     }
 
     if (args.show) this.show(items);
+    if (args.json) {
+      fs.writeFileSync(args.json, JSON.stringify(items, null, 2));
+    }
+
     return items;
   }
 
@@ -828,6 +858,10 @@ export default class Zotero {
               }
             }),
         );
+      }
+      if (args.crossref) {
+        let result = await formatAsCrossRefXML(item.data, args);
+        return result;
       }
 
       //TODO: extract UploadItem class
@@ -1131,38 +1165,58 @@ export default class Zotero {
         //  all items are read into a single structure:
         const items = args.files.map((item) => JSON.parse(fs.readFileSync(item, 'utf-8')));
         const itemsflat = items.flat(1);
+
+        if (args.newcollection) {
+          // create a new collection
+          const collection = await this.http.post(
+            '/collections',
+            JSON.stringify([{ name: args.newcollection[0] }]),
+            {},
+            this.config,
+          );
+          if (!args.collections) {
+            args.collections = [];
+          }
+          args.collections.push(collection.successful[0].key);
+        }
+
+        // get the collections key if it is a zotero:// link
+        if (args.collections) {
+          args.collections = args.collections.map((collection) => {
+            if (collection.includes('zotero://')) {
+              collection = collection.split('/').pop();
+              return collection;
+            }
+            return collection;
+          });
+        }
+        // add the collections key to the items collections
+        for (const item of itemsflat) {
+          if (args.collections) {
+            item.collections = [...args.collections, ...item.collections];
+          }
+        }
         let res = [];
         const batchSize = 50;
-        if (itemsflat.length <= batchSize) {
-          const result = await this.http.post('/items', JSON.stringify(itemsflat), {}, this.config);
-          res.push(result);
-          this.show(res);
-        } else {
-          /* items.length = 151
+        /* items.length = 151
         0..49 (end=50)
         50..99 (end=100)
         100..149 (end=150)
         150..150 (end=151)
         */
-          for (var start = 0; start < itemsflat.length; start += batchSize) {
-            const end = start + batchSize <= itemsflat.length ? start + batchSize : itemsflat.length + 1;
-            // Safety check - should always be true:
-            if (itemsflat.slice(start, end).length) {
-              logger.error(`Uploading objects ${start} to ${end}-1`);
-              logger.info(`Uploading objects ${start} to ${end}-1`);
-              logger.info(`${itemsflat.slice(start, end).length}`);
-              const result = await this.http.post(
-                '/items',
-                JSON.stringify(itemsflat.slice(start, end)),
-                {},
-                this.config,
-              );
-              res.push(result);
-            } else {
-              logger.error(`NOT Uploading objects ${start} to ${end}-1`);
-              logger.info(`NOT Uploading objects ${start} to ${end}-1`);
-              logger.info(`${itemsflat.slice(start, end).length}`);
-            }
+        for (var start = 0; start < itemsflat.length; start += batchSize) {
+          const end = start + batchSize <= itemsflat.length ? start + batchSize : itemsflat.length + 1;
+          // Safety check - should always be true:
+          if (itemsflat.slice(start, end).length) {
+            logger.error(`Uploading objects ${start} to ${end}-1`);
+            logger.info(`Uploading objects ${start} to ${end}-1`);
+            logger.info(`${itemsflat.slice(start, end).length}`);
+            const result = await this.http.post('/items', JSON.stringify(itemsflat.slice(start, end)), {}, this.config);
+            res.push(result);
+          } else {
+            logger.error(`NOT Uploading objects ${start} to ${end}-1`);
+            logger.info(`NOT Uploading objects ${start} to ${end}-1`);
+            logger.info(`${itemsflat.slice(start, end).length}`);
           }
         }
         // TODO: see how to use pruneData
@@ -2928,4 +2982,4 @@ async function websocket(args, config) {
     console.log('WebSocket connection closed');
   });
 }
-// export = Zotero;
+export = Zotero;
