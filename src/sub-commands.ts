@@ -25,6 +25,7 @@ customCmdHandlers.set('deduplicate', 'deduplicate_func');
 customCmdHandlers.set('movetocollection', 'Move_deduplicate_to_collection');
 customCmdHandlers.set('merge', 'merge_func');
 customCmdHandlers.set('find-empty-items', 'findEmptyItems');
+customCmdHandlers.set('get-ids', 'getIds');
 
 function getFuncName(subCmdName) {
   if (customCmdHandlers.has(subCmdName)) {
@@ -199,7 +200,7 @@ subParsersMap.set('create', function (subparsers, subCmdName) {
   });
   argparser.add_argument('--newcollection', {
     nargs: 1,
-    help: 'The title of the new collection in which the new item is created. You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
+    help: 'The title of the new collection in which the new item is created.',
   });
 });
 
@@ -945,6 +946,19 @@ subParsersMap.set('find-empty-items', function (subparsers, subCmdName) {
   argparser.add_argument('--onlykeys', {
     action: 'store_true',
     help: "store only keys of empty items it's required to use with --output",
+  });
+});
+
+subParsersMap.set('get-ids', function (subparsers, subCmdName) {
+  const argparser = subparsers.add_parser(subCmdName, {
+    help: 'Get the ids of the items or a collection.',
+  });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
+
+  argparser.add_argument('--key', {
+    action: 'store',
+    help: 'The ids of the items or collection.',
+    required: true,
   });
 });
 

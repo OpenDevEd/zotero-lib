@@ -176,7 +176,7 @@ dist
 
 /prisma/schema2.prisma
 
-duplicates.json
+duplicat*.json
 
 #TODO: add task to notion
 

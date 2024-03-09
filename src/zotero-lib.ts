@@ -400,6 +400,25 @@ class Zotero {
     return { key: res, groups: res2 };
   }
 
+  public getIds(args) {
+    if (!args?.key) console.log('please provide a newlocation');
+    const key = args.key;
+    const res = key.match(/^zotero\:\/\/select\/groups\/(library|\d+)\/(items|collections)\/([A-Z01-9]+)/);
+    let x: {
+      key: string;
+      type?: string;
+      group?: string;
+    } = { key: '' };
+    if (res) {
+      x.key = res[3];
+      x.type = res[2];
+      x.group = res[1];
+    } else {
+      x.key = key;
+    }
+    return x;
+  }
+
   // End of standard API calls
 
   // Utility functions. private?
@@ -1166,6 +1185,8 @@ class Zotero {
         const items = args.files.map((item) => JSON.parse(fs.readFileSync(item, 'utf-8')));
         const itemsflat = items.flat(1);
 
+
+        // TODO: Also add an option 'tags' which adds tags to new items.
         if (args.newcollection) {
           // create a new collection
           const collection = await this.http.post(
@@ -1182,6 +1203,7 @@ class Zotero {
 
         // get the collections key if it is a zotero:// link
         if (args.collections) {
+          // TODO: There's a function that handles processing of zotero:// link - use this instead.
           args.collections = args.collections.map((collection) => {
             if (collection.includes('zotero://')) {
               collection = collection.split('/').pop();
@@ -1196,6 +1218,7 @@ class Zotero {
             item.collections = [...args.collections, ...item.collections];
           }
         }
+        // This code is repeated below for 'items'. It should be refactored.
         let res = [];
         const batchSize = 50;
         /* items.length = 151
@@ -1219,25 +1242,65 @@ class Zotero {
             logger.info(`${itemsflat.slice(start, end).length}`);
           }
         }
-        // TODO: see how to use pruneData
+        // TODO: see how to use pruneData - please look at the function pruneData, see what it does, and then add it here.
+        // this.pruneData(res, args.fullresponse);
+        // TODO: Returning here means that if there is 'items' it will not be processed. Fix.
         return res;
       }
     }
 
     if ('items' in args) {
-      logger.info('args.items = ', args.items);
-      let items = args.items;
+      logger.info('Processing args.items');
+      //logger.info('args.items = ', typeof(args.items) );
+      // TODO
+      // When the object comes in, it has the zotero {"0": ... } structure. Why is this? 
+      // I've checked in zotero-openalex, and it's passed a plain array.
+
+      let items;
+      if (typeof args.items === 'object') {
+        items = Object.values(args.items); 
+      };
+      if (!Array.isArray(items)) {
+        console.log('ERROR: args.items is not an array');
+        return;
+      }
+      //console.log(JSON.stringify(items.slice(0,2), null, 2));     
+      //return;
 
       if (Array.isArray(args.items) && args.items.length > 0) {
         items = items.map((item) => (typeof item === 'string' ? JSON.parse(item) : item));
-        items = JSON.stringify(items);
+        // items = JSON.stringify(items);
       }
 
       if (items.length > 0) {
-        const result = await this.http.post('/items', items, {}, this.config);
-        const res = result;
-        this.show(res);
-        return this.pruneData(res, args.fullresponse);
+        let res = [];
+        const batchSize = 50;
+        /* items.length = 151
+        0..49 (end=50)
+        50..99 (end=100)
+        100..149 (end=150)
+        150..150 (end=151)
+        */
+        for (var start = 0; start < items.length; start += batchSize) {
+          const end = start + batchSize <= items.length ? start + batchSize : items.length + 1;
+          // Safety check - should always be true:
+          if (items.slice(start, end).length <= batchSize) {
+            logger.error(`Uploading objects ${start} to ${end}-1`);
+            logger.info(`Uploading objects ${start} to ${end}-1`);
+            logger.info(`${items.slice(start, end).length}`);
+            const result = await this.http.post('/items', JSON.stringify(items.slice(start, end)), {}, this.config);
+            res.push(result);
+          } else {
+            logger.error(`NOT Uploading objects ${start} to ${end}-1`);
+            logger.info(`NOT Uploading objects ${start} to ${end}-1`);
+            logger.info(`${items.slice(start, end).length}`);
+          }
+        }
+        return res;
+        //const result = await this.http.post('/items', items, {}, this.config);
+        //const res = result;
+        //this.show(res);
+        // return this.pruneData(res, args.fullresponse);
       }
       return { type: 'success', message: 'No items to create' };
     }
