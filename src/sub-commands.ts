@@ -200,7 +200,7 @@ subParsersMap.set('create', function (subparsers, subCmdName) {
   });
   argparser.add_argument('--newcollection', {
     nargs: 1,
-    help: 'The title of the new collection in which the new item is created. You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
+    help: 'The title of the new collection in which the new item is created.',
   });
 });
 
