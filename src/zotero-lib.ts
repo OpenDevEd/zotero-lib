@@ -1250,12 +1250,26 @@ class Zotero {
     }
 
     if ('items' in args) {
-      logger.info('args.items = ', args.items);
-      let items = args.items;
+      logger.info('Processing args.items');
+      //logger.info('args.items = ', typeof(args.items) );
+      // TODO
+      // When the object comes in, it has the zotero {"0": ... } structure. Why is this? 
+      // I've checked in zotero-openalex, and it's passed a plain array.
+
+      let items;
+      if (typeof args.items === 'object') {
+        items = Object.values(args.items); 
+      };
+      if (!Array.isArray(items)) {
+        console.log('ERROR: args.items is not an array');
+        return;
+      }
+      //console.log(JSON.stringify(items.slice(0,2), null, 2));     
+      //return;
 
       if (Array.isArray(args.items) && args.items.length > 0) {
         items = items.map((item) => (typeof item === 'string' ? JSON.parse(item) : item));
-        items = JSON.stringify(items);
+        // items = JSON.stringify(items);
       }
 
       if (items.length > 0) {
@@ -1270,7 +1284,7 @@ class Zotero {
         for (var start = 0; start < items.length; start += batchSize) {
           const end = start + batchSize <= items.length ? start + batchSize : items.length + 1;
           // Safety check - should always be true:
-          if (items.slice(start, end).length) {
+          if (items.slice(start, end).length <= batchSize) {
             logger.error(`Uploading objects ${start} to ${end}-1`);
             logger.info(`Uploading objects ${start} to ${end}-1`);
             logger.info(`${items.slice(start, end).length}`);
