@@ -1185,6 +1185,8 @@ class Zotero {
         const items = args.files.map((item) => JSON.parse(fs.readFileSync(item, 'utf-8')));
         const itemsflat = items.flat(1);
 
+
+        // TODO: Also add an option 'tags' which adds tags to new items.
         if (args.newcollection) {
           // create a new collection
           const collection = await this.http.post(
@@ -1201,6 +1203,7 @@ class Zotero {
 
         // get the collections key if it is a zotero:// link
         if (args.collections) {
+          // TODO: There's a function that handles processing of zotero:// link - use this instead.
           args.collections = args.collections.map((collection) => {
             if (collection.includes('zotero://')) {
               collection = collection.split('/').pop();
@@ -1215,6 +1218,7 @@ class Zotero {
             item.collections = [...args.collections, ...item.collections];
           }
         }
+        // This code is repeated below for 'items'. It should be refactored.
         let res = [];
         const batchSize = 50;
         /* items.length = 151
@@ -1238,7 +1242,9 @@ class Zotero {
             logger.info(`${itemsflat.slice(start, end).length}`);
           }
         }
-        // TODO: see how to use pruneData
+        // TODO: see how to use pruneData - please look at the function pruneData, see what it does, and then add it here.
+        // this.pruneData(res, args.fullresponse);
+        // TODO: Returning here means that if there is 'items' it will not be processed. Fix.
         return res;
       }
     }
@@ -1253,10 +1259,34 @@ class Zotero {
       }
 
       if (items.length > 0) {
-        const result = await this.http.post('/items', items, {}, this.config);
-        const res = result;
-        this.show(res);
-        return this.pruneData(res, args.fullresponse);
+        let res = [];
+        const batchSize = 50;
+        /* items.length = 151
+        0..49 (end=50)
+        50..99 (end=100)
+        100..149 (end=150)
+        150..150 (end=151)
+        */
+        for (var start = 0; start < items.length; start += batchSize) {
+          const end = start + batchSize <= items.length ? start + batchSize : items.length + 1;
+          // Safety check - should always be true:
+          if (items.slice(start, end).length) {
+            logger.error(`Uploading objects ${start} to ${end}-1`);
+            logger.info(`Uploading objects ${start} to ${end}-1`);
+            logger.info(`${items.slice(start, end).length}`);
+            const result = await this.http.post('/items', JSON.stringify(items.slice(start, end)), {}, this.config);
+            res.push(result);
+          } else {
+            logger.error(`NOT Uploading objects ${start} to ${end}-1`);
+            logger.info(`NOT Uploading objects ${start} to ${end}-1`);
+            logger.info(`${items.slice(start, end).length}`);
+          }
+        }
+        return res;
+        //const result = await this.http.post('/items', items, {}, this.config);
+        //const res = result;
+        //this.show(res);
+        // return this.pruneData(res, args.fullresponse);
       }
       return { type: 'success', message: 'No items to create' };
     }
