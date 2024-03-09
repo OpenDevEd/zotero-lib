@@ -1186,7 +1186,6 @@ class Zotero {
         const items = args.files.map((item) => JSON.parse(fs.readFileSync(item, 'utf-8')));
         const itemsflat = items.flat(1);
 
-
         // TODO: Also add an option 'tags' which adds tags to new items.
         if (args.newcollection) {
           // create a new collection
@@ -1254,18 +1253,18 @@ class Zotero {
       logger.info('Processing args.items');
       //logger.info('args.items = ', typeof(args.items) );
       // TODO
-      // When the object comes in, it has the zotero {"0": ... } structure. Why is this? 
+      // When the object comes in, it has the zotero {"0": ... } structure. Why is this?
       // I've checked in zotero-openalex, and it's passed a plain array.
 
       let items;
       if (typeof args.items === 'object') {
-        items = Object.values(args.items); 
-      };
+        items = Object.values(args.items);
+      }
       if (!Array.isArray(items)) {
         console.log('ERROR: args.items is not an array');
         return;
       }
-      //console.log(JSON.stringify(items.slice(0,2), null, 2));     
+      //console.log(JSON.stringify(items.slice(0,2), null, 2));
       //return;
 
       if (Array.isArray(args.items) && args.items.length > 0) {
