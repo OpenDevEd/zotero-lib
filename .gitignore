@@ -187,3 +187,10 @@ item.json
 before*.json
 keys*.txt
 empty_items.json
+
+# Vagrant
+/.vagrant
+Vagrantfile
+
+# prisma generate
+/prisma/generated
