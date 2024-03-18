@@ -25,7 +25,7 @@ model groups {
 model items {
   id               String             @id
   version          Int
-  data             String
+  data             String // this is a json string
   inconsistent     Boolean?
   group_id         Int
   group            groups             @relation(fields: [group_id], references: [id])
@@ -42,7 +42,7 @@ model itemsArchive {
   row_id           Int                @id @default(autoincrement())
   id               String
   version          Int
-  data             String
+  data             String // this is a json string
   inconsistent     Boolean?           @default(false)
   group_id         Int
   group            groups             @relation(fields: [group_id], references: [id])

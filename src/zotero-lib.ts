@@ -25,7 +25,7 @@ import {
   saveGroup,
   // saveZoteroItems,
   saveZoteroItems,
-} from './local-db/db';
+} from './local-db/db-local';
 import { readConfigFile } from './readConfigFile';
 import { as_array, as_value, catchme, colophon, getCanonicalURL, isomessage, urlify } from './utils';
 import compare from './utils/compareItems';
