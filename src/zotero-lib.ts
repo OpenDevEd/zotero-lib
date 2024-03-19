@@ -967,6 +967,7 @@ class Zotero {
           item.version,
           this.config,
         );
+        item.version = parseInt(addTo['headers']['last-modified-version']);
         output.push({ addtocollection: addTo });
       }
 
@@ -992,6 +993,7 @@ class Zotero {
           item.version,
           this.config,
         );
+        item.version = parseInt(res['headers']['last-modified-version']);
         output.push({ switchNames: res });
       }
 
@@ -1011,6 +1013,7 @@ class Zotero {
             item.version,
             this.config,
           );
+          item.version = parseInt(res['headers']['last-modified-version']);
           logger.info('organise extra: ' + updatedExtra);
           output.push({ organise_extra: res });
           logger.info('We have added a new DOI - add a link as well.');
@@ -1042,6 +1045,8 @@ class Zotero {
           item.version,
           this.config,
         );
+        item.version = parseInt(removefrom['headers']['last-modified-version']);
+
         output.push({ removefromcollection: removefrom });
       }
 
@@ -1058,6 +1063,7 @@ class Zotero {
           item.version,
           this.config,
         );
+        item.version = parseInt(res['headers']['last-modified-version']);
         output.push({ addtags: res });
       }
 
@@ -1069,6 +1075,7 @@ class Zotero {
           item.version,
           this.config,
         );
+        item.version = parseInt(res['headers']['last-modified-version']);
         output.push({ removetags: res });
       }
     }
