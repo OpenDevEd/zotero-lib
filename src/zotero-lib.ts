@@ -289,7 +289,7 @@ class Zotero {
    * Expose 'get'
    * Make a direct query to the API using 'GET uri'.
    */
-  public async __get(args: ZoteroTypes.__getArgs): Promise<any> {
+  public async __get(args: ZoteroTypes.IGetArgs): Promise<any> {
     const out = [];
     for (const uri of args.uri) {
       const res = await this.http.get(uri, { userOrGroupPrefix: !args.root }, this.config);
@@ -308,7 +308,7 @@ class Zotero {
    * Expose 'post'. Make a direct query to the API using
    * 'POST uri [--data data]'.
    */
-  public async __post(args: ZoteroTypes.__postArgs): Promise<any> {
+  public async __post(args: ZoteroTypes.IPostArgs): Promise<any> {
     const res = await this.http.post(args.uri, args.data, {}, this.config);
     this.print(res);
     return res;
@@ -318,7 +318,7 @@ class Zotero {
    * Make a direct query to the API using
    * 'PUT uri [--data data]'.
    */
-  public async __put(args: ZoteroTypes.__putArgs): Promise<any> {
+  public async __put(args: ZoteroTypes.IPutArgs): Promise<any> {
     const res = await this.http.put(args.uri, args.data, this.config);
     this.print(res);
     return res;
@@ -328,7 +328,7 @@ class Zotero {
    * Make a direct query to the API using
    * 'PATCH uri [--data data]'.
    */
-  public async __patch(args: ZoteroTypes.__patchArgs): Promise<any> {
+  public async __patch(args: ZoteroTypes.IPatchArgs): Promise<any> {
     const res = await this.http.patch(args.uri, args.data, args.version, this.config);
     this.print(res);
     return res;
@@ -338,7 +338,7 @@ class Zotero {
    * Make a direct delete query to the API using
    * 'DELETE uri'.
    */
-  public async __delete(args: ZoteroTypes.__deleteArgs): Promise<any> {
+  public async __delete(args: ZoteroTypes.IDeleteArgs): Promise<any> {
     const output = [];
     for (const uri of args.uri) {
       const response = await this.http.get(uri, undefined, this.config);
@@ -352,7 +352,7 @@ class Zotero {
    * Show details about this API key.
    * (API: /keys )
    */
-  public async key(args: ZoteroTypes.keyArgs): Promise<any> {
+  public async key(args: ZoteroTypes.IKeyArgs): Promise<any> {
     if (!args.api_key) {
       args.api_key = this.config.api_key;
     }
@@ -545,7 +545,7 @@ class Zotero {
    * <userOrGroupPrefix>/collections/<collectionKey>/collections Subcollections within a specific collection in the library
    * TODO: --create-child should go into 'collection'.
    */
-  public async collections(args: ZoteroTypes.CollectionsArgs): Promise<any> {
+  public async collections(args: ZoteroTypes.ICollectionsArgs): Promise<any> {
     // TODO: args parsing code
     if (args.json && !args.json.endsWith('.json')) {
       return this.message(0, 'Please provide a valid json file name');
@@ -655,7 +655,7 @@ class Zotero {
    * DONE: Why is does the setup for --add and --remove differ? Should 'add' not be "nargs: '*'"? Remove 'itemkeys'?
    * TODO: Add option "--output file.json" to pipe output to file.
    */
-  async collection(args: ZoteroTypes.CollectionArgs): Promise<any> {
+  async collection(args: ZoteroTypes.ICollectionArgs): Promise<any> {
     // TODO: args parsing code
     if (args.key) {
       args.key = this.extractKeyAndSetGroup(args.key);
@@ -829,7 +829,7 @@ class Zotero {
    * <userOrGroupPrefix>/items/<itemKey> A specific item in the library
    * <userOrGroupPrefix>/items/<itemKey>/children Child items under a specific item
    */
-  public async item(args: ZoteroTypes.ItemArgs): Promise<any> {
+  public async item(args: ZoteroTypes.IItemArgs): Promise<any> {
     const output = [];
 
     // TODO: args parsing code
@@ -1160,7 +1160,7 @@ class Zotero {
    * [single item](https://www.zotero.org/support/dev/web_api/v3/write_requests#_an_item) OR
    * [multiple items](https://www.zotero.org/support/dev/web_api/v3/write_requests#creating_multiple_items)
    */
-  public async create_item(args: ZoteroTypes.create_itemArgs): Promise<any> {
+  public async create_item(args: ZoteroTypes.ICreateItemArgs): Promise<any> {
     //
 
     if (args.template) {
@@ -1185,7 +1185,6 @@ class Zotero {
         //  all items are read into a single structure:
         const items = args.files.map((item) => JSON.parse(fs.readFileSync(item, 'utf-8')));
         const itemsflat = items.flat(1);
-
 
         // TODO: Also add an option 'tags' which adds tags to new items.
         if (args.newcollection) {
@@ -1254,18 +1253,18 @@ class Zotero {
       logger.info('Processing args.items');
       //logger.info('args.items = ', typeof(args.items) );
       // TODO
-      // When the object comes in, it has the zotero {"0": ... } structure. Why is this? 
+      // When the object comes in, it has the zotero {"0": ... } structure. Why is this?
       // I've checked in zotero-openalex, and it's passed a plain array.
 
       let items;
       if (typeof args.items === 'object') {
-        items = Object.values(args.items); 
-      };
+        items = Object.values(args.items);
+      }
       if (!Array.isArray(items)) {
         console.log('ERROR: args.items is not an array');
         return;
       }
-      //console.log(JSON.stringify(items.slice(0,2), null, 2));     
+      //console.log(JSON.stringify(items.slice(0,2), null, 2));
       //return;
 
       if (Array.isArray(args.items) && args.items.length > 0) {
@@ -1328,7 +1327,7 @@ class Zotero {
    *
    * [see api docs](https://www.zotero.org/support/dev/web_api/v3/write_requests#updating_an_existing_item)
    */
-  public async update_item(args: ZoteroTypes.update_itemArgs): Promise<any> {
+  public async update_item(args: ZoteroTypes.IUpdateItemArgs): Promise<any> {
     //TODO: args parsing code
     args.replace = args.replace || false;
 
@@ -1538,7 +1537,7 @@ class Zotero {
    * Utility functions.
    */
 
-  public async enclose_item_in_collection(args: ZoteroTypes.enclose_item_in_collectionArgs): Promise<any> {
+  public async enclose_item_in_collection(args: ZoteroTypes.IEncloseItemInICollectionArgs): Promise<any> {
     const output = [];
     //TODO: args parsing code
     if (!args.key) {
@@ -1688,7 +1687,7 @@ class Zotero {
    * @param subparsers
    * @returns
    */
-  public async get_doi(args: ZoteroTypes.get_doiArgs): Promise<any> {
+  public async get_doi(args: ZoteroTypes.IGetDoiArgs): Promise<any> {
     // We dont know what kind of item this is - gotta get the item to see
 
     args.fullresponse = false;
@@ -1713,7 +1712,7 @@ class Zotero {
     return doi;
   }
 
-  public async manageLocalDB(args: ZoteroTypes.manageLocalDBArgs): Promise<any> {
+  public async manageLocalDB(args: ZoteroTypes.IManageLocalDBArgs): Promise<any> {
     console.log('args: ', { ...args }, this.config);
     if (args.lookup && !args.keys) {
       logger.error('You must provide keys to lookup');
@@ -1795,7 +1794,7 @@ class Zotero {
     // }
   }
 
-  public async deduplicate_func(args: ZoteroTypes.deduplicate_func_Args) {
+  public async deduplicate_func(args: ZoteroTypes.IDeduplicateFuncArgs) {
     const { PrismaClient } = require('@prisma/client');
     //@ts-ignore
     const prisma = new PrismaClient();
@@ -1925,7 +1924,7 @@ class Zotero {
     }
   }
 
-  public async Move_deduplicate_to_collection(args: ZoteroTypes.Move_deduplicate_to_collection_Args) {
+  public async Move_deduplicate_to_collection(args: ZoteroTypes.IMoveDeduplicateToICollectionArgs) {
     // read deduplicate json file
 
     if (!fs.existsSync(args.file)) {
@@ -2077,7 +2076,7 @@ class Zotero {
     }
   }
 
-  public async merge_func(args: ZoteroTypes.merge_func_Args) {
+  public async merge_func(args: ZoteroTypes.IMergeFuncArgs) {
     if (!fs.existsSync(args.data)) {
       console.log('file not found');
       process.exit(1);
@@ -2118,7 +2117,7 @@ class Zotero {
     // check if file exists using fs
   }
 
-  public async resolvefunc(args: ZoteroTypes.resolvefunc_Args) {
+  public async resolvefunc(args: ZoteroTypes.IResolvefuncArgs) {
     const { PrismaClient } = require('@prisma/client');
     const prisma = new PrismaClient();
 
@@ -2296,7 +2295,7 @@ class Zotero {
   /**
    * Update the DOI of the item provided.
    */
-  public async update_doi(args: ZoteroTypes.update_doiArgs): Promise<any> {
+  public async update_doi(args: ZoteroTypes.IUpdateDoiArgs): Promise<any> {
     //TODO: args parsing code
     args.fullresponse = false;
     //TODO: args parsing code
@@ -2369,7 +2368,7 @@ class Zotero {
   }
 
   // TODO: Implement
-  public async attach_link(args: ZoteroTypes.attach_linkArgs): Promise<any> {
+  public async attach_link(args: ZoteroTypes.IAttachLinkArgs): Promise<any> {
     // TODO: There's a problem here... the following just offer docorations. We need to have inputs too...
 
     // TODO: Make this consistent
@@ -2455,7 +2454,7 @@ class Zotero {
     return this.message(0, 'exist status', dataout);
   }
 
-  public async field(args: ZoteroTypes.fieldArgs): Promise<any> {
+  public async field(args: ZoteroTypes.IFieldArgs): Promise<any> {
     //TODO: args parsing code
     if (!args.field) {
       logger.info('args.field is required.');
@@ -2507,7 +2506,7 @@ class Zotero {
     return this.message(0, 'exit status', data);
   }
 
-  public async update_url(args: ZoteroTypes.update_urlArgs): Promise<any> {
+  public async update_url(args: ZoteroTypes.IUpdateUrlArgs): Promise<any> {
     //TODO: args parsing code
     args.json = {
       url: args.value,
@@ -2515,7 +2514,7 @@ class Zotero {
     return this.update_item(args);
   }
 
-  public async KerkoCiteItemAlsoKnownAs(args: ZoteroTypes.KerkoCiteItemAlsoKnownAs_Args) {
+  public async KerkoCiteItemAlsoKnownAs(args: ZoteroTypes.IKerkoCiteItemAlsoKnownAsArgs) {
     //TODO: args parsing code
     args.fullresponse = false;
     let thisversion = '';
@@ -2584,7 +2583,7 @@ class Zotero {
   }
 
   // TODO: Implement
-  public async getbib(args: ZoteroTypes.getbib_args) {
+  public async getbib(args: ZoteroTypes.IGetBibArgs) {
     let output;
     try {
       output = await this.getZoteroDataX(args);
@@ -2601,7 +2600,7 @@ class Zotero {
   }
 
   /* START FUcntionS FOR GETBIB */
-  async getZoteroDataX(args: ZoteroTypes.getZoteroDataX_args) {
+  async getZoteroDataX(args: ZoteroTypes.IGetZoteroDataXArgs) {
     //logger.info("Hello")
     let d = new Date();
     let n = d.getTime();
@@ -2713,7 +2712,7 @@ class Zotero {
     }
   }
 
-  async makeZoteroQuery(arg: ZoteroTypes.makeZoteroQuery_args) {
+  async makeZoteroQuery(arg: ZoteroTypes.IMakeZoteroQueryArgs) {
     var response = [];
     logger.info('hello');
     // The limit is 25 results at a time - so need to check that arg.keys is not too long.
@@ -2766,7 +2765,7 @@ class Zotero {
     return { status: 0, message: 'Success', data: response };
   }
 
-  async makeMultiQuery(args: ZoteroTypes.makeMultiQuery_args) {
+  async makeMultiQuery(args: ZoteroTypes.IMakeMultiQueryArgs) {
     // logger.info("Multi query 1")
     let mykeys;
     try {
@@ -2819,7 +2818,7 @@ class Zotero {
   /* END Fucntions FOR GETBIB */
 
   // TODO: Implement
-  public async attach_note(args: ZoteroTypes.attach_noteArgs) {
+  public async attach_note(args: ZoteroTypes.AttachNoteArgs) {
     //TODO: args parsing code
     args.notetext = as_value(args.notetext);
     args.key = this.extractKeyAndSetGroup(as_value(args.key));
@@ -2856,7 +2855,7 @@ class Zotero {
     const data = {};
     return this.message(0, 'exit status', data);
   }
-  public async findEmptyItems(args: ZoteroTypes.findEmptyItemsArgs) {
+  public async findEmptyItems(args: ZoteroTypes.IFindEmptyItemsArgs) {
     let path = args.output ? args.output : './empty_items.json';
     let emptyItems: any[] = await FindEmptyItemsFromDatabase(args['group-id']);
     if (args.delete) {
