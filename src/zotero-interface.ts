@@ -57,6 +57,9 @@ namespace ZoteroTypes {
     create_child?: string[];
     func?: string;
     terse?: boolean;
+    recursive?: boolean;
+    json?: string;
+    isSub?: boolean;
   }
 
   export interface CollectionArgs extends zoterocongif {
@@ -106,6 +109,8 @@ namespace ZoteroTypes {
     item?: any;
     items?: any;
     fullresponse?: boolean;
+    newcollection?: string[];
+    collections?: string[];
   }
 
   export interface update_itemArgs extends zoterocongif {
