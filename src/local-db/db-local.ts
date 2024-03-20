@@ -107,21 +107,20 @@ async function updateItems(prisma) {
   // });
   // update multiple rows of items in parallel
   if (UpdatedItems.length > 0) {
-    await Promise.all(
-      UpdatedItems.map(async (item) => {
-        await prisma.items.update({
-          where: {
-            id: item.id,
-          },
-          data: {
-            version: item.version,
-            data: item.data,
-            updatedAt: new Date(),
-            isDeleted: item.isDeleted,
-          },
-        });
-      }),
-    );
+    for (const item of UpdatedItems) {
+      await prisma.items.update({
+        where: {
+          id: item.id,
+        },
+        data: {
+          version: item.version,
+          data: item.data,
+          updatedAt: new Date(),
+          isDeleted: item.isDeleted,
+        },
+      });
+    }
+
     console.log('finished updating items');
     UpdatedItems = [];
   }
@@ -133,10 +132,19 @@ let newAlsoKnownAs = [];
 async function insertAlsoKnownAs(prisma) {
   // insert multiple rows of items
   if (newAlsoKnownAs.length > 0) {
-    await prisma.alsoKnownAs.createMany({
-      data: newAlsoKnownAs,
-      skipDuplicates: true,
-    });
+    let creates = [];
+    for (const item of newAlsoKnownAs) {
+      creates.push(
+        prisma.alsoKnownAs.create({
+          data: item,
+        }),
+      );
+    }
+    await prisma.$transaction(creates);
+    // await prisma.alsoKnownAs.createMany({
+    //   data: newAlsoKnownAs,
+    //   skipDuplicates: true,
+    // });
     newAlsoKnownAs = [];
   }
 }
@@ -147,7 +155,7 @@ async function updateAlsoKnownAs(prisma) {
   // insert multiple rows of items
   console.log('updating alsoKnownAs...');
   if (updatedAlsoKnownAs.length > 0) {
-    updatedAlsoKnownAs.map(async (item) => {
+    for (const item of updatedAlsoKnownAs) {
       await prisma.alsoKnownAs.update({
         where: {
           id: item.id,
@@ -160,7 +168,7 @@ async function updateAlsoKnownAs(prisma) {
           isDeleted: item.isDeleted,
         },
       });
-    });
+    }
 
     console.log('finished updating alsoKnownAs');
     updatedAlsoKnownAs = [];
