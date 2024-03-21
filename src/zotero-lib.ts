@@ -50,6 +50,9 @@ const LinkHeader = require('http-link-header');
 
 const ajv = new Ajv();
 
+/**
+ * Represents the Zotero class.
+ */
 class Zotero {
   // The following config keys are expected/allowed,
   // with both "-" and "_". The corresponding variables have _
@@ -72,6 +75,10 @@ class Zotero {
 
   http: any;
 
+  /**
+   * Constructs a new instance of the ZoteroLib class.
+   * @param args - The configuration arguments.
+   */
   constructor(args = {}) {
     // Read config
     this.config = this.configure(args, true);
@@ -85,6 +92,12 @@ class Zotero {
   }
 
   //TODO: config
+  /**
+   * Configures the Zotero library with the provided arguments.
+   * @param args - The arguments to configure the library.
+   * @param shouldReadConfigFile - Optional parameter to indicate whether to read the config file. Default is false.
+   * @returns The configured result object.
+   */
   public configure(args, shouldReadConfigFile = false) {
     // pick up config: The function reads args and populates config
 
@@ -199,16 +212,33 @@ class Zotero {
     return config;
   }
 
+  /**
+   * Retrieves the current configuration settings.
+   * @returns The configuration object.
+   */
   public showConfig() {
     logger.info('showConfig=' + JSON.stringify(this.config, null, 2));
     //@ts-ignore
 
     return this.config;
   }
+  /**
+   * Changes the configuration of the Zotero library.
+   * @param args - The configuration arguments.
+   * @param args.group_id - The ID of the group to set.
+   */
   public changeConfig(args) {
     args.group_id ? (this.config.group_id = args.group_id) : null;
   }
 
+  /**
+   * Creates a message object with the specified status, message, and data.
+   *
+   * @param stat - The status code of the message.
+   * @param msg - The message string.
+   * @param data - The additional data associated with the message.
+   * @returns The message object.
+   */
   private message(stat = 0, msg = 'None', data = null) {
     return {
       status: stat,
@@ -229,6 +259,13 @@ class Zotero {
   // library starts.
   //TODO: this was made public because of cli refactoring
   // see if we can make it private again
+  /**
+   * Prints the provided arguments to the console or appends them to the output string.
+   * If the 'out' configuration option is not set, the arguments are logged to the console using the logger.
+   * If the 'out' configuration option is set, the formatted arguments are appended to the output string.
+   *
+   * @param args - The arguments to be printed or appended.
+   */
   public print(...args: any[]) {
     if (!this.config.out) {
       logger.info(args);
@@ -244,6 +281,13 @@ class Zotero {
   }
 
   // Function to get more than 100 records, i.e. chunked retrieval.
+  /**
+   * Retrieves all data from the specified URI using HTTP GET requests.
+   *
+   * @param uri - The URI to retrieve data from.
+   * @param params - Optional parameters to include in the request.
+   * @returns A Promise that resolves to the retrieved data.
+   */
   async all(uri, params = {}) {
     let chunk = await this.http
       .get(
@@ -288,6 +332,8 @@ class Zotero {
   /**
    * Expose 'get'
    * Make a direct query to the API using 'GET uri'.
+   * @param args - {uri: string[], show: boolean, root: boolean}
+   * @returns The response from the API.
    */
   public async __get(args: ZoteroTypes.IGetArgs): Promise<any> {
     const out = [];
@@ -307,6 +353,8 @@ class Zotero {
   /**
    * Expose 'post'. Make a direct query to the API using
    * 'POST uri [--data data]'.
+   * @param args - {uri: string, data: string}
+   * @returns The response from the API.
    */
   public async __post(args: ZoteroTypes.IPostArgs): Promise<any> {
     const res = await this.http.post(args.uri, args.data, {}, this.config);
@@ -317,6 +365,8 @@ class Zotero {
   /**
    * Make a direct query to the API using
    * 'PUT uri [--data data]'.
+   * @param args - {uri: string, data: string}
+   * @returns The response from the API.
    */
   public async __put(args: ZoteroTypes.IPutArgs): Promise<any> {
     const res = await this.http.put(args.uri, args.data, this.config);
@@ -327,6 +377,8 @@ class Zotero {
   /**
    * Make a direct query to the API using
    * 'PATCH uri [--data data]'.
+   * @param args - {uri: string, data: string, version: string}
+   * @returns The response from the API.
    */
   public async __patch(args: ZoteroTypes.IPatchArgs): Promise<any> {
     const res = await this.http.patch(args.uri, args.data, args.version, this.config);
@@ -337,6 +389,8 @@ class Zotero {
   /**
    * Make a direct delete query to the API using
    * 'DELETE uri'.
+   * @param args - {uri: string[]}
+   * @returns The response from the API.
    */
   public async __delete(args: ZoteroTypes.IDeleteArgs): Promise<any> {
     const output = [];
@@ -351,6 +405,8 @@ class Zotero {
   /**
    * Show details about this API key.
    * (API: /keys )
+   * @param args - {api_key: string, groups: boolean, terse: boolean}
+   * @returns The response from the API.
    */
   public async key(args: ZoteroTypes.IKeyArgs): Promise<any> {
     if (!args.api_key) {
@@ -654,6 +710,12 @@ class Zotero {
    * TODO: --create-child should go into 'collection'.
    * DONE: Why is does the setup for --add and --remove differ? Should 'add' not be "nargs: '*'"? Remove 'itemkeys'?
    * TODO: Add option "--output file.json" to pipe output to file.
+   * @param args - The arguments for retrieving a collection.
+   * @param {string} args.key - The key of the collection to retrieve.
+   * @param {string[]} args.add - The items to add to the collection.
+   * @param {string[]} args.remove - The items to remove from the collection.
+   * @param {boolean} args.tags - Indicates whether to retrieve the tags of the collection.
+   * @returns The retrieved collection.
    */
   async collection(args: ZoteroTypes.ICollectionArgs): Promise<any> {
     // TODO: args parsing code
@@ -718,6 +780,18 @@ class Zotero {
    * https://www.zotero.org/support/dev/web_api/v3/basics
    * <userOrGroupPrefix>/items All items in the library, excluding trashed items
    * <userOrGroupPrefix>/items/top Top-level items in the library, excluding trashed items
+   *
+   * @param {object} args - The arguments for retrieving items.
+   * @param {string | object} args.filter - The filter to apply when retrieving items. Can be a string or an object.
+   * @param {string} args.json - The name of the JSON file to save the retrieved items.
+   * @param {boolean} args.count - Indicates whether to only retrieve the count of items.
+   * @param {boolean} args.validate - Indicates whether to validate the retrieved items.
+   * @param {string} args.collection - The collection to retrieve items from.
+   * @param {boolean} args.top - Indicates whether to retrieve the top items.
+   * @param {number} args.limit - The maximum number of items to retrieve.
+   * @param {boolean} args.show - Indicates whether to show the retrieved items.
+   * @param {boolean} args.validate_with - Indicates whether to validate the retrieved items with a specific method.
+   * @returns The retrieved items.
    */
   async items(args) {
     //
@@ -828,6 +902,17 @@ class Zotero {
    * https://www.zotero.org/support/dev/web_api/v3/basics
    * <userOrGroupPrefix>/items/<itemKey> A specific item in the library
    * <userOrGroupPrefix>/items/<itemKey>/children Child items under a specific item
+   * @param args - The arguments for retrieving an item.
+   * @param {string} args.key - The key of the item to retrieve.
+   * @param {string} args.filter - The filter to apply when retrieving the item.
+   * @param {boolean} args.savefiles - Indicates whether to save the files of the item.
+   * @param {boolean} args.crossref - Indicates whether to format the item as a CrossRef XML.
+   * @param {string[]} args.addfiles - The files to add to the item.
+   * @param {string[]} args.addtocollection - The collections to add the item to.
+   * @param {boolean} args.switchNames - Indicates whether to switch the names of the creators of the item.
+   * @param {boolean} args.verbose - Indicates whether to show verbose output.
+   * @param {boolean} args.debug - Indicates whether to show debug output.
+   * @returns The retrieved item.
    */
   public async item(args: ZoteroTypes.IItemArgs): Promise<any> {
     const output = [];
@@ -2929,6 +3014,10 @@ const fetchGroupItems = async (group, itemIds, args) => {
 };
 
 // Main Function
+/**
+ * Syncs the local database with the online library.
+ * @param args - The arguments for syncing.
+ */
 const syncToLocalDB = async (args: any) => {
   const syncStart = Date.now();
   console.log('syncing local db with online library');
