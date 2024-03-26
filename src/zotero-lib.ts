@@ -1265,7 +1265,7 @@ class Zotero {
       // If there are items to upload, upload them in batches of 50.
       let res = [];
       const batchSize = 50;
-      for (var start = 0; start < ItemsForUpload.length; start += batchSize) {
+      for (let start = 0; start < ItemsForUpload.length; start += batchSize) {
         const end = start + batchSize <= ItemsForUpload.length ? start + batchSize : ItemsForUpload.length + 1;
         // Safety check - should always be true:
         if (ItemsForUpload.slice(start, end).length) {
