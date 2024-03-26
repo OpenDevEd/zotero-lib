@@ -1184,6 +1184,7 @@ class Zotero {
       // logger.info("/"+result+"/")
       return result;
     }
+    let FileItems = [];
 
     if (Array.isArray(args.files)) {
       if (!args.files.length)
@@ -1191,7 +1192,7 @@ class Zotero {
       else {
         //  all items are read into a single structure:
         const items = args.files.map((item) => JSON.parse(fs.readFileSync(item, 'utf-8')));
-        const itemsflat = items.flat(1);
+        FileItems = items.flat(1);
 
         // TODO: Also add an option 'tags' which adds tags to new items.
         if (args.newcollection) {
@@ -1220,41 +1221,15 @@ class Zotero {
           });
         }
         // add the collections key to the items collections
-        for (const item of itemsflat) {
+        for (const item of FileItems) {
           if (args.collections) {
             item.collections = [...args.collections, ...item.collections];
           }
         }
-        // This code is repeated below for 'items'. It should be refactored.
-        let res = [];
-        const batchSize = 50;
-        /* items.length = 151
-        0..49 (end=50)
-        50..99 (end=100)
-        100..149 (end=150)
-        150..150 (end=151)
-        */
-        for (var start = 0; start < itemsflat.length; start += batchSize) {
-          const end = start + batchSize <= itemsflat.length ? start + batchSize : itemsflat.length + 1;
-          // Safety check - should always be true:
-          if (itemsflat.slice(start, end).length) {
-            logger.error(`Uploading objects ${start} to ${end}-1`);
-            logger.info(`Uploading objects ${start} to ${end}-1`);
-            logger.info(`${itemsflat.slice(start, end).length}`);
-            const result = await this.http.post('/items', JSON.stringify(itemsflat.slice(start, end)), {}, this.config);
-            res.push(result);
-          } else {
-            logger.error(`NOT Uploading objects ${start} to ${end}-1`);
-            logger.info(`NOT Uploading objects ${start} to ${end}-1`);
-            logger.info(`${itemsflat.slice(start, end).length}`);
-          }
-        }
-        // TODO: see how to use pruneData - please look at the function pruneData, see what it does, and then add it here.
-        // this.pruneData(res, args.fullresponse);
-        // TODO: Returning here means that if there is 'items' it will not be processed. Fix.
-        return res;
       }
     }
+
+    let ObjectItems = [];
 
     if ('items' in args) {
       logger.info('Processing args.items');
@@ -1263,11 +1238,10 @@ class Zotero {
       // When the object comes in, it has the zotero {"0": ... } structure. Why is this?
       // I've checked in zotero-openalex, and it's passed a plain array.
 
-      let items;
       if (typeof args.items === 'object') {
-        items = Object.values(args.items);
+        ObjectItems = Object.values(args.items);
       }
-      if (!Array.isArray(items)) {
+      if (!Array.isArray(ObjectItems)) {
         console.log('ERROR: args.items is not an array');
         return;
       }
@@ -1275,53 +1249,59 @@ class Zotero {
       //return;
 
       if (Array.isArray(args.items) && args.items.length > 0) {
-        items = items.map((item) => (typeof item === 'string' ? JSON.parse(item) : item));
+        ObjectItems = ObjectItems.map((item) => (typeof item === 'string' ? JSON.parse(item) : item));
         // items = JSON.stringify(items);
       }
-
-      if (items.length > 0) {
-        let res = [];
-        const batchSize = 50;
-        /* items.length = 151
-        0..49 (end=50)
-        50..99 (end=100)
-        100..149 (end=150)
-        150..150 (end=151)
-        */
-        for (var start = 0; start < items.length; start += batchSize) {
-          const end = start + batchSize <= items.length ? start + batchSize : items.length + 1;
-          // Safety check - should always be true:
-          if (items.slice(start, end).length <= batchSize) {
-            logger.error(`Uploading objects ${start} to ${end}-1`);
-            logger.info(`Uploading objects ${start} to ${end}-1`);
-            logger.info(`${items.slice(start, end).length}`);
-            const result = await this.http.post('/items', JSON.stringify(items.slice(start, end)), {}, this.config);
-            res.push(result);
-          } else {
-            logger.error(`NOT Uploading objects ${start} to ${end}-1`);
-            logger.info(`NOT Uploading objects ${start} to ${end}-1`);
-            logger.info(`${items.slice(start, end).length}`);
-          }
-        }
-        return res;
-        //const result = await this.http.post('/items', items, {}, this.config);
-        //const res = result;
-        //this.show(res);
-        // return this.pruneData(res, args.fullresponse);
-      }
-      return { type: 'success', message: 'No items to create' };
     }
 
-    if (args.item) {
+    let ItemsForUpload = FileItems.concat(ObjectItems);
+    if (args.fullresponse && args.item) {
+      // If we are uploading a single item, and we want the full response, we need to add it to the array.
+      let SigleItem = typeof args.item === 'string' ? JSON.parse(args.item) : args.item;
+      ItemsForUpload = ItemsForUpload.concat(JSON.stringify([SigleItem]));
+    }
+
+    if (ItemsForUpload.length > 0) {
+      // If there are items to upload, upload them in batches of 50.
+      let res = [];
+      const batchSize = 50;
+      for (let start = 0; start < ItemsForUpload.length; start += batchSize) {
+        const end = start + batchSize <= ItemsForUpload.length ? start + batchSize : ItemsForUpload.length + 1;
+        // Safety check - should always be true:
+        if (ItemsForUpload.slice(start, end).length) {
+          logger.error(`Uploading objects ${start} to ${end}-1`);
+          logger.info(`Uploading objects ${start} to ${end}-1`);
+          logger.info(`${ItemsForUpload.slice(start, end).length}`);
+          const result = await this.http.post(
+            '/items',
+            JSON.stringify(ItemsForUpload.slice(start, end)),
+            {},
+            this.config,
+          );
+          res.push(result);
+        } else {
+          logger.error(`NOT Uploading objects ${start} to ${end}-1`);
+          logger.info(`NOT Uploading objects ${start} to ${end}-1`);
+          logger.info(`${ItemsForUpload.slice(start, end).length}`);
+        }
+      }
+      return res;
+    } else if ((args.fullresponse && args.item) || args.items.length || args.files) {
+      // If there are no items to upload, and we want a full response, Stop.
+      return { type: 'success', message: 'No items to create' };
+    }
+    if (args.item && !args.fullresponse) {
+      // If we are uploading a single item, and we don't want the full response, upload it.
       let item = typeof args.item === 'string' ? JSON.parse(args.item) : args.item;
       let items = JSON.stringify([item]);
 
       const result = await this.http.post('/items', items, {}, this.config);
       this.show(result);
-      return this.pruneData(result, args.fullresponse);
+      return result.successful['0'].data;
     }
   }
 
+  // This function is not used now. It was used to create a new item.
   public pruneData(res, fullresponse = false) {
     if (fullresponse) return res;
     return res.successful['0'].data;
