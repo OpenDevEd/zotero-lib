@@ -247,6 +247,10 @@ class Zotero {
     };
   }
 
+  /**
+   * Write the output to a file passed to the config.
+   * @param output - The output to write to the file.
+   */
   private finalActions(output) {
     // logger.info("args="+JSON.stringify(args))
     // TODO: Look at the type of output: if string, then print, if object, then stringify
@@ -457,6 +461,12 @@ class Zotero {
     return { key: res, groups: res2 };
   }
 
+  /**
+   * Retrieves the IDs from the provided arguments.
+   * @param args - The arguments object.
+   * @param args.key - The key to extract the IDs from.
+   * @returns An object containing the extracted IDs. - {key: string, type: string, group: string}
+   */
   public getIds(args) {
     if (!args?.key) console.log('please provide a newlocation');
     const key = args.key;
@@ -493,6 +503,15 @@ class Zotero {
     this.print(JSON.stringify(v, null, this.config.indent));
   }
 
+  /**
+   * Extracts the specified group, items vs. collections, or key from a Zotero key.
+   * @param key - The Zotero key to extract from. {zotero://select/groups/(\d+)/(items|collections)/([A-Z01-9]+)}
+   * @param n - The value indicating which part of the key to extract.
+   *            - n=1 -> group
+   *            - n=2 -> items vs. collections
+   *            - n=3 -> key
+   * @returns The extracted group, items vs. collections, or key.
+   */
   private extractKeyGroupVariable(key, n) {
     // n=1 -> group
     // n=2 -> items vs. collections
@@ -592,6 +611,17 @@ class Zotero {
    * Retrieve a list of collections or create a collection.
    * (API: /collections, /collections/top, /collections/<collectionKey>/collections).
    * Use 'collections --help' for details.
+   *
+   * @param args - The arguments for retrieving collections.
+   * @param {string} args.key - The key of the collection to retrieve.
+   * key format: zotero://select/groups/(\d+)/(items|collections)/([A-Z01-9]+)
+   * @param {string[]} args.create_child - The names of the collections to create.
+   * @param {boolean} args.recursive - Indicates whether to retrieve the collections recursively.
+   * @param {boolean} args.top - Indicates whether to retrieve the top collections.
+   * @param {string} args.json - The name of the JSON file to save the retrieved collections.
+   * @param {boolean} args.terse - Indicates whether to display the collections in a terse format.
+   * @param {boolean} args.isSub - Indicates whether the collections are subcollections.
+   * @returns The retrieved collections.
    *
    * https://www.zotero.org/support/dev/web_api/v3/basics
    * Collections
@@ -1212,6 +1242,10 @@ class Zotero {
    * Retrieve/save file attachments for the item specified with --key KEY
    * (API: /items/KEY/file).
    * Also see 'item', which has options for adding/saving file attachments.
+   * @param args - The arguments for retrieving/saving file attachments.
+   * @param {string} args.key - The key of the item to retrieve the file attachment from.
+   * @param {string} args.save - The name of the file to save the file attachment to.
+   * @returns The retrieved/saved file attachment.
    */
   async attachment(args) {
     if (args.key) {
@@ -1251,6 +1285,14 @@ class Zotero {
    * see api docs for creating
    * [single item](https://www.zotero.org/support/dev/web_api/v3/write_requests#_an_item) OR
    * [multiple items](https://www.zotero.org/support/dev/web_api/v3/write_requests#creating_multiple_items)
+   * @param args - The arguments for creating an item.
+   * @param {string} args.template - The template of the item to create.
+   * @param {string[]} args.files - The files to create items from.
+   * @param {string} args.newcollection - The name of the new collection to create.
+   * @param {string[]} args.collections - The collections to add the items to.
+   * @param {object} args.items - The items to create.
+   * @param {boolean} args.fullresponse - Indicates whether to return the full response.
+   * @returns The created item.
    */
   public async create_item(args: ZoteroTypes.ICreateItemArgs): Promise<any> {
     //
@@ -1416,6 +1458,14 @@ class Zotero {
    * Update/replace an item with given key (--key KEY),
    * either update the item (API: patch /items/KEY)
    * or replace (using --replace, API: put /items/KEY).
+   * 
+   * @param args - The arguments for updating an item.
+   * @param {string} args.key - The key of the item to update.
+   * @param {string | object} args.json - The JSON data to update the item with.
+   * @param {string} args.file - The file to update the item with.
+   * @param {boolean} args.replace - Indicates whether to replace the item.
+   * @param {string} args.version - The version of the item to update.
+   * @returns The updated item.
    *
    * [see api docs](https://www.zotero.org/support/dev/web_api/v3/write_requests#updating_an_existing_item)
    */
@@ -1629,6 +1679,15 @@ class Zotero {
    * Utility functions.
    */
 
+  /**
+   * Encloses an item in a collection.
+   * @param args - The arguments for enclosing the item.
+   * @param {string} args.key - The key of the item to enclose.
+   * @param {string} args.collection - The collection to enclose the item in.
+   * @param {string} args.title - The title of the collection to enclose the item in.
+   * @param {string} args.group_id - The group ID to enclose the item in.
+   * @returns A promise that resolves with the result of the operation.
+   */
   public async enclose_item_in_collection(args: ZoteroTypes.IEncloseItemInICollectionArgs): Promise<any> {
     const output = [];
     //TODO: args parsing code
@@ -2947,6 +3006,14 @@ class Zotero {
     const data = {};
     return this.message(0, 'exit status', data);
   }
+  /**
+   * Finds and processes empty items based on the provided arguments.
+   * @param args - The arguments for finding empty items.
+   * @param args.group-id - The group ID to search for empty items.
+   * @param args.output - The output file path for the empty items.
+   * @param args.delete - Whether to delete the empty items.
+   * @returns A Promise that resolves when the empty items are processed.
+   */
   public async findEmptyItems(args: ZoteroTypes.IFindEmptyItemsArgs) {
     let path = args.output ? args.output : './empty_items.json';
     let emptyItems: any[] = await FindEmptyItemsFromDatabase(args['group-id']);

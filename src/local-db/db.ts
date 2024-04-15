@@ -1,4 +1,7 @@
 // import path from 'path';
+/**
+ * Get all groups from the database
+ */
 export async function getAllGroups() {
   const { PrismaClient } = require('@prisma/client');
   const prisma = new PrismaClient();
@@ -8,6 +11,9 @@ export async function getAllGroups() {
   return groups;
 }
 
+/**
+ * Save groups to the database
+ */
 export async function saveGroup(groupData) {
   const { PrismaClient } = require('@prisma/client');
   const prisma = new PrismaClient();
