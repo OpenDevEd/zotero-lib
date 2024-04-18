@@ -474,6 +474,10 @@ subParsersMap.set('field', function (subparsers, subCmdName) {
     nargs: 1,
     help: 'You have to supply the version of the item via the --version argument or else the latest version will be used.',
   });
+  argparser.add_argument('--extra', {
+    action: 'store_true',
+    help: 'The field is in the extra field instead of the zotero official fields.',
+  });
 });
 // TODO: Fix help text and text fundtion.
 subParsersMap.set('extra-append', function (subparsers, subCmdName) {

@@ -170,6 +170,7 @@ namespace ZoteroTypes {
   export interface IFieldArgs extends ZoteroTypes.IItemArgs {
     field: string;
     value?: string;
+    extra?: boolean;
   }
 
   export interface IUpdateUrlArgs extends ZoteroTypes.IUpdateItemArgs {
