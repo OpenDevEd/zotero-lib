@@ -2672,6 +2672,12 @@ class Zotero {
     return this.message(0, 'exit status', data);
   }
 
+  /**
+   * Updates the URL of an item in Zotero.
+   * @param args - The arguments for updating the URL.
+   * @param args.value - The new URL to set for the item.
+   * @returns A promise that resolves with the updated item.
+   */
   public async update_url(args: ZoteroTypes.IUpdateUrlArgs): Promise<any> {
     //TODO: args parsing code
     args.json = {
