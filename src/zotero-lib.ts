@@ -1458,7 +1458,7 @@ class Zotero {
    * Update/replace an item with given key (--key KEY),
    * either update the item (API: patch /items/KEY)
    * or replace (using --replace, API: put /items/KEY).
-   * 
+   *
    * @param args - The arguments for updating an item.
    * @param {string} args.key - The key of the item to update.
    * @param {string | object} args.json - The JSON data to update the item with.
@@ -2445,6 +2445,12 @@ class Zotero {
 
   /**
    * Update the DOI of the item provided.
+   * @param args - The arguments for updating the DOI of the item.
+   * @param {string} args.key - The key of the item to update the DOI.
+   * @param {string} args.doi - The DOI to update the item with.
+   * @param {string} args.zenodoRecordID - The Zenodo record ID to update the item with.
+   * @param {boolean} args.verbose - Whether to show verbose output.
+   * @returns A promise that resolves with the result of the operation.
    */
   public async update_doi(args: ZoteroTypes.IUpdateDoiArgs): Promise<any> {
     //TODO: args parsing code
@@ -2605,6 +2611,15 @@ class Zotero {
     return this.message(0, 'exist status', dataout);
   }
 
+  /**
+   * Retrieves/Set the value of a specific field from a Zotero item.
+   * @param args - The arguments for retrieving the field value.
+   * @param args.key - The key of the item to retrieve the field from.
+   * @param args.field - The field to retrieve the value of.
+   * @param args.version - The version of the item to retrieve the field from.
+   * @param args.value - The value to set the field to.
+   * @returns A Promise that resolves to the value of the field.
+   */
   public async field(args: ZoteroTypes.IFieldArgs): Promise<any> {
     //TODO: args parsing code
     if (!args.field) {
@@ -2665,6 +2680,14 @@ class Zotero {
     return this.update_item(args);
   }
 
+  /**
+   * Searches for an item in Zotero library and updates its ItemAlsoKnownAs field.
+   * @param args - The arguments for searching and updating the item.
+   * @param args.key - The key of the item to search for.
+   * @param args.add - The value to add to the ItemAlsoKnownAs field.
+   * @param args.verbose - Whether to show verbose output.
+   * @returns A Promise that resolves to an object containing the update status and the updated item.
+   */
   public async KerkoCiteItemAlsoKnownAs(args: ZoteroTypes.IKerkoCiteItemAlsoKnownAsArgs) {
     //TODO: args parsing code
     args.fullresponse = false;
