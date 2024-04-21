@@ -173,6 +173,7 @@ namespace ZoteroTypes {
   export interface fieldArgs extends ZoteroTypes.ItemArgs {
     field: string;
     value?: string;
+    extra?: boolean;
   }
 
   export interface update_urlArgs extends ZoteroTypes.update_itemArgs {
