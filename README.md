@@ -145,6 +145,31 @@ zotero-lib items --filter '{"limit": 10}'
 
 ### field
 
+This sub-command can be used to fetch field information
+
+```bash
+zoetro-lib field --key key-here --field field-name
+```
+
+Modify field information
+
+```bash
+zoetro-lib field --key key-here --field field-name --value new-value
+```
+
+Or with `--extra` to fetch extra information
+
+```bash
+zoetro-lib field --extra --key key-here --field field-name
+```
+
+And modify extra information
+
+```bash
+zoetro-lib field --extra --key key-here --field field-name --value new-value
+```
+
+
 ### update-url
 
 ### get-doi
