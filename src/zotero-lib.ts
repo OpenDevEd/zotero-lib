@@ -2470,9 +2470,35 @@ class Zotero {
       item = await this.item(args);
       thisversion = item.version;
     }
+    let extra = '';
+    let extraarr = [];
+    if (args.extra) {
+      extra = item.extra;
+      extraarr = extra.split('\n');
+    }
+    const getExtra = (field) => {
+      let i = -1;
+      for (const value of extraarr) {
+        i++;
+        if (value.match(new RegExp('^' + field + '\\:'))) {
+          return i;
+        }
+      }
+      return -1;
+    };
     const myobj = {};
     if (args.value) {
-      myobj[args.field] = as_value(args.value);
+      if (args.extra) {
+        const fieldIndex = getExtra(args.field);
+        if (fieldIndex == -1) {
+          extraarr.push(args.field + ': ' + as_value(args.value));
+        } else {
+          extraarr[fieldIndex] = args.field + ': ' + as_value(args.value);
+        }
+        myobj['extra'] = extraarr.join('\n');
+      } else {
+        myobj[args.field] = as_value(args.value);
+      }
       const updateargs = {
         key: args.key,
         version: thisversion,
@@ -2491,6 +2517,12 @@ class Zotero {
         return this.message(1, 'update failed');
       }
     } else {
+      if (args.extra) {
+        const fieldIndex = getExtra(args.field);
+
+        return extraarr[fieldIndex].split(':').slice(1).join(':').trim();
+      }
+
       return item[args.field];
       //logger.info(item[args.field]);
       //process.exit(1);

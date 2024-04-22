@@ -470,6 +470,10 @@ subParsersMap.set('field', function (subparsers, subCmdName) {
     action: 'store',
     help: 'The value for the update (if not provided, the value of the field is shown).',
   });
+  argparser.add_argument('--extra', {
+    action: 'store_true',
+    help: 'The field is in the extra field instead of the zotero official fields.',
+  });
   argparser.add_argument('--version', {
     nargs: 1,
     help: 'You have to supply the version of the item via the --version argument or else the latest version will be used.',
