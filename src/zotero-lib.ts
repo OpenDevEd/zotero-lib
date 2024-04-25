@@ -18,6 +18,15 @@ import {
   getChangedItemsForGroup,
 } from './local-db/api';
 import {
+  FindEmptyItemsFromDatabase as FindEmptyItemsFromDatabaseLocal,
+  // fetchAllItems as fetchAllItemsLocal,
+  getAllGroups as getAllGroupsLocal,
+  lookupItems as lookupItemsLocal,
+  saveGroup as saveGroupLocal,
+  // saveZoteroItems as saveZoteroItemsLocal,
+  saveZoteroItems as saveZoteroItemsLocal,
+} from './local-db/db-local';
+import {
   FindEmptyItemsFromDatabase,
   // fetchAllItems,
   getAllGroups,
@@ -25,7 +34,7 @@ import {
   saveGroup,
   // saveZoteroItems,
   saveZoteroItems,
-} from './local-db/db-local';
+} from './local-db/db';
 import { readConfigFile } from './readConfigFile';
 import { as_array, as_value, catchme, colophon, getCanonicalURL, isomessage, urlify } from './utils';
 import compare from './utils/compareItems';
@@ -1729,7 +1738,12 @@ class Zotero {
 
     if (args.lookup && Array.isArray(args.keys) && args.keys.length > 0) {
       let keys = { keys: [...args.keys] };
-      let result = await lookupItems(keys);
+      let result: any;
+      if (!!args.sqlite) {
+        result = await lookupItemsLocal(keys);
+      } else {
+        result = await lookupItems(keys);
+      }
       if (args.verbose) logger.info('result: ', result);
       return result;
     }
@@ -2857,7 +2871,13 @@ class Zotero {
   }
   public async findEmptyItems(args) {
     let path = args.output ? args.output : './empty_items.json';
-    let emptyItems: any[] = await FindEmptyItemsFromDatabase(args['group-id']);
+    const isSqlite = !!args.sqlite;
+    let emptyItems: any[] = [];
+    if (isSqlite) {
+      emptyItems = await FindEmptyItemsFromDatabaseLocal(args['group-id']);
+    } else {
+      emptyItems = await FindEmptyItemsFromDatabase(args['group-id']);
+    }
     if (args.delete) {
       await emptyItems.forEach(async (item) => {
         await this.update_item({
@@ -2933,7 +2953,13 @@ const syncToLocalDB = async (args: any) => {
   const { groupid } = args;
 
   const onlineGroups = await fetchGroups({ ...args });
-  const offlineGroups = await getAllGroups();
+  const isSqlite = !!args.sqlite;
+  let offlineGroups: any[] = [];
+  if (isSqlite) {
+    offlineGroups = await getAllGroupsLocal();
+  } else {
+    offlineGroups = await getAllGroups();
+  }
 
   const offlineItemsVersion = offlineGroups.reduce((a, c) => ({ ...a, [c.id]: c.itemsVersion }), {});
 
@@ -2947,7 +2973,11 @@ const syncToLocalDB = async (args: any) => {
     const allChangedGroupsData = await Promise.all(
       changedGroups.map((changedGroup) => fetchGroupData({ ...args, group_id: changedGroup })),
     );
-    await saveGroup(allChangedGroupsData);
+    if (isSqlite) {
+      await saveGroupLocal(allChangedGroupsData);
+    } else {
+      await saveGroup(allChangedGroupsData);
+    }
   }
 
   const changedGroupsArray = groupid ? [groupid] : Object.keys(onlineGroups);
@@ -2991,7 +3021,11 @@ const syncToLocalDB = async (args: any) => {
       //@ts-ignore
       itemsLastModifiedVersion[group.group] = lastModifiedVersion;
 
-      await saveZoteroItems(groupItems, itemsLastModifiedVersion, group.group);
+      if (isSqlite) {
+        await saveZoteroItemsLocal(groupItems, itemsLastModifiedVersion, group.group);
+      } else {
+        await saveZoteroItems(groupItems, itemsLastModifiedVersion, group.group);
+      }
       // Saving logic here...
       console.log('group saved into db ', group.group);
 
@@ -3006,7 +3040,13 @@ const syncToLocalDB = async (args: any) => {
 };
 async function websocket(args, config) {
   console.log('starting websocket');
-  const groups = await getAllGroups();
+  const isSqlite = !!args.sqlite;
+  let groups;
+  if (isSqlite) {
+    groups = await getAllGroupsLocal();
+  } else {
+    groups = await getAllGroups();
+  }
   const groupIds: string[] = groups.map((group) => `/groups/${group.id}`);
   var ws: webSocket = new webSocket('wss://stream.zotero.org');
 

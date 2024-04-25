@@ -814,6 +814,11 @@ subParsersMap.set('db', function (subparsers, subCmdName) {
     help: 'Sync online library in local database',
   });
 
+  argparser.add_argument('--sqlite', {
+    action: 'store_true',
+    help: 'Use sqlite database instead of postgres',
+  });
+
   argparser.add_argument('--lookup', {
     action: 'store_true',
     help: 'Lookup records in local db',
