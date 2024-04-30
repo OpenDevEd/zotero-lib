@@ -123,6 +123,32 @@ namespace ZoteroTypes {
     fullresponse?: boolean;
   }
 
+  export interface delete_itemArgs extends zoterocongif {
+    key: string;
+    fullresponse?: boolean;
+  }
+
+  export interface delete_itemsArgs extends zoterocongif {
+    keys: string[];
+    fullresponse?: boolean;
+  }
+
+  export interface update_collectionArgs extends zoterocongif {
+    key: string;
+    json?: any;
+    fullresponse?: boolean;
+  }
+
+  export interface delete_collectionArgs extends zoterocongif {
+    key: string;
+    fullresponse?: boolean;
+  }
+
+  export interface delete_collectionsArgs extends zoterocongif {
+    keys: string[];
+    fullresponse?: boolean;
+  }
+
   export interface enclose_item_in_collectionArgs extends zoterocongif {
     key?: string;
     collection?: string;

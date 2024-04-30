@@ -643,6 +643,71 @@ class Zotero {
   }
 
   /**
+   * Update a collection.
+   * (API: /collections/KEY).
+   * Use 'collection --help' for details.
+   *
+   */
+  public async update_collection(args: ZoteroTypes.update_collectionArgs) {
+    if (!args.key) {
+      return this.message(0, 'Unable to extract group/key from the string provided.');
+    }
+
+    if (!args.json) {
+      return this.message(0, 'Please provide a valid json string');
+    }
+
+    args.key = this.extractKeyAndSetGroup(args.key);
+
+    const results = await this.http.put(`/collections/${args.key}`, args.json, this.config);
+
+    return results;
+  }
+
+  /**
+   * Delete a collection
+   * (API: /collections/KEY).
+   * Use 'collection --help' for details.
+   */
+  public async delete_collection(args: ZoteroTypes.delete_collectionArgs) {
+    if (!args.key) {
+      return this.message(0, 'Unable to extract group/key from the string provided.');
+    }
+
+    args.key = this.extractKeyAndSetGroup(args.key);
+
+    const results = await this.http.delete(`/collections/${args.key}`, undefined, this.config);
+
+    return results;
+  }
+
+  /**
+   * Delete multiple collections
+   */
+  public async delete_collections(args: ZoteroTypes.delete_collectionsArgs) {
+    if (!args.keys) {
+      return this.message(0, 'Please provide a valid key');
+    }
+
+    args.keys = args.keys.map((key) => this.extractKeyAndSetGroup(key));
+    // check if keys less than 50 otherwise split into chunks
+    let res = [];
+    const batchSize = 50;
+    for (let start = 0; start < args.keys.length; start += batchSize) {
+      const end = start + batchSize <= args.keys.length ? start + batchSize : args.keys.length + 1;
+      if (args.keys.slice(start, end).length) {
+        const results = await this.http.delete(
+          `/collections/${args.keys.slice(start, end).join(',')}`,
+          undefined,
+          this.config,
+        );
+        res.push(results);
+      }
+    }
+    return res;
+  }
+
+  /**
    * Retrieve information about a specific collection
    * --key KEY (API: /collections/KEY or /collections/KEY/tags).
    * Use 'collection --help' for details.
@@ -757,7 +822,7 @@ class Zotero {
     if (args.top) {
       // This should be all - there may be more than 100 items.
       // items = await this.all(`${collection}/items/top`, { params })
-      items = await this.all(`${collection}/items/top`, params);
+      items = await this.all(`${collection}/items/top${args.tags ? '/tags' : ''}`, params);
     } else if (params.limit) {
       if (params.limit > 100) {
         return this.message(0, 'You can only retrieve up to 100 items with with params.limit.');
@@ -766,7 +831,7 @@ class Zotero {
       items = await this.http.get(`${collection}/items`, { params }, this.config);
     } else {
       // logger.info("all-----")
-      items = await this.all(`${collection}/items`, params);
+      items = await this.all(`${collection}/items${args.tags ? '/tags' : ''}`, params);
     }
 
     if (args.validate || args.validate_with) {
@@ -1383,6 +1448,54 @@ class Zotero {
     return result;
   }
 
+  /**
+   * Delete an item with given key (--key KEY).
+   * (API: delete /items/KEY)
+   *
+   * [see api docs](https://www.zotero.org/support/dev/web_api/v3/write_requests#deleting_an_item)
+   */
+  public async delete_item(args: ZoteroTypes.delete_itemArgs): Promise<any> {
+    if (!args.key) {
+      return this.message(0, 'Unable to extract group/key from the string provided.');
+    }
+
+    args.key = this.extractKeyAndSetGroup(args.key);
+
+    const results = await this.http.delete(`/items/${args.key}`, undefined, this.config);
+    return results;
+  }
+
+  /**
+   * Delete multiple items with given keys (--keys KEYS).
+   * (API: delete /items/KEY)
+   * [see api docs](https://www.zotero.org/support/dev/web_api/v3/write_requests#deleting_multiple_items)
+   */
+  public async delete_items(args: ZoteroTypes.delete_itemsArgs): Promise<any> {
+    // check if keys less than 50 otherwise split into chunks
+    let keys = args.keys.map((key) => this.extractKeyAndSetGroup(key));
+    let res = [];
+    const batchSize = 50;
+    for (var start = 0; start < keys.length; start += batchSize) {
+      const end = start + batchSize <= keys.length ? start + batchSize : keys.length + 1;
+      // Safety check - should always be true:
+      if (keys.slice(start, end).length) {
+        logger.error(`Deleting objects ${start} to ${end}-1`);
+        logger.info(`Deleting objects ${start} to ${end}-1`);
+        logger.info(`${keys.slice(start, end).length}`);
+        const result = await this.http.delete(
+          `/items/?itemKey=${keys.slice(start, end).join(',')}`,
+          undefined,
+          this.config,
+        );
+        res.push(result);
+      } else {
+        logger.error(`NOT Deleting objects ${start} to ${end}-1`);
+        logger.info(`NOT Deleting objects ${start} to ${end}-1`);
+        logger.info(`${keys.slice(start, end).length}`);
+      }
+    }
+  }
+
   // <userOrGroupPrefix>/items/trash Items in the trash
   /** Return a list of items in the trash. */
   // async trash(args) {
@@ -1402,7 +1515,7 @@ class Zotero {
    * <userOrGroupPrefix>/publications/items Items in My Publications
    */
   async publications(args) {
-    const items = await this.http.get('/publications/items', undefined, this.config);
+    const items = await this.http.get(`/publications/items${args.tags ? '/tags' : ''}`, undefined, this.config);
     this.show(items);
     return items;
   }
@@ -1501,6 +1614,11 @@ class Zotero {
       const res = await this.http.post('/searches', JSON.stringify(searchDef), {}, this.config);
       this.print('Saved search(s) created successfully.');
       return res;
+    }
+    if (args.key) {
+      const search = await this.http.get(`/searches/${args.key}`, undefined, this.config);
+      this.show(search);
+      return search;
     }
     const items = await this.http.get('/searches', undefined, this.config);
     this.show(items);
