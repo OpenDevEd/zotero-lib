@@ -653,9 +653,23 @@ class Zotero {
       return this.message(0, 'Unable to extract group/key from the string provided.');
     }
 
+    args.key = this.extractKeyAndSetGroup(args.key);
+
     if (!args.json) {
       return this.message(0, 'Please provide a valid json string');
     }
+
+    const json = JSON.parse(args.json);
+    if (!json.version) {
+      if (args.version) {
+        json.version = args.version;
+      } else {
+        const version = await this.http.get(`/collections/${args.key}`, undefined, this.config);
+        json.version = version.data.version;
+      }
+    }
+
+    args.json = JSON.stringify(json);
 
     args.key = this.extractKeyAndSetGroup(args.key);
 
@@ -676,9 +690,14 @@ class Zotero {
 
     args.key = this.extractKeyAndSetGroup(args.key);
 
-    const results = await this.http.delete(`/collections/${args.key}`, undefined, this.config);
+    if (!args.version) {
+      const version = await this.http.get(`/collections/${args.key}`, undefined, this.config);
+      args.version = version.data.version;
+    }
 
-    return results;
+    await this.http.delete(`/collections/${args.key}`, args.version, this.config);
+
+    return `Collection ${args.key} deleted`;
   }
 
   /**
@@ -696,12 +715,12 @@ class Zotero {
     for (let start = 0; start < args.keys.length; start += batchSize) {
       const end = start + batchSize <= args.keys.length ? start + batchSize : args.keys.length + 1;
       if (args.keys.slice(start, end).length) {
-        const results = await this.http.delete(
-          `/collections/${args.keys.slice(start, end).join(',')}`,
+        await this.http.delete(
+          `/collections?collectionKey=${args.keys.slice(start, end).join(',')}`,
           undefined,
           this.config,
         );
-        res.push(results);
+        res.push(`Collections ${args.keys.slice(start, end).join(',')} deleted`);
       }
     }
     return res;
@@ -1454,15 +1473,24 @@ class Zotero {
    *
    * [see api docs](https://www.zotero.org/support/dev/web_api/v3/write_requests#deleting_an_item)
    */
-  public async delete_item(args: ZoteroTypes.delete_itemArgs): Promise<any> {
+  public async delete_item(args: ZoteroTypes.delete_itemArgs) {
     if (!args.key) {
       return this.message(0, 'Unable to extract group/key from the string provided.');
     }
 
     args.key = this.extractKeyAndSetGroup(args.key);
 
-    const results = await this.http.delete(`/items/${args.key}`, undefined, this.config);
-    return results;
+    let originalItemVersion = ''; // was 0 before
+    //TODO: args parsing code
+    if (args.version) {
+      originalItemVersion = args.version;
+    } else {
+      const originalItem = await this.http.get(`/items/${args.key}`, undefined, this.config);
+      originalItemVersion = originalItem.version;
+    }
+
+    await this.http.delete(`/items/${args.key}`, originalItemVersion, this.config);
+    return `deleted item ${args.key}`;
   }
 
   /**
@@ -1470,10 +1498,10 @@ class Zotero {
    * (API: delete /items/KEY)
    * [see api docs](https://www.zotero.org/support/dev/web_api/v3/write_requests#deleting_multiple_items)
    */
-  public async delete_items(args: ZoteroTypes.delete_itemsArgs): Promise<any> {
+  public async delete_items(args: ZoteroTypes.delete_itemsArgs) {
     // check if keys less than 50 otherwise split into chunks
     let keys = args.keys.map((key) => this.extractKeyAndSetGroup(key));
-    let res = [];
+    let res: string[] = [];
     const batchSize = 50;
     for (var start = 0; start < keys.length; start += batchSize) {
       const end = start + batchSize <= keys.length ? start + batchSize : keys.length + 1;
@@ -1482,18 +1510,15 @@ class Zotero {
         logger.error(`Deleting objects ${start} to ${end}-1`);
         logger.info(`Deleting objects ${start} to ${end}-1`);
         logger.info(`${keys.slice(start, end).length}`);
-        const result = await this.http.delete(
-          `/items/?itemKey=${keys.slice(start, end).join(',')}`,
-          undefined,
-          this.config,
-        );
-        res.push(result);
+        await this.http.delete(`/items/?itemKey=${keys.slice(start, end).join(',')}`, undefined, this.config);
+        res.push(`Items ${keys.slice(start, end).join(',')} deleted`);
       } else {
         logger.error(`NOT Deleting objects ${start} to ${end}-1`);
         logger.info(`NOT Deleting objects ${start} to ${end}-1`);
         logger.info(`${keys.slice(start, end).length}`);
       }
     }
+    return res;
   }
 
   // <userOrGroupPrefix>/items/trash Items in the trash

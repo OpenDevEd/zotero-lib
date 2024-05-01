@@ -125,6 +125,7 @@ namespace ZoteroTypes {
 
   export interface delete_itemArgs extends zoterocongif {
     key: string;
+    version?: string;
     fullresponse?: boolean;
   }
 
@@ -136,11 +137,13 @@ namespace ZoteroTypes {
   export interface update_collectionArgs extends zoterocongif {
     key: string;
     json?: any;
+    version?: string;
     fullresponse?: boolean;
   }
 
   export interface delete_collectionArgs extends zoterocongif {
     key: string;
+    version?: string;
     fullresponse?: boolean;
   }
 
