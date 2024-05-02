@@ -81,9 +81,9 @@ subParsersMap.set('items', function (subparsers, subCmdName) {
     action: 'store',
     help: 'Provide output in json format E.g --json Items.json',
   });
-  argparser.add_argument('tags', {
+  argparser.add_argument('--tags', {
     action: 'store_true',
-    help: ' Retrieve sll tags in the library, with the ability to filter based on the items',
+    help: ' Retrieve all tags in the library, with the ability to filter based on the items',
   });
 });
 
@@ -183,6 +183,10 @@ subParsersMap.set('item', function (subparsers, subCmdName) {
   argparser.add_argument('--fullresponse', {
     action: 'store_true',
     help: 'Return the full response from the Zotero API.',
+  });
+  argparser.add_argument('--tags', {
+    action: 'store_true',
+    help: ' Retrieve all tags in the item.',
   });
 });
 
@@ -335,7 +339,7 @@ subParsersMap.set('publications', function (subparsers, subCmdName) {
   argparser.set_defaults({ func: getFuncName(subCmdName) });
   argparser.add_argument('--tags', {
     action: 'store_true',
-    help: ' Retrieve sll tags in the library, with the ability to filter based on the items',
+    help: ' Retrieve all tags in the library, with the ability to filter based on the items',
   });
 });
 
@@ -393,6 +397,10 @@ subParsersMap.set('searches', function (subparsers, subCmdName) {
   argparser.add_argument('--key', {
     nargs: 1,
     help: 'The key of the saved search.',
+  });
+  argparser.add_argument('--delete', {
+    nargs: '*',
+    help: 'The keys of the saved search to be deleted.',
   });
 });
 
@@ -864,6 +872,10 @@ subParsersMap.set('collections', function (subparsers, subCmdName) {
   argparser.add_argument('--json', {
     action: 'store',
     help: 'Provide output in json format E.g --json Items.json',
+  });
+  argparser.add_argument('--tags', {
+    action: 'store_true',
+    help: 'Display tags present in the collection.',
   });
 });
 

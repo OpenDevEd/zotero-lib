@@ -152,6 +152,12 @@ namespace ZoteroTypes {
     fullresponse?: boolean;
   }
 
+  export interface searchesArgs extends zoterocongif {
+    create?: string[];
+    delete?: string[];
+    key?: string;
+  }
+
   export interface enclose_item_in_collectionArgs extends zoterocongif {
     key?: string;
     collection?: string;
