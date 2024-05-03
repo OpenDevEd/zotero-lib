@@ -328,9 +328,16 @@ subParsersMap.set('delete-collections', function (subparsers, subCmdName) {
 });
 
 //TODO: Discuss that trash is not implemented???
-// parsersMap.set('trash', function (subparsers, subCmdName) {
-//   return null;
-// });
+subParsersMap.set('trash', function (subparsers, subCmdName) {
+  const argparser = subparsers.add_parser(subCmdName, {
+    help: 'Retrieve items in the trash. (API: /trash/items)',
+  });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
+  argparser.add_argument('--tags', {
+    action: 'store_true',
+    help: 'Retrieve all tags in the trash.',
+  });
+});
 
 subParsersMap.set('publications', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser(subCmdName, {

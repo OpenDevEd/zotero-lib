@@ -1546,12 +1546,11 @@ class Zotero {
 
   // <userOrGroupPrefix>/items/trash Items in the trash
   /** Return a list of items in the trash. */
-  // async trash(args) {
-  //
-  //   const items = await this.http.get('/items/trash', undefined, this.config);
-  //   this.show(items);
-  //   return items;
-  // }
+  async trash(args) {
+    const items = await this.http.get(`/items/trash${args.tags ? '/tags' : ''}`, undefined, this.config);
+    this.show(items);
+    return items;
+  }
 
   /**
    * Return a list of items in publications (user library only).
