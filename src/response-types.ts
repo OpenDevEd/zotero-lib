@@ -156,7 +156,7 @@ export namespace Item {
 
     export interface Tag {
       tag: string;
-      type: number;
+      type?: number;
     }
 
     export interface Library {
@@ -184,6 +184,124 @@ export namespace Item {
       creatorSummary: string;
       parsedDate: string;
       numChildren: number;
+    }
+  }
+}
+
+export namespace Items {
+  export namespace Get {
+    export interface Items {
+      key: string;
+      version: number;
+      library: Library;
+      links: ItemLinks;
+      meta: Meta;
+      data: Data;
+    }
+
+    export interface Data {
+      key: string;
+      version: number;
+      parentItem?: string;
+      itemType: string;
+      linkMode?: string;
+      title: string;
+      accessDate: string;
+      url: string;
+      note?: string;
+      contentType?: string;
+      charset?: string;
+      filename?: string;
+      md5?: null | string;
+      mtime?: number | null;
+      tags: Tag[];
+      relations: Relations;
+      dateAdded: Date;
+      dateModified: Date;
+      creators?: Creator[];
+      abstractNote?: string;
+      websiteTitle?: string;
+      websiteType?: string;
+      date?: string;
+      shortTitle?: string;
+      language?: string;
+      rights?: string;
+      extra?: string;
+      collections?: string[];
+      publicationTitle?: string;
+      volume?: string;
+      issue?: string;
+      pages?: string;
+      series?: string;
+      seriesTitle?: string;
+      seriesText?: string;
+      journalAbbreviation?: string;
+      DOI?: string;
+      ISSN?: string;
+      archive?: string;
+      archiveLocation?: string;
+      libraryCatalog?: string;
+      callNumber?: string;
+      seriesNumber?: string;
+      numberOfVolumes?: string;
+      edition?: string;
+      place?: string;
+      publisher?: string;
+      numPages?: string;
+      ISBN?: string;
+      distributor?: string;
+      genre?: string;
+      videoRecordingFormat?: string;
+      runningTime?: string;
+      artworkMedium?: string;
+      artworkSize?: string;
+      proceedingsTitle?: string;
+      conferenceName?: string;
+      manuscriptType?: string;
+    }
+
+    export interface Creator {
+      creatorType: string;
+      firstName?: string;
+      lastName?: string;
+      name?: string;
+    }
+
+    export interface Relations {
+      'owl:sameAs'?: string[] | string;
+    }
+
+    export interface Tag {
+      tag: string;
+      type: number;
+    }
+
+    export interface Library {
+      type: string;
+      id: number;
+      name: string;
+      links: LibraryLinks;
+    }
+
+    export interface LibraryLinks {
+      alternate: Alternate;
+    }
+
+    export interface Alternate {
+      href: string;
+      type: string;
+    }
+
+    export interface ItemLinks {
+      self: Alternate;
+      alternate: Alternate;
+      up?: Alternate;
+    }
+
+    export interface Meta {
+      numChildren?: boolean | number;
+      creatorSummary?: string;
+      parsedDate?: string;
     }
   }
 }
