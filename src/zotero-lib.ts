@@ -353,7 +353,7 @@ class Zotero {
    * Show details about this API key.
    * (API: /keys )
    */
-  public async key(args: ZoteroTypes.keyArgs): Promise<any> {
+  public async key(args: ZoteroTypes.IKeyArgs): Promise<any> {
     if (!args.api_key) {
       args.api_key = this.config.api_key;
     }
@@ -546,7 +546,7 @@ class Zotero {
    * <userOrGroupPrefix>/collections/<collectionKey>/collections Subcollections within a specific collection in the library
    * TODO: --create-child should go into 'collection'.
    */
-  public async collections(args: ZoteroTypes.CollectionsArgs): Promise<any | Collection.Get.Collection> {
+  public async collections(args: ZoteroTypes.ICollectionsArgs): Promise<any | Collection.Get.Collection> {
     // TODO: args parsing code
     if (args.json && !args.json.endsWith('.json')) {
       return this.message(0, 'Please provide a valid json file name');
@@ -650,7 +650,7 @@ class Zotero {
    * Use 'collection --help' for details.
    *
    */
-  public async update_collection(args: ZoteroTypes.update_collectionArgs) {
+  public async update_collection(args: ZoteroTypes.IUpdateCollectionArgs) {
     if (!args.key) {
       return this.message(0, 'Unable to extract group/key from the string provided.');
     }
@@ -689,7 +689,7 @@ class Zotero {
    * (API: /collections/KEY).
    * Use 'collection --help' for details.
    */
-  public async delete_collection(args: ZoteroTypes.delete_collectionArgs) {
+  public async delete_collection(args: ZoteroTypes.IDeleteCollectionArgs) {
     if (!args.key) {
       return this.message(0, 'Unable to extract group/key from the string provided.');
     }
@@ -709,7 +709,7 @@ class Zotero {
   /**
    * Delete multiple collections
    */
-  public async delete_collections(args: ZoteroTypes.delete_collectionsArgs) {
+  public async delete_collections(args: ZoteroTypes.IDeleteCollectionsArgs) {
     if (!args.keys) {
       return this.message(0, 'Please provide a valid key');
     }
@@ -745,7 +745,7 @@ class Zotero {
    * DONE: Why is does the setup for --add and --remove differ? Should 'add' not be "nargs: '*'"? Remove 'itemkeys'?
    * TODO: Add option "--output file.json" to pipe output to file.
    */
-  async collection(args: ZoteroTypes.CollectionArgs): Promise<any> {
+  async collection(args: ZoteroTypes.ICollectionArgs): Promise<any> {
     // TODO: args parsing code
     if (args.key) {
       args.key = this.extractKeyAndSetGroup(args.key);
@@ -919,7 +919,7 @@ class Zotero {
    * <userOrGroupPrefix>/items/<itemKey> A specific item in the library
    * <userOrGroupPrefix>/items/<itemKey>/children Child items under a specific item
    */
-  public async item(args: ZoteroTypes.ItemArgs & { tags?: boolean }): Promise<any> {
+  public async item(args: ZoteroTypes.IItemArgs & { tags?: boolean }): Promise<any> {
     const output = [];
 
     // TODO: args parsing code
@@ -1250,7 +1250,7 @@ class Zotero {
    * [single item](https://www.zotero.org/support/dev/web_api/v3/write_requests#_an_item) OR
    * [multiple items](https://www.zotero.org/support/dev/web_api/v3/write_requests#creating_multiple_items)
    */
-  public async create_item(args: ZoteroTypes.create_itemArgs): Promise<any> {
+  public async create_item(args: ZoteroTypes.ICreateItemArgs): Promise<any> {
     //
 
     if (args.template) {
@@ -1417,7 +1417,7 @@ class Zotero {
    *
    * [see api docs](https://www.zotero.org/support/dev/web_api/v3/write_requests#updating_an_existing_item)
    */
-  public async update_item(args: ZoteroTypes.update_itemArgs): Promise<any> {
+  public async update_item(args: ZoteroTypes.IUpdateItemArgs): Promise<any> {
     //TODO: args parsing code
     args.replace = args.replace || false;
 
@@ -1479,7 +1479,7 @@ class Zotero {
    *
    * [see api docs](https://www.zotero.org/support/dev/web_api/v3/write_requests#deleting_an_item)
    */
-  public async delete_item(args: ZoteroTypes.delete_itemArgs): Promise<
+  public async delete_item(args: ZoteroTypes.IDeleteItemArgs): Promise<
     | string
     | {
         status: number;
@@ -1511,7 +1511,7 @@ class Zotero {
    * (API: delete /items/KEY)
    * [see api docs](https://www.zotero.org/support/dev/web_api/v3/write_requests#deleting_multiple_items)
    */
-  public async delete_items(args: ZoteroTypes.delete_itemsArgs): Promise<
+  public async delete_items(args: ZoteroTypes.IDeleteItemsArgs): Promise<
     | string[]
     | {
         status: number;
@@ -1647,7 +1647,7 @@ class Zotero {
    *
    * https://www.zotero.org/support/dev/web_api/v3/basics
    */
-  async searches(args: ZoteroTypes.searchesArgs) {
+  async searches(args: ZoteroTypes.ISearchesArgs) {
     if (args.create) {
       let searchDef = [];
       try {
@@ -1723,7 +1723,7 @@ class Zotero {
    * Utility functions.
    */
 
-  public async enclose_item_in_collection(args: ZoteroTypes.enclose_item_in_collectionArgs): Promise<any> {
+  public async enclose_item_in_collection(args: ZoteroTypes.IEncloseItemInCollectionArgs): Promise<any> {
     const output = [];
     //TODO: args parsing code
     if (!args.key) {
@@ -1873,7 +1873,7 @@ class Zotero {
    * @param subparsers
    * @returns
    */
-  public async get_doi(args: ZoteroTypes.get_doiArgs): Promise<any> {
+  public async get_doi(args: ZoteroTypes.IGetDoiArgs): Promise<any> {
     // We dont know what kind of item this is - gotta get the item to see
 
     args.fullresponse = false;
@@ -1898,7 +1898,7 @@ class Zotero {
     return doi;
   }
 
-  public async manageLocalDB(args: ZoteroTypes.manageLocalDBArgs): Promise<any> {
+  public async manageLocalDB(args: ZoteroTypes.IManageLocalDBArgs): Promise<any> {
     console.log('args: ', { ...args }, this.config);
     if (args.lookup && !args.keys) {
       logger.error('You must provide keys to lookup');
@@ -1980,7 +1980,7 @@ class Zotero {
     // }
   }
 
-  public async deduplicate_func(args: ZoteroTypes.deduplicate_func_Args) {
+  public async deduplicate_func(args: ZoteroTypes.IDeduplicateFuncArgs) {
     const { PrismaClient } = require('@prisma/client');
     //@ts-ignore
     const prisma = new PrismaClient();
@@ -2110,7 +2110,7 @@ class Zotero {
     }
   }
 
-  public async Move_deduplicate_to_collection(args: ZoteroTypes.Move_deduplicate_to_collection_Args) {
+  public async Move_deduplicate_to_collection(args: ZoteroTypes.IMoveDeduplicateToCollectionArgs) {
     // read deduplicate json file
 
     if (!fs.existsSync(args.file)) {
@@ -2262,7 +2262,7 @@ class Zotero {
     }
   }
 
-  public async merge_func(args: ZoteroTypes.merge_func_Args) {
+  public async merge_func(args: ZoteroTypes.IMergeFuncArgs) {
     if (!fs.existsSync(args.data)) {
       console.log('file not found');
       process.exit(1);
@@ -2303,7 +2303,7 @@ class Zotero {
     // check if file exists using fs
   }
 
-  public async resolvefunc(args: ZoteroTypes.resolvefunc_Args) {
+  public async resolvefunc(args: ZoteroTypes.IResolveFuncArgs) {
     const { PrismaClient } = require('@prisma/client');
     const prisma = new PrismaClient();
 
@@ -2481,7 +2481,7 @@ class Zotero {
   /**
    * Update the DOI of the item provided.
    */
-  public async update_doi(args: ZoteroTypes.update_doiArgs): Promise<any> {
+  public async update_doi(args: ZoteroTypes.IUpdateDoiArgs): Promise<any> {
     //TODO: args parsing code
     args.fullresponse = false;
     //TODO: args parsing code
@@ -2554,7 +2554,7 @@ class Zotero {
   }
 
   // TODO: Implement
-  public async attach_link(args: ZoteroTypes.attach_linkArgs): Promise<any> {
+  public async attach_link(args: ZoteroTypes.IAttachLinkArgs): Promise<any> {
     // TODO: There's a problem here... the following just offer docorations. We need to have inputs too...
 
     // TODO: Make this consistent
@@ -2640,7 +2640,7 @@ class Zotero {
     return this.message(0, 'exist status', dataout);
   }
 
-  public async field(args: ZoteroTypes.fieldArgs): Promise<any> {
+  public async field(args: ZoteroTypes.IFieldArgs): Promise<any> {
     //TODO: args parsing code
     if (!args.field) {
       logger.info('args.field is required.');
@@ -2692,7 +2692,7 @@ class Zotero {
     return this.message(0, 'exit status', data);
   }
 
-  public async update_url(args: ZoteroTypes.update_urlArgs): Promise<any> {
+  public async update_url(args: ZoteroTypes.IUpdateUrlArgs): Promise<any> {
     //TODO: args parsing code
     args.json = {
       url: args.value,
@@ -2700,7 +2700,7 @@ class Zotero {
     return this.update_item(args);
   }
 
-  public async KerkoCiteItemAlsoKnownAs(args: ZoteroTypes.KerkoCiteItemAlsoKnownAs_Args) {
+  public async KerkoCiteItemAlsoKnownAs(args: ZoteroTypes.IKerkoCiteItemAlsoKnownAsArgs) {
     //TODO: args parsing code
     args.fullresponse = false;
     let thisversion = '';
@@ -2769,7 +2769,7 @@ class Zotero {
   }
 
   // TODO: Implement
-  public async getbib(args: ZoteroTypes.getbib_args) {
+  public async getbib(args: ZoteroTypes.IGetbibArgs) {
     let output;
     try {
       output = await this.getZoteroDataX(args);
@@ -2786,7 +2786,7 @@ class Zotero {
   }
 
   /* START FUcntionS FOR GETBIB */
-  async getZoteroDataX(args: ZoteroTypes.getZoteroDataX_args) {
+  async getZoteroDataX(args: ZoteroTypes.IGetZoteroDataXargs) {
     //logger.info("Hello")
     let d = new Date();
     let n = d.getTime();
@@ -2898,7 +2898,7 @@ class Zotero {
     }
   }
 
-  async makeZoteroQuery(arg: ZoteroTypes.makeZoteroQuery_args) {
+  async makeZoteroQuery(arg: ZoteroTypes.IMakeZoteroQueryArgs) {
     var response = [];
     logger.info('hello');
     // The limit is 25 results at a time - so need to check that arg.keys is not too long.
@@ -2951,7 +2951,7 @@ class Zotero {
     return { status: 0, message: 'Success', data: response };
   }
 
-  async makeMultiQuery(args: ZoteroTypes.makeMultiQuery_args) {
+  async makeMultiQuery(args: ZoteroTypes.IMakeMultiQueryArgs) {
     // logger.info("Multi query 1")
     let mykeys;
     try {
@@ -3004,7 +3004,7 @@ class Zotero {
   /* END Fucntions FOR GETBIB */
 
   // TODO: Implement
-  public async attach_note(args: ZoteroTypes.attach_noteArgs) {
+  public async attach_note(args: ZoteroTypes.IAttachNoteArgs) {
     //TODO: args parsing code
     args.notetext = as_value(args.notetext);
     args.key = this.extractKeyAndSetGroup(as_value(args.key));
@@ -3041,7 +3041,7 @@ class Zotero {
     const data = {};
     return this.message(0, 'exit status', data);
   }
-  public async findEmptyItems(args: ZoteroTypes.findEmptyItemsArgs) {
+  public async findEmptyItems(args: ZoteroTypes.IFindEmptyItemsArgs) {
     let path = args.output ? args.output : './empty_items.json';
     let emptyItems: any[] = await FindEmptyItemsFromDatabase(args['group-id']);
     if (args.delete) {
