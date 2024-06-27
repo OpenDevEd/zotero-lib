@@ -244,7 +244,7 @@ export class HttpClient {
    * @param config.verbose - verbose mode
    * @returns the response from zotero
    */
-  async delete(uri: string, version?: number, config?: any) {
+  async delete(uri: string, version?: number | string, config?: any) {
     const prefix = config.user_id ? `/users/${config.user_id}` : `/groups/${config.group_id}`;
 
     const headers = { ...this.headers, 'Content-Type': 'application/json' };
