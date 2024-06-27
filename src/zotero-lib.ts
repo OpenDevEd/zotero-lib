@@ -10,7 +10,7 @@ import newVanityDOI from './utils/newVanityDOI';
 import processExtraField from './utils/processExtraField';
 
 import decorations from './decorations';
-import { createHttpClient } from './http.client';
+import { createHttpClient, HttpClient } from './http.client';
 import {
   fetchCurrentKey,
   fetchGroupData,
@@ -71,8 +71,15 @@ class Zotero {
 
   output: string = '';
 
-  http: any;
+  http: HttpClient;
 
+  /**
+   * Constructor for Zotero class
+   * @param args - arguments passed to the constructor
+   * @param args.config - path to the config file
+   * @param args.config_json - config in json format
+   * @param args.verbose - verbose output
+   */
   constructor(args = {}) {
     // Read config
     this.config = this.configure(args, true);
@@ -86,6 +93,15 @@ class Zotero {
   }
 
   //TODO: config
+  /**
+   * Configure the zotero class
+   * @param args - arguments passed to the constructor
+   * @param args.config - path to the config file
+   * @param args.config_json - config in json format
+   * @param args.verbose - verbose output
+   * @param shouldReadConfigFile - if the config file should be read
+   * @returns the config
+   */
   public configure(args, shouldReadConfigFile = false) {
     // pick up config: The function reads args and populates config
 
@@ -136,8 +152,10 @@ class Zotero {
   }
 
   /**
-   * format Array of string tags as Array of Object tags
-   * Will convert ['title'] to [{tag: 'title', type: 0}]
+   * Convert array of string tags to array of object tags
+   * @param tags - Array of string tags
+   * @returns Array of Object tags
+   * @example - ['title'] to [{tag: 'title', type: 0}]
    */
   public objectifyTags(tags) {
     const result = [];
@@ -352,6 +370,10 @@ class Zotero {
   /**
    * Show details about this API key.
    * (API: /keys )
+   * @param args.api_key - the API key to show details for
+   * @param args.groups - show groups for this user, only 100 are shown
+   * @param args.terse - show output in a terse format, `id name owner type`
+   * @returns details about the API key
    */
   public async key(args: ZoteroTypes.IKeyArgs): Promise<any> {
     if (!args.api_key) {
@@ -402,6 +424,11 @@ class Zotero {
     return { key: res, groups: res2 };
   }
 
+  /**
+   * Extract the key, type and group from a zotero select link.
+   * @param args.key - zotero select link format, or just the key
+   * @returns object with key, type and group (if applicable) or key
+   */
   public getIds(args) {
     if (!args?.key) console.log('please provide a newlocation');
     const key = args.key;
@@ -424,10 +451,20 @@ class Zotero {
   // End of standard API calls
 
   // Utility functions. private?
+  /**
+   * Return the total results from a query.
+   * @param uri 
+   * @param params 
+   * @returns the total results from a query
+   */
   async count(uri, params = {}) {
     return (await this.http.get(uri, { resolveWithFullResponse: true, params }, this.config)).headers['total-results'];
   }
 
+  /**
+   * Show a message. If the message is an object, it is stringified.
+   * @param v - the message to show
+   */
   private show(v) {
     // TODO: Look at the type of v: if string, then print, if object, then stringify
     if (typeof v === 'string') {
@@ -438,6 +475,11 @@ class Zotero {
     this.print(JSON.stringify(v, null, this.config.indent));
   }
 
+  /**
+   * Extract the key, type (items or collections) and group from a zotero select link.
+   * @param key - array of (or simple variable) zotero select link format, or just the key
+   * @param n - the input key type (1=group or 3=key) ir the key not match zotero select link
+   */
   private extractKeyGroupVariable(key, n) {
     // n=1 -> group
     // n=2 -> items vs. collections
