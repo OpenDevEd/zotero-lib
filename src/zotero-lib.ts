@@ -453,8 +453,8 @@ class Zotero {
   // Utility functions. private?
   /**
    * Return the total results from a query.
-   * @param uri 
-   * @param params 
+   * @param uri - the uri to query
+   * @param params - the parameters to pass to the query
    * @returns the total results from a query
    */
   async count(uri, params = {}) {
@@ -528,6 +528,14 @@ class Zotero {
     return this.extractKeyGroupVariable(key, 3);
   }
 
+  /**
+   * Attach a note to an item.
+   * @param PARENT - the parent item to attach the note to
+   * @param options - options for the note
+   * @param options.content - the content of the note
+   * @param options.tags - the tags for the note
+   * @returns the note attached to the item
+   */
   public async attachNoteToItem(
     PARENT,
     options: { content?: string; tags?: any } = {
@@ -550,6 +558,14 @@ class Zotero {
 
   // TODO: Rewrite other function args like this.
   // Rather than fn(args) have fn({......})
+  /**
+   * Attach a link to an item
+   * @param PARENT - the parent item to attach the link to
+   * @param URL - the URL to attach
+   * @param options - options for the link
+   * @param options.title - the title of the link
+   * @param options.tags - the tags for the link
+   */
   public async attachLinkToItem(
     PARENT,
     URL,
@@ -579,6 +595,15 @@ class Zotero {
    * Retrieve a list of collections or create a collection.
    * (API: /collections, /collections/top, /collections/<collectionKey>/collections).
    * Use 'collections --help' for details.
+   *
+   * @param args - arguments passed to the function
+   * @param args.json - the json file to save the collections results to
+   * @param args.key - the key of the collection to retrieve, if not provided, all collections are retrieved
+   * @param args.recursive - whether to retrieve subcollections
+   * @param args.create_child - create a child collection, it takes an array of collection names
+   * @param args.top - whether to retrieve top level collections
+   * @param args.terse - whether to return the results in forma of object with key and name
+   * @returns the list of collections
    *
    * https://www.zotero.org/support/dev/web_api/v3/basics
    * Collections
@@ -691,6 +716,12 @@ class Zotero {
    * (API: /collections/KEY).
    * Use 'collection --help' for details.
    *
+   * @param args - arguments passed to the function
+   * @param args.key - the key of the collection to update
+   * @param args.json - the json string to update the collection with
+   * @param args.version - the version of the collection to update, if not provided, it is retrieved
+   * @returns the updated collection
+   *
    */
   public async update_collection(args: ZoteroTypes.IUpdateCollectionArgs) {
     if (!args.key) {
@@ -730,6 +761,11 @@ class Zotero {
    * Delete a collection
    * (API: /collections/KEY).
    * Use 'collection --help' for details.
+   *
+   * @param args - arguments passed to the function
+   * @param args.key - the key of the collection to delete
+   * @param args.version - the version of the collection to delete, if not provided, it is retrieved
+   * @returns a string confirming the deletion of the collection
    */
   public async delete_collection(args: ZoteroTypes.IDeleteCollectionArgs) {
     if (!args.key) {
@@ -750,6 +786,10 @@ class Zotero {
 
   /**
    * Delete multiple collections
+   *
+   * @param args - arguments passed to the function
+   * @param args.keys - the keys of the collections to delete
+   * @returns an array of strings confirming the deletion of the collections
    */
   public async delete_collections(args: ZoteroTypes.IDeleteCollectionsArgs) {
     if (!args.keys) {
@@ -779,6 +819,13 @@ class Zotero {
    * --key KEY (API: /collections/KEY or /collections/KEY/tags).
    * Use 'collection --help' for details.
    * (Note: Retrieve items is a collection via 'items --collection KEY'.)
+   *
+   * @param args - arguments passed to the function
+   * @param args.key - the key of the collection to retrieve, in zotero select link format
+   * @param args.tags - whether to retrieve the tags of the collection
+   * @param args.add - add an item to the collection, takes an array of item keys
+   * @param args.remove - remove an item from the collection, takes an array of item keys
+   * @returns the collection
    *
    * Operate on a specific collection.
    * <userOrGroupPrefix>/collections/<collectionKey>/items Items within a specific collection in the library
@@ -845,6 +892,18 @@ class Zotero {
    * (API: /items, /items/top, /collections/COLLECTION/items/top).
    * Use 'items --help' for details.
    * By default, all items are retrieved. With --top or limit (via --filter) the default number of items are retrieved.
+   *
+   * @param args - arguments passed to the function
+   * @param args.filter - the filter to apply to the items, this is the parameters to pass to the query
+   * @param args.json - the json file to save the items results to
+   * @param args.count - whether to count the number of items
+   * @param args.collection - the collection to retrieve items from
+   * @param args.top - whether to retrieve top level items
+   * @param args.tags - whether to retrieve the tags of the items
+   * @param args.validate - whether to validate the items, with a pre-defined schema
+   * @param args.validate_with - the schema to validate the items with
+   * @param args.show - whether to show the items
+   * @returns the list of items
    *
    * URI Description
    * https://www.zotero.org/support/dev/web_api/v3/basics
@@ -913,6 +972,14 @@ class Zotero {
     return items;
   }
 
+  /**
+   * Validates the items using a specified schema or the default Zotero schema.
+   * @param args - The arguments passed to the method.
+   * @param args.validate_with - The schema to validate the items with.
+   * @param args.items - The items to be validated.
+   * @param items - The items to be validated.
+   * @throws Error if the specified schema does not exist or if validation is requested but the default Zotero schema does not exist.
+   */
   private async validate_items(args: any, items: any) {
     let schema_path = '';
     if (args.validate_with) {
@@ -956,6 +1023,24 @@ class Zotero {
    * Retrieve an item (item --key KEY), save/add file attachments,
    * retrieve children. Manage collections and tags.
    * (API: /items/KEY/ or /items/KEY/children).
+   *
+   * @param args - arguments passed to the function
+   * @param args.key - the key of the item to retrieve
+   * @param args.tags - whether to retrieve the tags of the item
+   * @param args.filter - the filter to apply to the item, this is the parameters to pass to the query
+   * @param args.savefiles - whether to save the attachments of the item
+   * @param args.addfiles - the files to add to the item, array of file paths
+   * @param args.addtocollection - the collections to add the item to, array of collection keys
+   * @param args.removefromcollection - the collections to remove the item from, array of collection keys
+   * @param args.switchNames - whether to switch the first and last names of the creators
+   * @param args.crossref - whether to format the item as a crossref XML
+   * @param args.verbose - whether to show verbose output
+   * @param args.debug - whether to show debug output
+   * @param args.organise_extra - to organize the extra field
+   * @param args.addtags - the tags to add to the item, array of tags
+   * @param args.removetags - the tags to remove from the item, array of tags
+   * @returns the item
+   *
    * Also see 'attachment', 'create' and 'update'.
    * https://www.zotero.org/support/dev/web_api/v3/basics
    * <userOrGroupPrefix>/items/<itemKey> A specific item in the library
