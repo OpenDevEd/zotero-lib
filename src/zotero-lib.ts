@@ -1335,6 +1335,9 @@ class Zotero {
 
   /**
    * Retrieve/save file attachments for the item specified with --key KEY
+   * @param args.key - the key of the item to retrieve the attachment for, in zotero select link format
+   * @param args.save - the file to save the attachment to
+   * @returns an object with the message 'File saved' and the filename, md5, and mtime of the file
    * (API: /items/KEY/file).
    * Also see 'item', which has options for adding/saving file attachments.
    */
@@ -1373,6 +1376,14 @@ class Zotero {
    * a template with the --template option.Use this option to create
    * both top-level items, as well as child items (including notes and links).
    *
+   * @param args.items - the items to create, an array of items
+   * @param args.files - the files to create items from, an array of file paths
+   * @param args.template - get the template for the item to create instead of creating an item
+   * @param args.newcollection - create a new collection, takes an array of collection names, for now only the first one is used
+   * @param args.collections - the collections to add the items to, an array of collection keys
+   * @param args.fullresponse - whether to return the full response
+   * @returns the created item or items
+   *
    * see api docs for creating
    * [single item](https://www.zotero.org/support/dev/web_api/v3/write_requests#_an_item) OR
    * [multiple items](https://www.zotero.org/support/dev/web_api/v3/write_requests#creating_multiple_items)
@@ -1404,6 +1415,7 @@ class Zotero {
         const itemsflat = items.flat(1);
 
         // TODO: Also add an option 'tags' which adds tags to new items.
+        // TODO: from @oaizab to @suzuya1331 is this one should stay like this or should loop over the newcollection array?
         if (args.newcollection) {
           // create a new collection
           const collection = await this.http.post(
@@ -1532,6 +1544,12 @@ class Zotero {
     }
   }
 
+  /**
+   * Prunes the data from the response object.
+   * @param res - The response object.
+   * @param fullresponse - Whether to return the full response object or just the pruned data. Default is `false`.
+   * @returns The pruned data or the full response object.
+   */
   public pruneData(res, fullresponse = false) {
     if (fullresponse) return res;
     return res.successful['0'].data;
@@ -1541,6 +1559,14 @@ class Zotero {
    * Update/replace an item with given key (--key KEY),
    * either update the item (API: patch /items/KEY)
    * or replace (using --replace, API: put /items/KEY).
+   *
+   * @param args - arguments passed to the function
+   * @param args.key - the key of the item to update, in zotero select link format
+   * @param args.json - the json file to update the item with
+   * @param args.file - the file to update the item with
+   * @param args.version - the version of the item to update
+   * @param args.replace - whether to replace the item
+   * @returns the updated item
    *
    * [see api docs](https://www.zotero.org/support/dev/web_api/v3/write_requests#updating_an_existing_item)
    */
@@ -1604,6 +1630,11 @@ class Zotero {
    * Delete an item with given key (--key KEY).
    * (API: delete /items/KEY)
    *
+   * @param args - arguments passed to the function
+   * @param args.key - the key of the item to delete, in zotero select link format
+   * @param args.version - the version of the item to delete
+   * @returns a message indicating the item was deleted
+   *
    * [see api docs](https://www.zotero.org/support/dev/web_api/v3/write_requests#deleting_an_item)
    */
   public async delete_item(args: ZoteroTypes.IDeleteItemArgs): Promise<
@@ -1636,6 +1667,11 @@ class Zotero {
   /**
    * Delete multiple items with given keys (--keys KEYS).
    * (API: delete /items/KEY)
+   *
+   * @param args - arguments passed to the function
+   * @param args.keys - the keys of the items to delete, in zotero select link format
+   * @returns a message indicating the items were deleted
+   *
    * [see api docs](https://www.zotero.org/support/dev/web_api/v3/write_requests#deleting_multiple_items)
    */
   public async delete_items(args: ZoteroTypes.IDeleteItemsArgs): Promise<
@@ -1672,7 +1708,12 @@ class Zotero {
   }
 
   // <userOrGroupPrefix>/items/trash Items in the trash
-  /** Return a list of items in the trash. */
+  /**
+   * Retrieves the items in the trash.
+   * @param args - Additional arguments for the request.
+   * @param args.tags - Whether to retrieve the tags of the items.
+   * @returns A Promise that resolves to the items in the trash.
+   */
   async trash(args) {
     const items = await this.http.get(`/items/trash${args.tags ? '/tags' : ''}`, undefined, this.config);
     this.show(items);
@@ -1682,8 +1723,9 @@ class Zotero {
   /**
    * Return a list of items in publications (user library only).
    * (API: /publications/items)
-   * @param args
-   * @returns
+   * @param args - Additional arguments for the request.
+   * @param args.tags - Whether to retrieve the tags of the publications.
+   * @returns A Promise that resolves to the items in the publications.
    *
    * https://www.zotero.org/support/dev/web_api/v3/basics
    * <userOrGroupPrefix>/publications/items Items in My Publications
@@ -1727,8 +1769,12 @@ class Zotero {
    * (API: /itemFields).
    * Note that to retrieve a template, use 'create-item --template TYPE'
    * rather than this command.
+   *
+   * @param args - Additional arguments for the request.
+   * @param args.type - The type of item to retrieve the fields for.
+   * @returns A Promise that resolves to the template fields.
    */
-  async fields(args) {
+  async fields(args: { type?: string }): Promise<any> {
     if (args.type) {
       const result = {
         itemTypeFields: await this.http.get(
@@ -1766,10 +1812,12 @@ class Zotero {
   }
 
   /**
-   * Return a list of the saved searches of the library.
+   * Return a list of the saved searches of the library. or create a new saved search. or delete saved searches.
    * Create new saved searches. (API: /searches)
-   * @param args
-   * @param subparsers
+   * @param args - Additional arguments for the request.
+   * @param args.key - The key of the saved search to retrieve. or else will retrieve all saved searches.
+   * @param args.create - Create a new saved search. it gets an array of search definitions.
+   * @param args.delete - Delete saved searches, it gets an array of search keys.
    * @returns
    *
    * https://www.zotero.org/support/dev/web_api/v3/basics
@@ -1778,6 +1826,7 @@ class Zotero {
     if (args.create) {
       let searchDef = [];
       try {
+        // TODO: from @oaizab to @suzuya1331 - this should be a loop instead of a single item.
         searchDef = JSON.parse(fs.readFileSync(args.create[0], 'utf8'));
       } catch (ex) {
         logger.info('Invalid search definition: ', ex);
