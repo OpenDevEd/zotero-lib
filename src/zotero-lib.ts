@@ -1872,6 +1872,10 @@ class Zotero {
   /**
    * Return a list of tags in the library. Options to filter
    * and count tags. (API: /tags)
+   *
+   * @param args.filter - Filter tags by a specific tag.
+   * @param args.count - Count the number of items with each tag.
+   * @returns A Promise that resolves to the tags.
    */
   async tags(args) {
     let rawTags = null;
@@ -2046,8 +2050,10 @@ class Zotero {
   /**
    * Get the DOI of the item provided.
    * @param args
-   * @param subparsers
-   * @returns
+   * @param args.key - the key of the item to get the DOI for
+   * @param args.fullresponse - whether to return the full response
+   * @see item for more information on the args
+   * @returns the DOI of the item
    */
   public async get_doi(args: ZoteroTypes.IGetDoiArgs): Promise<any> {
     // We dont know what kind of item this is - gotta get the item to see
@@ -2059,6 +2065,11 @@ class Zotero {
     return doi;
   }
 
+  /**
+   * Get the DOI of the item provided.
+   * @param item - the item to get the DOI for
+   * @returns the DOI of the item
+   */
   public get_doi_from_item(item) {
     let doi = '';
     if ('doi' in item) {
@@ -2074,6 +2085,20 @@ class Zotero {
     return doi;
   }
 
+  /**
+   * Manages the local database based on the provided arguments.
+   *
+   * @param args - The arguments for managing the local database.
+   * @param args.lookup - Whether to lookup the items.
+   * @param args.keys - The keys of the items to lookup.
+   * @param args.sync - Whether to sync the local database with the online library.
+   * @param args.demon - The cron pattern for the demon.
+   * @param args.lockfile - The lockfile for the sync.
+   * @param args.lock_timeout - The lock timeout for the sync.
+   * @param args.websocket - Whether to use the websocket if not provided the process will exit after 1 second.
+   * @param args.verbose - Whether to show verbose output.
+   * @returns A promise that resolves to the result of the database management operation.
+   */
   public async manageLocalDB(args: ZoteroTypes.IManageLocalDBArgs): Promise<any> {
     console.log('args: ', { ...args }, this.config);
     if (args.lookup && !args.keys) {
@@ -2156,6 +2181,14 @@ class Zotero {
     // }
   }
 
+  /**
+   * Deduplicates items in the specified group based on certain criteria.
+   * It writes the duplicates to a file named `duplicates.json`.
+   * @param args - The deduplication function arguments.
+   * @param args.group_id - The ID of the group to deduplicate.
+   * @param args.api_key - The API key of the group.
+   * @param args.collection - The collection to add the deduplicated items to.
+   */
   public async deduplicate_func(args: ZoteroTypes.IDeduplicateFuncArgs) {
     const { PrismaClient } = require('@prisma/client');
     //@ts-ignore
@@ -2286,6 +2319,13 @@ class Zotero {
     }
   }
 
+  /**
+   * Moves and deduplicates items to a specified collection.
+   *
+   * @param args - The arguments for moving and deduplicating items.
+   * @param args.file - The file containing the items to move and deduplicate.
+   * @returns A Promise that resolves when the items have been moved and deduplicated.
+   */
   public async Move_deduplicate_to_collection(args: ZoteroTypes.IMoveDeduplicateToCollectionArgs) {
     // read deduplicate json file
 
@@ -2438,6 +2478,14 @@ class Zotero {
     }
   }
 
+  /**
+   * Merges items from a specified data file into a Zotero group.
+   *
+   * @param args - The arguments for the merge function.
+   * @param args.data - The path to the data file containing the items to be merged.
+   * @param args.options - The options for merging the items.
+   * @param args.group_id - The ID of the Zotero group to merge the items into.
+   */
   public async merge_func(args: ZoteroTypes.IMergeFuncArgs) {
     if (!fs.existsSync(args.data)) {
       console.log('file not found');
@@ -2464,6 +2512,11 @@ class Zotero {
     }
   }
   //@ts-ignore
+  /**
+   * Retrieves the count of items from the database based on the provided item IDs.
+   * @param items - An array of item IDs.
+   * @returns A Promise that resolves to the count of items.
+   */
   private async getItems(items: string[]) {
     const { PrismaClient } = require('@prisma/client');
     const prisma = new PrismaClient();

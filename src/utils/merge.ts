@@ -15,6 +15,11 @@ async function getItems(items: string[]): Promise<{}> {
   return allItems;
 }
 
+/**
+ * Retrieves the oldest item from an array of item keys.
+ * @param items - An array of item keys.
+ * @returns A Promise that resolves to an array containing the oldest item key and an array of the remaining item keys.
+ */
 export async function get_oldest_item(items: string[]) {
   let allItems = await getItems(items);
   // change object to array
@@ -60,6 +65,11 @@ export async function get_Newest_item(items: string[]) {
   ];
 }
 
+/**
+ * Merges multiple items in a group.
+ * @param {string} groupid - The ID of the group.
+ * @param {string[]} items - An array of item IDs to be merged.
+ */
 export async function merge_items(groupid, items: string[]) {
   let itemarr = await get_oldest_item(items);
   let base = itemarr[0];
@@ -79,6 +89,14 @@ async function changedParentItem(groupid, child, newParent) {
 }
 
 let noMergeType = ['note', 'attachment'];
+/**
+ * Merges two items in Zotero.
+ *
+ * @param {string} groupid - The ID of the Zotero group.
+ * @param {string} base - The key of the base item.
+ * @param {string} deleted - The key of the deleted item.
+ * @returns {Promise<number>} - A promise that resolves to 1 if the merge is successful, or 0 otherwise.
+ */
 async function mergeTwoItems(groupid, base, deleted) {
   const zotero = new Zotero({ verbose: false, 'group-id': groupid });
   const deletedItem = await zotero.item({ key: deleted, fullresponse: true });
@@ -222,6 +240,13 @@ async function mergeTwoItems(groupid, base, deleted) {
   return 1;
 }
 //@ts-ignore
+/**
+ * Merges multiple items in a group with a base item.
+ * @param {string} groupid - The ID of the group.
+ * @param {string} base - The ID of the base item.
+ * @param {string[]} deletedarr - An array of IDs of the items to be merged with the base item.
+ * @returns 0
+ */
 async function mergeMultipleItems(groupid, base, deletedarr) {
   for (const deleted of deletedarr) {
     let result = await mergeTwoItems(groupid, base, deleted);
