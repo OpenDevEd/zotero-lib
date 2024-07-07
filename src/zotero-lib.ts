@@ -2532,6 +2532,14 @@ class Zotero {
     // check if file exists using fs
   }
 
+  /**
+   * Resolves the given arguments and returns the result.
+   *
+   * @param args - The arguments to resolve.
+   * @param args.keys - The keys of the items to resolve.
+   * @param args.groupid - The ID of the group to resolve the items from.
+   * @returns The resolved result, null if keys not provided.
+   */
   public async resolvefunc(args: ZoteroTypes.IResolveFuncArgs) {
     const { PrismaClient } = require('@prisma/client');
     const prisma = new PrismaClient();
@@ -2709,6 +2717,13 @@ class Zotero {
 
   /**
    * Update the DOI of the item provided.
+   *
+   * @param args - The arguments for updating the DOI.
+   * @param args.key - The key of the item to update the DOI for.
+   * @param args.doi - The new DOI to update the item with.
+   * @param args.zenodoRecordID - The Zenodo record ID to update the item with.
+   * @param args.verbose - Whether to show verbose output.
+   * @returns A Promise that resolves to the updated item.
    */
   public async update_doi(args: ZoteroTypes.IUpdateDoiArgs): Promise<any> {
     //TODO: args parsing code
