@@ -2897,6 +2897,16 @@ class Zotero {
     return this.message(0, 'exist status', dataout);
   }
 
+  /**
+   * Retrieves the value of a specific field from a Zotero item.
+   * If the `value` argument is provided, it updates the field with the new value.
+   * @param args - The arguments for retrieving or updating the field.
+   * @param args.key - The key of the item to retrieve or update the field for.
+   * @param args.field - The field to retrieve or update.
+   * @param args.value - The new value to update the field with.
+   * @param args.version - The version of the item to update.
+   * @returns The value of the field or the updated Zotero item.
+   */
   public async field(args: ZoteroTypes.IFieldArgs): Promise<any> {
     //TODO: args parsing code
     if (!args.field) {
