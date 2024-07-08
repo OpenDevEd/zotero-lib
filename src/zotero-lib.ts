@@ -2798,6 +2798,19 @@ class Zotero {
   }
 
   // TODO: Implement
+  /**
+   * Attaches a link to an item in Zotero.
+   * @param args - The arguments for attaching the link.
+   * @param args.key - The key of the item to attach the link to.
+   * @param args.url - The URL to attach to the item.
+   * @param args.title - The title of the link.
+   * @param args.zenodo - Whether to attach a Zenodo link.
+   * @param args.id - The Zenodo ID to attach the link to.
+   * @param args.tags - The tags to attach to the link.
+   * @param args.kerko_site_url - The Kerko site URL to attach to the link.
+   * @param args.update_url_field - Whether to update the URL field.
+   * @returns A Promise that resolves to the result of attaching the link.
+   */
   public async attach_link(args: ZoteroTypes.IAttachLinkArgs): Promise<any> {
     // TODO: There's a problem here... the following just offer docorations. We need to have inputs too...
 
