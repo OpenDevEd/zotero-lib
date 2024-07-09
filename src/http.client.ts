@@ -12,14 +12,26 @@ export function createHttpClient(options = {}) {
 export class HttpClient {
   private headers: any;
 
+  /**
+   * @param args.header - headers to be passed in the request
+   */
   constructor({ headers = {} }) {
     this.headers = headers;
   }
 
-  async post(uri, data, headers = {}, config: any = {}) {
-    const prefix = config.user_id
-      ? `/users/${config.user_id}`
-      : `/groups/${config.group_id}`;
+  /**
+   * The post method is used to send data to zotero.
+   * @param uri - the uri to send the data to
+   * @param data - the data to be sent
+   * @param headers - headers to be passed in the request
+   * @param config - configuration object
+   * @param config.user_id - the user id
+   * @param config.group_id - the group id
+   * @param config.verbose - verbose mode
+   * @returns the response from the server
+   */
+  async post(uri: string, data: any, headers = {}, config: any = {}) {
+    const prefix = config.user_id ? `/users/${config.user_id}` : `/groups/${config.group_id}`;
     if (!uri.startsWith('http')) {
       uri = `${base}${prefix}${uri}`;
     }
@@ -36,11 +48,27 @@ export class HttpClient {
         ...headers,
       },
       data,
-    }).then((res) => res.data);
+    }).then((res: { data: any }) => res.data);
   }
 
+  /**
+   * The get method is used to get data from zotero.
+   * @param uri - the uri to get the data from
+   * @param options - options to be passed in the request
+   * @param options.fulluri - whether to use the full uri
+   * @param options.userOrGroupPrefix - whether to use the user or group prefix, if not provided it defaults to true
+   * @param options.params - the parameters to be passed in the request
+   * @param options.resolveWithFullResponse - resolve with full response axios param, see axios documentation
+   * @param options.json - json axios param, see axios documentation
+   * @param options.arraybuffer - wheter to pass responseType as arraybuffer, see axios documentation
+   * @param config - configuration object
+   * @param config.user_id - the zotero user id it will be used if userOrGroupPrefix is not false
+   * @param config.group_id - the the zotero group id it will be used if user_id is not provided
+   * @param config.verbose - verbose mode
+   * @returns the response from zotero.
+   */
   async get(
-    uri,
+    uri: string,
     options: {
       fulluri?: boolean;
       userOrGroupPrefix?: boolean;
@@ -51,17 +79,14 @@ export class HttpClient {
     } = {},
     config: any = {},
   ) {
-    if (typeof options.userOrGroupPrefix === 'undefined')
-      options.userOrGroupPrefix = true;
+    if (typeof options.userOrGroupPrefix === 'undefined') options.userOrGroupPrefix = true;
 
     if (typeof options.params === 'undefined') options.params = {};
     if (typeof options.json === 'undefined') options.json = true;
 
     let prefix = '';
     if (options.userOrGroupPrefix) {
-      prefix = config.user_id
-        ? `/users/${config.user_id}`
-        : `/groups/${config.group_id}`;
+      prefix = config.user_id ? `/users/${config.user_id}` : `/groups/${config.group_id}`;
     }
 
     const params = Object.keys(options.params)
@@ -103,9 +128,7 @@ export class HttpClient {
       })
       .catch((error) => {
         if (config.verbose) {
-          console.log(
-            `Error in zotero.get = ${JSON.stringify(error, null, 2)}`,
-          );
+          console.log(`Error in zotero.get = ${JSON.stringify(error, null, 2)}`);
         }
         logger.error('error in zotero get %O', error);
         // console.log(`Error in zotero.get = ${JSON.stringify(error.error.data, null, 2)}`)
@@ -117,9 +140,7 @@ export class HttpClient {
           url: uri,
           json: options.json,
         };
-        console.log(
-          'Error in zotero.get = ' + JSON.stringify(shortError, null, 2),
-        );
+        console.log('Error in zotero.get = ' + JSON.stringify(shortError, null, 2));
         return error;
       });
     // console.log("all=" + JSON.stringify(res, null, 2))
@@ -130,11 +151,19 @@ export class HttpClient {
     }
   }
 
-  // TODO: Add resolveWithFullResponse: options.resolveWithFullResponse,
-  async put(uri, data, config) {
-    const prefix = config.user_id
-      ? `/users/${config.user_id}`
-      : `/groups/${config.group_id}`;
+  // TODO: Add resolveWithFullResponse: options.resolveWithFullResponse,'
+  /**
+   * The put method is used to update data in zotero.
+   * @param uri - the uri to update the data
+   * @param data - the data to be updated
+   * @param config - configuration object
+   * @param config.user_id - the zotero user id
+   * @param config.group_id - the zotero group id it will be used if user_id is not provided
+   * @param config.verbose - verbose mode
+   * @returns the response from zotero
+   */
+  async put(uri: string, data: any, config: any) {
+    const prefix = config.user_id ? `/users/${config.user_id}` : `/groups/${config.group_id}`;
 
     uri = `${base}${prefix}${uri}`;
     if (config.verbose) console.error('PUT', uri);
@@ -162,10 +191,19 @@ export class HttpClient {
 
   // patch does not return any data.
   // TODO: Errors are not handled - add this to patch (below) but needs adding to others.
-  async patch(uri, data, version?: number, config?: any) {
-    const prefix = config.user_id
-      ? `/users/${config.user_id}`
-      : `/groups/${config.group_id}`;
+  /**
+   * The patch method is used to update data in zotero.
+   * @param uri - the uri to update the data
+   * @param data - the data to be updated
+   * @param version - the version of the data
+   * @param config - configuration object
+   * @param config.user_id - the zotero user id
+   * @param config.group_id - the zotero group id it will be used if user_id is not provided
+   * @param config.verbose - verbose mode
+   * @returns the response from zotero
+   */
+  async patch(uri: string, data: any, version?: number | string, config?: any) {
+    const prefix = config.user_id ? `/users/${config.user_id}` : `/groups/${config.group_id}`;
 
     const headers = { ...this.headers, 'Content-Type': 'application/json' };
     if (typeof version !== 'undefined') {
@@ -189,17 +227,25 @@ export class HttpClient {
           config: response.config,
         };
       })
-      .catch((error) => {
+      .catch((error: any) => {
         console.log('PAT ERROR=' + JSON.stringify(error, null, 2));
         return error;
       });
   }
 
   // TODO: Add resolveWithFullResponse: options.resolveWithFullResponse,
-  async delete(uri, version?: number, config?: any) {
-    const prefix = config.user_id
-      ? `/users/${config.user_id}`
-      : `/groups/${config.group_id}`;
+  /**
+   * The delete method is used to delete data from zotero.
+   * @param uri - the uri to delete the data
+   * @param version - the version of the data
+   * @param config - configuration object
+   * @param config.user_id - the zotero user id
+   * @param config.group_id - the zotero group id it will be used if user_id is not provided
+   * @param config.verbose - verbose mode
+   * @returns the response from zotero
+   */
+  async delete(uri: string, version?: number | string, config?: any) {
+    const prefix = config.user_id ? `/users/${config.user_id}` : `/groups/${config.group_id}`;
 
     const headers = { ...this.headers, 'Content-Type': 'application/json' };
     if (typeof version !== 'undefined') {
@@ -213,6 +259,6 @@ export class HttpClient {
       method: 'DELETE',
       url: uri,
       headers,
-    }).then((res) => res.data);
+    }).then((res: { data: any }) => res.data);
   }
 }

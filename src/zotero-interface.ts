@@ -1,6 +1,11 @@
 
+// interface ZoteroInterface {
+//   collections(args: ZoteroTypes.CollectionsArgs): Promise<void>;
+// }
+
 namespace ZoteroTypes {
-  export interface IZoterocongif {
+  export interface IZoteroCongif {
+
     user_id?: string;
     group_id?: string;
     library_type?: string;
@@ -13,39 +18,48 @@ namespace ZoteroTypes {
     zotero_schema?: string;
   }
 
-  export interface IGetArgs extends IZoterocongif {
+
+  export interface __getArgs extends IZoteroCongif {
+
     root?: boolean;
     uri: string[];
     show?: boolean;
   }
+  export interface __postArgs extends IZoteroCongif {
 
-  export interface IPostArgs extends IZoterocongif {
     uri: string;
     data: string;
   }
 
-  export interface IPutArgs extends IZoterocongif {
+
+  export interface __putArgs extends IZoteroCongif {
     uri: string;
     data: string;
   }
 
-  export interface IPatchArgs extends IZoterocongif {
+
+  export interface __patchArgs extends IZoteroCongif {
+
     uri: string;
     data: string;
     version: string;
   }
 
-  export interface IDeleteArgs extends IZoterocongif {
+
+  export interface __deleteArgs extends IZoteroCongif {
     uri: string[];
   }
 
-  export interface IKeyArgs extends IZoterocongif {
+  export interface IKeyArgs extends IZoteroCongif {
+
     key: string;
     groups?: boolean;
     terse?: boolean;
   }
 
-  export interface ICollectionsArgs extends IZoterocongif {
+
+  export interface ICollectionsArgs extends IZoteroCongif {
+
     key: string;
     dryrun?: boolean;
     show?: boolean;
@@ -59,7 +73,9 @@ namespace ZoteroTypes {
     isSub?: boolean;
   }
 
-  export interface ICollectionArgs extends IZoterocongif {
+
+  export interface ICollectionArgs extends IZoteroCongif {
+
     key: string;
     dryrun?: boolean;
     show?: boolean;
@@ -71,7 +87,9 @@ namespace ZoteroTypes {
     remove?: string[];
   }
 
-  export interface IItemArgs extends IZoterocongif {
+
+  export interface IItemArgs extends IZoteroCongif {
+
     key: string;
     dryrun?: boolean;
     show?: boolean;
@@ -100,7 +118,9 @@ namespace ZoteroTypes {
     fullresponse?: boolean;
   }
 
-  export interface ICreateItemArgs extends IZoterocongif {
+
+  export interface ICreateItemArgs extends IZoteroCongif {
+
     template?: string;
     files?: string[];
     item?: any;
@@ -110,7 +130,9 @@ namespace ZoteroTypes {
     collections?: string[];
   }
 
-  export interface IUpdateItemArgs extends IZoterocongif {
+
+  export interface IUpdateItemArgs extends IZoteroCongif {
+
     key: string;
     replace?: boolean;
     json?: any;
@@ -120,7 +142,44 @@ namespace ZoteroTypes {
     fullresponse?: boolean;
   }
 
-  export interface IEncloseItemInICollectionArgs extends IZoterocongif {
+
+  export interface IDeleteItemArgs extends IZoteroCongif {
+    key: string;
+    version?: string;
+    fullresponse?: boolean;
+  }
+
+  export interface IDeleteItemsArgs extends IZoteroCongif {
+    keys: string[];
+    fullresponse?: boolean;
+  }
+
+  export interface IUpdateCollectionArgs extends IZoteroCongif {
+    key: string;
+    json?: any;
+    version?: string;
+    fullresponse?: boolean;
+  }
+
+  export interface IDeleteCollectionArgs extends IZoteroCongif {
+    key: string;
+    version?: string;
+    fullresponse?: boolean;
+  }
+
+  export interface IDeleteCollectionsArgs extends IZoteroCongif {
+    keys: string[];
+    fullresponse?: boolean;
+  }
+
+  export interface ISearchesArgs extends IZoteroCongif {
+    create?: string[];
+    delete?: string[];
+    key?: string;
+  }
+
+  export interface IEncloseItemInCollectionArgs extends IZoteroCongif {
+
     key?: string;
     collection?: string;
     title?: string;
@@ -128,7 +187,9 @@ namespace ZoteroTypes {
 
   export interface IGetDoiArgs extends ZoteroTypes.IItemArgs {}
 
-  export interface IManageLocalDBArgs extends IZoterocongif {
+
+  export interface IManageLocalDBArgs extends IZoteroCongif {
+
     database: string;
     sync?: boolean;
     lookup?: boolean;
@@ -143,14 +204,18 @@ namespace ZoteroTypes {
     websocket?: boolean;
   }
 
-  export interface IUpdateDoiArgs extends IZoterocongif {
+
+  export interface IUpdateDoiArgs extends IZoteroCongif {
+
     key: string;
     doi?: string;
     zenodoRecordID?: string;
     fullresponse?: boolean;
   }
 
-  export interface IAttachLinkArgs extends IZoterocongif {
+
+  export interface IAttachLinkArgs extends IZoteroCongif {
+
     key: string;
     url?: string;
     update_url_field?: boolean;
@@ -170,37 +235,43 @@ namespace ZoteroTypes {
   export interface IFieldArgs extends ZoteroTypes.IItemArgs {
     field: string;
     value?: string;
+    extra?: boolean;
+
   }
 
   export interface IUpdateUrlArgs extends ZoteroTypes.IUpdateItemArgs {
     value: string;
   }
 
-  export interface IDeduplicateFuncArgs extends ZoteroTypes.IZoterocongif {
+
+  export interface IDeduplicateFuncArgs extends ZoteroTypes.IZoteroCongif {
     files?: string[];
     collection?: string;
   }
-  export interface IMoveDeduplicateToICollectionArgs extends ZoteroTypes.IZoterocongif {
+  export interface IMoveDeduplicateToCollectionArgs extends ZoteroTypes.IZoteroCongif {
     file?: string;
     collection?: string;
   }
-  //MergeFuncArgs
-  export interface IMergeFuncArgs extends ZoteroTypes.IZoterocongif {
+  //merge_func_Args
+  export interface IMergeFuncArgs extends ZoteroTypes.IZoteroCongif {
     data?: string;
     options?: string;
   }
-  //ResolvefuncArgs
-  export interface IResolvefuncArgs extends ZoteroTypes.IZoterocongif {
+  //resolvefunc_Args
+  export interface IResolveFuncArgs extends ZoteroTypes.IZoteroCongif {
     groupid?: string;
     keys?: string[];
   }
-  //KerkoCiteItemAlsoKnownAsArgs
+  //KerkoCiteItemAlsoKnownAs_Args
+
   export interface IKerkoCiteItemAlsoKnownAsArgs extends ZoteroTypes.IItemArgs {
     fullresponse?: boolean;
     add?: string[];
   }
-  //GetBibArgs
-  export interface IGetZoteroDataXArgs extends ZoteroTypes.IZoterocongif {
+
+  //getbib_Args
+  export interface IGetZoteroDataXargs extends ZoteroTypes.IZoteroCongif {
+
     key?: string;
     keys?: string[];
     zgroup?: string;
@@ -210,28 +281,33 @@ namespace ZoteroTypes {
     json?: boolean;
     groupkeys?: string;
   }
-  export interface IGetBibArgs extends ZoteroTypes.IGetZoteroDataXArgs {
+
+  export interface IGetbibArgs extends ZoteroTypes.IGetZoteroDataXargs {
     xml?: boolean;
   }
-  //MakeZoteroQueryArgs
-  export interface IMakeZoteroQueryArgs extends ZoteroTypes.IZoterocongif {
+  //makeZoteroQuery_args
+  export interface IMakeZoteroQueryArgs extends ZoteroTypes.IZoteroCongif {
+
     key?: string;
     keys?: string[];
     group?: string;
   }
-  //MakeMultiQueryArgs
-  export interface IMakeMultiQueryArgs extends ZoteroTypes.IZoterocongif {
+
+  //makeMultiQuery_args
+  export interface IMakeMultiQueryArgs extends ZoteroTypes.IZoteroCongif {
     groupkeys?: string;
   }
-  //AttachNoteArgs
-  export interface AttachNoteArgs extends ZoteroTypes.IZoterocongif {
+  //attach_noteArgs
+  export interface IAttachNoteArgs extends ZoteroTypes.IZoteroCongif {
+
     notetext: string;
     key?: string;
     notefile?: string;
     tags?: string[];
   }
-  //FindEmptyItemsArgs
-  export interface IFindEmptyItemsArgs extends ZoteroTypes.IZoterocongif {
+  //findEmptyItemsArgs
+  export interface IFindEmptyItemsArgs extends ZoteroTypes.IZoteroCongif {
+
     output?: string;
     delete?: boolean;
     onlykeys?: boolean;
