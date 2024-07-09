@@ -9,6 +9,8 @@ import decorations from './decorations';
 const customCmdHandlers = new Map();
 customCmdHandlers.set('create', 'create_item');
 customCmdHandlers.set('update', 'update_item');
+customCmdHandlers.set('delete', 'delete_item');
+customCmdHandlers.set('delete-many', 'delete_items');
 customCmdHandlers.set('enclose-item', 'enclose_item_in_collection');
 customCmdHandlers.set('get-doi', 'get_doi');
 customCmdHandlers.set('update-doi', 'update_doi');
@@ -26,6 +28,9 @@ customCmdHandlers.set('movetocollection', 'Move_deduplicate_to_collection');
 customCmdHandlers.set('merge', 'merge_func');
 customCmdHandlers.set('find-empty-items', 'findEmptyItems');
 customCmdHandlers.set('get-ids', 'getIds');
+customCmdHandlers.set('update-collection', 'update_collection');
+customCmdHandlers.set('delete-collection', 'delete_collection');
+customCmdHandlers.set('delete-collections', 'delete_collections');
 
 function getFuncName(subCmdName) {
   if (customCmdHandlers.has(subCmdName)) {
@@ -75,6 +80,10 @@ subParsersMap.set('items', function (subparsers, subCmdName) {
   argparser.add_argument('--json', {
     action: 'store',
     help: 'Provide output in json format E.g --json Items.json',
+  });
+  argparser.add_argument('--tags', {
+    action: 'store_true',
+    help: ' Retrieve all tags in the library, with the ability to filter based on the items',
   });
 });
 
@@ -175,6 +184,10 @@ subParsersMap.set('item', function (subparsers, subCmdName) {
     action: 'store_true',
     help: 'Return the full response from the Zotero API.',
   });
+  argparser.add_argument('--tags', {
+    action: 'store_true',
+    help: ' Retrieve all tags in the item.',
+  });
 });
 
 subParsersMap.set('create', function (subparsers, subCmdName) {
@@ -232,16 +245,109 @@ subParsersMap.set('update', function (subparsers, subCmdName) {
   });
 });
 
+subParsersMap.set('delete', function (subparsers, subCmdName) {
+  // async delete item
+  const argparser = subparsers.add_parser(subCmdName, {
+    help: 'Delete an item(--key KEY). (API: delete /items/KEY)',
+  });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
+  argparser.add_argument('--key', {
+    required: true,
+    help: 'The key of the item. You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
+  });
+  argparser.add_argument('--version', {
+    nargs: 1,
+    help: 'You have to supply the version of the item via the --version argument or else the latest version will be used.',
+  });
+});
+
+subParsersMap.set('delete-many', function (subparsers, subCmdName) {
+  // async delete items
+  const argparser = subparsers.add_parser(subCmdName, {
+    help: 'Delete multiple items. (API: delete /items/KEY)',
+  });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
+  argparser.add_argument('--keys', {
+    nargs: '*',
+    required: true,
+    help: 'The keys of the items. You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
+  });
+  argparser.add_argument('--version', {
+    nargs: 1,
+    help: 'You have to supply the version of the item via the --version argument or else the latest version will be used.',
+  });
+});
+
+subParsersMap.set('update-collection', function (subparsers, subCmdName) {
+  // async update collection
+  const argparser = subparsers.add_parser(subCmdName, {
+    help: 'Update a collection (--key KEY). (API: patch /collections/KEY)',
+  });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
+  argparser.add_argument('--key', {
+    required: true,
+    help: 'The key of the collection. You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
+  });
+  argparser.add_argument('--json', {
+    nargs: 1,
+    help: 'New collection as JSON.',
+  });
+  argparser.add_argument('--version', {
+    nargs: 1,
+    help: 'You have to supply the version of the item via the --version argument or else the latest version will be used.',
+  });
+});
+
+subParsersMap.set('delete-collection', function (subparsers, subCmdName) {
+  // async delete collection
+  const argparser = subparsers.add_parser(subCmdName, {
+    help: 'Delete a collection (--key KEY). (API: delete /collections/KEY)',
+  });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
+  argparser.add_argument('--key', {
+    required: true,
+    help: 'The key of the collection. You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
+  });
+  argparser.add_argument('--version', {
+    nargs: 1,
+    help: 'You have to supply the version of the item via the --version argument or else the latest version will be used.',
+  });
+});
+
+subParsersMap.set('delete-collections', function (subparsers, subCmdName) {
+  // async delete collections
+  const argparser = subparsers.add_parser(subCmdName, {
+    help: 'Delete multiple collections. (API: delete /collections/KEY)',
+  });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
+  argparser.add_argument('--keys', {
+    nargs: '*',
+    required: true,
+    help: 'The keys of the collections. You can provide the key as zotero-select link (zotero://...) to also set the group-id.',
+  });
+});
+
 //TODO: Discuss that trash is not implemented???
-// parsersMap.set('trash', function (subparsers, subCmdName) {
-//   return null;
-// });
+subParsersMap.set('trash', function (subparsers, subCmdName) {
+  const argparser = subparsers.add_parser(subCmdName, {
+    help: 'Retrieve items in the trash. (API: /trash/items)',
+  });
+  argparser.set_defaults({ func: getFuncName(subCmdName) });
+  argparser.add_argument('--tags', {
+    action: 'store_true',
+    help: 'Retrieve all tags in the trash.',
+  });
+});
 
 subParsersMap.set('publications', function (subparsers, subCmdName) {
   const argparser = subparsers.add_parser(subCmdName, {
     help: 'Return a list of items in publications (user library only). (API: /publications/items)',
   });
   argparser.set_defaults({ func: getFuncName(subCmdName) });
+  argparser.add_argument('--tags', {
+    action: 'store_true',
+    help: ' Retrieve all tags in the library, with the ability to filter based on the items',
+  });
 });
 
 subParsersMap.set('types', function (subparsers, subCmdName) {
@@ -294,6 +400,14 @@ subParsersMap.set('searches', function (subparsers, subCmdName) {
   argparser.add_argument('--create', {
     nargs: 1,
     help: 'Path of JSON file containing the definitions of saved searches.',
+  });
+  argparser.add_argument('--key', {
+    nargs: 1,
+    help: 'The key of the saved search.',
+  });
+  argparser.add_argument('--delete', {
+    nargs: '*',
+    help: 'The keys of the saved search to be deleted.',
   });
 });
 
@@ -769,6 +883,10 @@ subParsersMap.set('collections', function (subparsers, subCmdName) {
   argparser.add_argument('--json', {
     action: 'store',
     help: 'Provide output in json format E.g --json Items.json',
+  });
+  argparser.add_argument('--tags', {
+    action: 'store_true',
+    help: 'Display tags present in the collection.',
   });
 });
 
