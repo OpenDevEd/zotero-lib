@@ -10,7 +10,7 @@ import newVanityDOI from './utils/newVanityDOI';
 import processExtraField from './utils/processExtraField';
 
 import decorations from './decorations';
-import { createHttpClient } from './http.client';
+import { createHttpClient, HttpClient } from './http.client';
 import {
   fetchCurrentKey,
   fetchGroupData,
@@ -71,8 +71,15 @@ class Zotero {
 
   output: string = '';
 
-  http: any;
+  http: HttpClient;
 
+  /**
+   * Constructor for Zotero class
+   * @param args - arguments passed to the constructor
+   * @param args.config - path to the config file
+   * @param args.config_json - config in json format
+   * @param args.verbose - verbose output
+   */
   constructor(args = {}) {
     // Read config
     this.config = this.configure(args, true);
@@ -86,6 +93,15 @@ class Zotero {
   }
 
   //TODO: config
+  /**
+   * Configure the zotero class
+   * @param args - arguments passed to the constructor
+   * @param args.config - path to the config file
+   * @param args.config_json - config in json format
+   * @param args.verbose - verbose output
+   * @param shouldReadConfigFile - if the config file should be read
+   * @returns the config
+   */
   public configure(args, shouldReadConfigFile = false) {
     // pick up config: The function reads args and populates config
 
@@ -136,8 +152,10 @@ class Zotero {
   }
 
   /**
-   * format Array of string tags as Array of Object tags
-   * Will convert ['title'] to [{tag: 'title', type: 0}]
+   * Convert array of string tags to array of object tags
+   * @param tags - Array of string tags
+   * @returns Array of Object tags
+   * @example - ['title'] to [{tag: 'title', type: 0}]
    */
   public objectifyTags(tags) {
     const result = [];
@@ -352,6 +370,10 @@ class Zotero {
   /**
    * Show details about this API key.
    * (API: /keys )
+   * @param args.api_key - the API key to show details for
+   * @param args.groups - show groups for this user, only 100 are shown
+   * @param args.terse - show output in a terse format, `id name owner type`
+   * @returns details about the API key
    */
   public async key(args: ZoteroTypes.IKeyArgs): Promise<any> {
     if (!args.api_key) {
@@ -402,6 +424,11 @@ class Zotero {
     return { key: res, groups: res2 };
   }
 
+  /**
+   * Extract the key, type and group from a zotero select link.
+   * @param args.key - zotero select link format, or just the key
+   * @returns object with key, type and group (if applicable) or key
+   */
   public getIds(args) {
     if (!args?.key) console.log('please provide a newlocation');
     const key = args.key;
@@ -424,10 +451,20 @@ class Zotero {
   // End of standard API calls
 
   // Utility functions. private?
+  /**
+   * Return the total results from a query.
+   * @param uri - the uri to query
+   * @param params - the parameters to pass to the query
+   * @returns the total results from a query
+   */
   async count(uri, params = {}) {
     return (await this.http.get(uri, { resolveWithFullResponse: true, params }, this.config)).headers['total-results'];
   }
 
+  /**
+   * Show a message. If the message is an object, it is stringified.
+   * @param v - the message to show
+   */
   private show(v) {
     // TODO: Look at the type of v: if string, then print, if object, then stringify
     if (typeof v === 'string') {
@@ -438,6 +475,11 @@ class Zotero {
     this.print(JSON.stringify(v, null, this.config.indent));
   }
 
+  /**
+   * Extract the key, type (items or collections) and group from a zotero select link.
+   * @param key - array of (or simple variable) zotero select link format, or just the key
+   * @param n - the input key type (1=group or 3=key) ir the key not match zotero select link
+   */
   private extractKeyGroupVariable(key, n) {
     // n=1 -> group
     // n=2 -> items vs. collections
@@ -486,6 +528,14 @@ class Zotero {
     return this.extractKeyGroupVariable(key, 3);
   }
 
+  /**
+   * Attach a note to an item.
+   * @param PARENT - the parent item to attach the note to
+   * @param options - options for the note
+   * @param options.content - the content of the note
+   * @param options.tags - the tags for the note
+   * @returns the note attached to the item
+   */
   public async attachNoteToItem(
     PARENT,
     options: { content?: string; tags?: any } = {
@@ -508,6 +558,14 @@ class Zotero {
 
   // TODO: Rewrite other function args like this.
   // Rather than fn(args) have fn({......})
+  /**
+   * Attach a link to an item
+   * @param PARENT - the parent item to attach the link to
+   * @param URL - the URL to attach
+   * @param options - options for the link
+   * @param options.title - the title of the link
+   * @param options.tags - the tags for the link
+   */
   public async attachLinkToItem(
     PARENT,
     URL,
@@ -537,6 +595,15 @@ class Zotero {
    * Retrieve a list of collections or create a collection.
    * (API: /collections, /collections/top, /collections/<collectionKey>/collections).
    * Use 'collections --help' for details.
+   *
+   * @param args - arguments passed to the function
+   * @param args.json - the json file to save the collections results to
+   * @param args.key - the key of the collection to retrieve, if not provided, all collections are retrieved
+   * @param args.recursive - whether to retrieve subcollections
+   * @param args.create_child - create a child collection, it takes an array of collection names
+   * @param args.top - whether to retrieve top level collections
+   * @param args.terse - whether to return the results in forma of object with key and name
+   * @returns the list of collections
    *
    * https://www.zotero.org/support/dev/web_api/v3/basics
    * Collections
@@ -649,6 +716,12 @@ class Zotero {
    * (API: /collections/KEY).
    * Use 'collection --help' for details.
    *
+   * @param args - arguments passed to the function
+   * @param args.key - the key of the collection to update
+   * @param args.json - the json string to update the collection with
+   * @param args.version - the version of the collection to update, if not provided, it is retrieved
+   * @returns the updated collection
+   *
    */
   public async update_collection(args: ZoteroTypes.IUpdateCollectionArgs) {
     if (!args.key) {
@@ -688,6 +761,11 @@ class Zotero {
    * Delete a collection
    * (API: /collections/KEY).
    * Use 'collection --help' for details.
+   *
+   * @param args - arguments passed to the function
+   * @param args.key - the key of the collection to delete
+   * @param args.version - the version of the collection to delete, if not provided, it is retrieved
+   * @returns a string confirming the deletion of the collection
    */
   public async delete_collection(args: ZoteroTypes.IDeleteCollectionArgs) {
     if (!args.key) {
@@ -708,6 +786,10 @@ class Zotero {
 
   /**
    * Delete multiple collections
+   *
+   * @param args - arguments passed to the function
+   * @param args.keys - the keys of the collections to delete
+   * @returns an array of strings confirming the deletion of the collections
    */
   public async delete_collections(args: ZoteroTypes.IDeleteCollectionsArgs) {
     if (!args.keys) {
@@ -737,6 +819,13 @@ class Zotero {
    * --key KEY (API: /collections/KEY or /collections/KEY/tags).
    * Use 'collection --help' for details.
    * (Note: Retrieve items is a collection via 'items --collection KEY'.)
+   *
+   * @param args - arguments passed to the function
+   * @param args.key - the key of the collection to retrieve, in zotero select link format
+   * @param args.tags - whether to retrieve the tags of the collection
+   * @param args.add - add an item to the collection, takes an array of item keys
+   * @param args.remove - remove an item from the collection, takes an array of item keys
+   * @returns the collection
    *
    * Operate on a specific collection.
    * <userOrGroupPrefix>/collections/<collectionKey>/items Items within a specific collection in the library
@@ -803,6 +892,18 @@ class Zotero {
    * (API: /items, /items/top, /collections/COLLECTION/items/top).
    * Use 'items --help' for details.
    * By default, all items are retrieved. With --top or limit (via --filter) the default number of items are retrieved.
+   *
+   * @param args - arguments passed to the function
+   * @param args.filter - the filter to apply to the items, this is the parameters to pass to the query
+   * @param args.json - the json file to save the items results to
+   * @param args.count - whether to count the number of items
+   * @param args.collection - the collection to retrieve items from
+   * @param args.top - whether to retrieve top level items
+   * @param args.tags - whether to retrieve the tags of the items
+   * @param args.validate - whether to validate the items, with a pre-defined schema
+   * @param args.validate_with - the schema to validate the items with
+   * @param args.show - whether to show the items
+   * @returns the list of items
    *
    * URI Description
    * https://www.zotero.org/support/dev/web_api/v3/basics
@@ -871,6 +972,14 @@ class Zotero {
     return items;
   }
 
+  /**
+   * Validates the items using a specified schema or the default Zotero schema.
+   * @param args - The arguments passed to the method.
+   * @param args.validate_with - The schema to validate the items with.
+   * @param args.items - The items to be validated.
+   * @param items - The items to be validated.
+   * @throws Error if the specified schema does not exist or if validation is requested but the default Zotero schema does not exist.
+   */
   private async validate_items(args: any, items: any) {
     let schema_path = '';
     if (args.validate_with) {
@@ -914,6 +1023,24 @@ class Zotero {
    * Retrieve an item (item --key KEY), save/add file attachments,
    * retrieve children. Manage collections and tags.
    * (API: /items/KEY/ or /items/KEY/children).
+   *
+   * @param args - arguments passed to the function
+   * @param args.key - the key of the item to retrieve
+   * @param args.tags - whether to retrieve the tags of the item
+   * @param args.filter - the filter to apply to the item, this is the parameters to pass to the query
+   * @param args.savefiles - whether to save the attachments of the item
+   * @param args.addfiles - the files to add to the item, array of file paths
+   * @param args.addtocollection - the collections to add the item to, array of collection keys
+   * @param args.removefromcollection - the collections to remove the item from, array of collection keys
+   * @param args.switchNames - whether to switch the first and last names of the creators
+   * @param args.crossref - whether to format the item as a crossref XML
+   * @param args.verbose - whether to show verbose output
+   * @param args.debug - whether to show debug output
+   * @param args.organise_extra - to organize the extra field
+   * @param args.addtags - the tags to add to the item, array of tags
+   * @param args.removetags - the tags to remove from the item, array of tags
+   * @returns the item
+   *
    * Also see 'attachment', 'create' and 'update'.
    * https://www.zotero.org/support/dev/web_api/v3/basics
    * <userOrGroupPrefix>/items/<itemKey> A specific item in the library
@@ -1208,6 +1335,9 @@ class Zotero {
 
   /**
    * Retrieve/save file attachments for the item specified with --key KEY
+   * @param args.key - the key of the item to retrieve the attachment for, in zotero select link format
+   * @param args.save - the file to save the attachment to
+   * @returns an object with the message 'File saved' and the filename, md5, and mtime of the file
    * (API: /items/KEY/file).
    * Also see 'item', which has options for adding/saving file attachments.
    */
@@ -1246,6 +1376,14 @@ class Zotero {
    * a template with the --template option.Use this option to create
    * both top-level items, as well as child items (including notes and links).
    *
+   * @param args.items - the items to create, an array of items
+   * @param args.files - the files to create items from, an array of file paths
+   * @param args.template - get the template for the item to create instead of creating an item
+   * @param args.newcollection - create a new collection, takes an array of collection names, for now only the first one is used
+   * @param args.collections - the collections to add the items to, an array of collection keys
+   * @param args.fullresponse - whether to return the full response
+   * @returns the created item or items
+   *
    * see api docs for creating
    * [single item](https://www.zotero.org/support/dev/web_api/v3/write_requests#_an_item) OR
    * [multiple items](https://www.zotero.org/support/dev/web_api/v3/write_requests#creating_multiple_items)
@@ -1277,6 +1415,7 @@ class Zotero {
         const itemsflat = items.flat(1);
 
         // TODO: Also add an option 'tags' which adds tags to new items.
+        // TODO: from @oaizab to @suzuya1331 is this one should stay like this or should loop over the newcollection array?
         if (args.newcollection) {
           // create a new collection
           const collection = await this.http.post(
@@ -1405,6 +1544,12 @@ class Zotero {
     }
   }
 
+  /**
+   * Prunes the data from the response object.
+   * @param res - The response object.
+   * @param fullresponse - Whether to return the full response object or just the pruned data. Default is `false`.
+   * @returns The pruned data or the full response object.
+   */
   public pruneData(res, fullresponse = false) {
     if (fullresponse) return res;
     return res.successful['0'].data;
@@ -1414,6 +1559,14 @@ class Zotero {
    * Update/replace an item with given key (--key KEY),
    * either update the item (API: patch /items/KEY)
    * or replace (using --replace, API: put /items/KEY).
+   *
+   * @param args - arguments passed to the function
+   * @param args.key - the key of the item to update, in zotero select link format
+   * @param args.json - the json file to update the item with
+   * @param args.file - the file to update the item with
+   * @param args.version - the version of the item to update
+   * @param args.replace - whether to replace the item
+   * @returns the updated item
    *
    * [see api docs](https://www.zotero.org/support/dev/web_api/v3/write_requests#updating_an_existing_item)
    */
@@ -1477,6 +1630,11 @@ class Zotero {
    * Delete an item with given key (--key KEY).
    * (API: delete /items/KEY)
    *
+   * @param args - arguments passed to the function
+   * @param args.key - the key of the item to delete, in zotero select link format
+   * @param args.version - the version of the item to delete
+   * @returns a message indicating the item was deleted
+   *
    * [see api docs](https://www.zotero.org/support/dev/web_api/v3/write_requests#deleting_an_item)
    */
   public async delete_item(args: ZoteroTypes.IDeleteItemArgs): Promise<
@@ -1509,6 +1667,11 @@ class Zotero {
   /**
    * Delete multiple items with given keys (--keys KEYS).
    * (API: delete /items/KEY)
+   *
+   * @param args - arguments passed to the function
+   * @param args.keys - the keys of the items to delete, in zotero select link format
+   * @returns a message indicating the items were deleted
+   *
    * [see api docs](https://www.zotero.org/support/dev/web_api/v3/write_requests#deleting_multiple_items)
    */
   public async delete_items(args: ZoteroTypes.IDeleteItemsArgs): Promise<
@@ -1545,7 +1708,12 @@ class Zotero {
   }
 
   // <userOrGroupPrefix>/items/trash Items in the trash
-  /** Return a list of items in the trash. */
+  /**
+   * Retrieves the items in the trash.
+   * @param args - Additional arguments for the request.
+   * @param args.tags - Whether to retrieve the tags of the items.
+   * @returns A Promise that resolves to the items in the trash.
+   */
   async trash(args) {
     const items = await this.http.get(`/items/trash${args.tags ? '/tags' : ''}`, undefined, this.config);
     this.show(items);
@@ -1555,8 +1723,9 @@ class Zotero {
   /**
    * Return a list of items in publications (user library only).
    * (API: /publications/items)
-   * @param args
-   * @returns
+   * @param args - Additional arguments for the request.
+   * @param args.tags - Whether to retrieve the tags of the publications.
+   * @returns A Promise that resolves to the items in the publications.
    *
    * https://www.zotero.org/support/dev/web_api/v3/basics
    * <userOrGroupPrefix>/publications/items Items in My Publications
@@ -1600,8 +1769,12 @@ class Zotero {
    * (API: /itemFields).
    * Note that to retrieve a template, use 'create-item --template TYPE'
    * rather than this command.
+   *
+   * @param args - Additional arguments for the request.
+   * @param args.type - The type of item to retrieve the fields for.
+   * @returns A Promise that resolves to the template fields.
    */
-  async fields(args) {
+  async fields(args: { type?: string }): Promise<any> {
     if (args.type) {
       const result = {
         itemTypeFields: await this.http.get(
@@ -1639,10 +1812,12 @@ class Zotero {
   }
 
   /**
-   * Return a list of the saved searches of the library.
+   * Return a list of the saved searches of the library. or create a new saved search. or delete saved searches.
    * Create new saved searches. (API: /searches)
-   * @param args
-   * @param subparsers
+   * @param args - Additional arguments for the request.
+   * @param args.key - The key of the saved search to retrieve. or else will retrieve all saved searches.
+   * @param args.create - Create a new saved search. it gets an array of search definitions.
+   * @param args.delete - Delete saved searches, it gets an array of search keys.
    * @returns
    *
    * https://www.zotero.org/support/dev/web_api/v3/basics
@@ -1651,6 +1826,7 @@ class Zotero {
     if (args.create) {
       let searchDef = [];
       try {
+        // TODO: from @oaizab to @suzuya1331 - this should be a loop instead of a single item.
         searchDef = JSON.parse(fs.readFileSync(args.create[0], 'utf8'));
       } catch (ex) {
         logger.info('Invalid search definition: ', ex);
@@ -1696,6 +1872,10 @@ class Zotero {
   /**
    * Return a list of tags in the library. Options to filter
    * and count tags. (API: /tags)
+   *
+   * @param args.filter - Filter tags by a specific tag.
+   * @param args.count - Count the number of items with each tag.
+   * @returns A Promise that resolves to the tags.
    */
   async tags(args) {
     let rawTags = null;
@@ -1870,8 +2050,10 @@ class Zotero {
   /**
    * Get the DOI of the item provided.
    * @param args
-   * @param subparsers
-   * @returns
+   * @param args.key - the key of the item to get the DOI for
+   * @param args.fullresponse - whether to return the full response
+   * @see item for more information on the args
+   * @returns the DOI of the item
    */
   public async get_doi(args: ZoteroTypes.IGetDoiArgs): Promise<any> {
     // We dont know what kind of item this is - gotta get the item to see
@@ -1883,6 +2065,11 @@ class Zotero {
     return doi;
   }
 
+  /**
+   * Get the DOI of the item provided.
+   * @param item - the item to get the DOI for
+   * @returns the DOI of the item
+   */
   public get_doi_from_item(item) {
     let doi = '';
     if ('doi' in item) {
@@ -1898,6 +2085,20 @@ class Zotero {
     return doi;
   }
 
+  /**
+   * Manages the local database based on the provided arguments.
+   *
+   * @param args - The arguments for managing the local database.
+   * @param args.lookup - Whether to lookup the items.
+   * @param args.keys - The keys of the items to lookup.
+   * @param args.sync - Whether to sync the local database with the online library.
+   * @param args.demon - The cron pattern for the demon.
+   * @param args.lockfile - The lockfile for the sync.
+   * @param args.lock_timeout - The lock timeout for the sync.
+   * @param args.websocket - Whether to use the websocket if not provided the process will exit after 1 second.
+   * @param args.verbose - Whether to show verbose output.
+   * @returns A promise that resolves to the result of the database management operation.
+   */
   public async manageLocalDB(args: ZoteroTypes.IManageLocalDBArgs): Promise<any> {
     console.log('args: ', { ...args }, this.config);
     if (args.lookup && !args.keys) {
@@ -1980,6 +2181,14 @@ class Zotero {
     // }
   }
 
+  /**
+   * Deduplicates items in the specified group based on certain criteria.
+   * It writes the duplicates to a file named `duplicates.json`.
+   * @param args - The deduplication function arguments.
+   * @param args.group_id - The ID of the group to deduplicate.
+   * @param args.api_key - The API key of the group.
+   * @param args.collection - The collection to add the deduplicated items to.
+   */
   public async deduplicate_func(args: ZoteroTypes.IDeduplicateFuncArgs) {
     const { PrismaClient } = require('@prisma/client');
     //@ts-ignore
@@ -2110,6 +2319,13 @@ class Zotero {
     }
   }
 
+  /**
+   * Moves and deduplicates items to a specified collection.
+   *
+   * @param args - The arguments for moving and deduplicating items.
+   * @param args.file - The file containing the items to move and deduplicate.
+   * @returns A Promise that resolves when the items have been moved and deduplicated.
+   */
   public async Move_deduplicate_to_collection(args: ZoteroTypes.IMoveDeduplicateToCollectionArgs) {
     // read deduplicate json file
 
@@ -2262,6 +2478,14 @@ class Zotero {
     }
   }
 
+  /**
+   * Merges items from a specified data file into a Zotero group.
+   *
+   * @param args - The arguments for the merge function.
+   * @param args.data - The path to the data file containing the items to be merged.
+   * @param args.options - The options for merging the items.
+   * @param args.group_id - The ID of the Zotero group to merge the items into.
+   */
   public async merge_func(args: ZoteroTypes.IMergeFuncArgs) {
     if (!fs.existsSync(args.data)) {
       console.log('file not found');
@@ -2288,6 +2512,11 @@ class Zotero {
     }
   }
   //@ts-ignore
+  /**
+   * Retrieves the count of items from the database based on the provided item IDs.
+   * @param items - An array of item IDs.
+   * @returns A Promise that resolves to the count of items.
+   */
   private async getItems(items: string[]) {
     const { PrismaClient } = require('@prisma/client');
     const prisma = new PrismaClient();
@@ -2303,6 +2532,14 @@ class Zotero {
     // check if file exists using fs
   }
 
+  /**
+   * Resolves the given arguments and returns the result.
+   *
+   * @param args - The arguments to resolve.
+   * @param args.keys - The keys of the items to resolve.
+   * @param args.groupid - The ID of the group to resolve the items from.
+   * @returns The resolved result, null if keys not provided.
+   */
   public async resolvefunc(args: ZoteroTypes.IResolveFuncArgs) {
     const { PrismaClient } = require('@prisma/client');
     const prisma = new PrismaClient();
@@ -2480,6 +2717,13 @@ class Zotero {
 
   /**
    * Update the DOI of the item provided.
+   *
+   * @param args - The arguments for updating the DOI.
+   * @param args.key - The key of the item to update the DOI for.
+   * @param args.doi - The new DOI to update the item with.
+   * @param args.zenodoRecordID - The Zenodo record ID to update the item with.
+   * @param args.verbose - Whether to show verbose output.
+   * @returns A Promise that resolves to the updated item.
    */
   public async update_doi(args: ZoteroTypes.IUpdateDoiArgs): Promise<any> {
     //TODO: args parsing code
@@ -2554,6 +2798,19 @@ class Zotero {
   }
 
   // TODO: Implement
+  /**
+   * Attaches a link to an item in Zotero.
+   * @param args - The arguments for attaching the link.
+   * @param args.key - The key of the item to attach the link to.
+   * @param args.url - The URL to attach to the item.
+   * @param args.title - The title of the link.
+   * @param args.zenodo - Whether to attach a Zenodo link.
+   * @param args.id - The Zenodo ID to attach the link to.
+   * @param args.tags - The tags to attach to the link.
+   * @param args.kerko_site_url - The Kerko site URL to attach to the link.
+   * @param args.update_url_field - Whether to update the URL field.
+   * @returns A Promise that resolves to the result of attaching the link.
+   */
   public async attach_link(args: ZoteroTypes.IAttachLinkArgs): Promise<any> {
     // TODO: There's a problem here... the following just offer docorations. We need to have inputs too...
 
@@ -2640,6 +2897,16 @@ class Zotero {
     return this.message(0, 'exist status', dataout);
   }
 
+  /**
+   * Retrieves the value of a specific field from a Zotero item.
+   * If the `value` argument is provided, it updates the field with the new value.
+   * @param args - The arguments for retrieving or updating the field.
+   * @param args.key - The key of the item to retrieve or update the field for.
+   * @param args.field - The field to retrieve or update.
+   * @param args.value - The new value to update the field with.
+   * @param args.version - The version of the item to update.
+   * @returns The value of the field or the updated Zotero item.
+   */
   public async field(args: ZoteroTypes.IFieldArgs): Promise<any> {
     //TODO: args parsing code
     if (!args.field) {
@@ -2724,6 +2991,14 @@ class Zotero {
     return this.message(0, 'exit status', data);
   }
 
+  /**
+   * Updates the URL of an item in the Zotero library.
+   * @param args - The arguments for updating the URL.
+   * @param args.key - The key of the item to update the URL for.
+   * @param args.value - The new URL to update the item with.
+   * @param args.version - The version of the item to update.
+   * @returns A promise that resolves with the updated item.
+   */
   public async update_url(args: ZoteroTypes.IUpdateUrlArgs): Promise<any> {
     //TODO: args parsing code
     args.json = {
