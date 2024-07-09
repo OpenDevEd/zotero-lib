@@ -308,7 +308,9 @@ class Zotero {
    * Expose 'get'
    * Make a direct query to the API using 'GET uri'.
    */
+
   public async __get(args: ZoteroTypes.__getArgs): Promise<any> {
+
     const out = [];
     for (const uri of args.uri) {
       const res = await this.http.get(uri, { userOrGroupPrefix: !args.root }, this.config);
@@ -327,7 +329,9 @@ class Zotero {
    * Expose 'post'. Make a direct query to the API using
    * 'POST uri [--data data]'.
    */
+
   public async __post(args: ZoteroTypes.__postArgs): Promise<any> {
+
     const res = await this.http.post(args.uri, args.data, {}, this.config);
     this.print(res);
     return res;
@@ -337,7 +341,9 @@ class Zotero {
    * Make a direct query to the API using
    * 'PUT uri [--data data]'.
    */
+
   public async __put(args: ZoteroTypes.__putArgs): Promise<any> {
+
     const res = await this.http.put(args.uri, args.data, this.config);
     this.print(res);
     return res;
@@ -347,7 +353,9 @@ class Zotero {
    * Make a direct query to the API using
    * 'PATCH uri [--data data]'.
    */
+
   public async __patch(args: ZoteroTypes.__patchArgs): Promise<any> {
+
     const res = await this.http.patch(args.uri, args.data, args.version, this.config);
     this.print(res);
     return res;
@@ -357,7 +365,9 @@ class Zotero {
    * Make a direct delete query to the API using
    * 'DELETE uri'.
    */
+
   public async __delete(args: ZoteroTypes.__deleteArgs): Promise<any> {
+
     const output = [];
     for (const uri of args.uri) {
       const response = await this.http.get(uri, undefined, this.config);
@@ -613,7 +623,9 @@ class Zotero {
    * <userOrGroupPrefix>/collections/<collectionKey>/collections Subcollections within a specific collection in the library
    * TODO: --create-child should go into 'collection'.
    */
+
   public async collections(args: ZoteroTypes.ICollectionsArgs): Promise<any | Collection.Get.Collection> {
+
     // TODO: args parsing code
     if (args.json && !args.json.endsWith('.json')) {
       return this.message(0, 'Please provide a valid json file name');
@@ -1046,7 +1058,9 @@ class Zotero {
    * <userOrGroupPrefix>/items/<itemKey> A specific item in the library
    * <userOrGroupPrefix>/items/<itemKey>/children Child items under a specific item
    */
+
   public async item(args: ZoteroTypes.IItemArgs & { tags?: boolean }): Promise<any> {
+
     const output = [];
 
     // TODO: args parsing code
@@ -1184,6 +1198,7 @@ class Zotero {
           item.version,
           this.config,
         );
+        item.version = parseInt(addTo['headers']['last-modified-version']);
         output.push({ addtocollection: addTo });
       }
 
@@ -1209,6 +1224,7 @@ class Zotero {
           item.version,
           this.config,
         );
+        item.version = parseInt(res['headers']['last-modified-version']);
         output.push({ switchNames: res });
       }
 
@@ -1228,6 +1244,7 @@ class Zotero {
             item.version,
             this.config,
           );
+          item.version = parseInt(res['headers']['last-modified-version']);
           logger.info('organise extra: ' + updatedExtra);
           output.push({ organise_extra: res });
           logger.info('We have added a new DOI - add a link as well.');
@@ -1259,6 +1276,8 @@ class Zotero {
           item.version,
           this.config,
         );
+        item.version = parseInt(removefrom['headers']['last-modified-version']);
+
         output.push({ removefromcollection: removefrom });
       }
 
@@ -1275,6 +1294,7 @@ class Zotero {
           item.version,
           this.config,
         );
+        item.version = parseInt(res['headers']['last-modified-version']);
         output.push({ addtags: res });
       }
 
@@ -1286,6 +1306,7 @@ class Zotero {
           item.version,
           this.config,
         );
+        item.version = parseInt(res['headers']['last-modified-version']);
         output.push({ removetags: res });
       }
     }
@@ -1405,6 +1426,7 @@ class Zotero {
       // logger.info("/"+result+"/")
       return result;
     }
+    let FileItems = [];
 
     if (Array.isArray(args.files)) {
       if (!args.files.length)
@@ -1413,6 +1435,8 @@ class Zotero {
         //  all items are read into a single structure:
         const items = args.files.map((item) => JSON.parse(fs.readFileSync(item, 'utf-8')));
         const itemsflat = items.flat(1);
+        FileItems = items.flat(1);
+
 
         // TODO: Also add an option 'tags' which adds tags to new items.
         // TODO: from @oaizab to @suzuya1331 is this one should stay like this or should loop over the newcollection array?
@@ -1442,11 +1466,12 @@ class Zotero {
           });
         }
         // add the collections key to the items collections
-        for (const item of itemsflat) {
+        for (const item of FileItems) {
           if (args.collections) {
             item.collections = [...args.collections, ...item.collections];
           }
         }
+
         // This code is repeated below for 'items'. It should be refactored.
         let res = [];
         const batchSize = 50;
@@ -1478,6 +1503,8 @@ class Zotero {
       }
     }
 
+    let ObjectItems = [];
+
     if ('items' in args) {
       logger.info('Processing args.items');
       //logger.info('args.items = ', typeof(args.items) );
@@ -1485,11 +1512,13 @@ class Zotero {
       // When the object comes in, it has the zotero {"0": ... } structure. Why is this?
       // I've checked in zotero-openalex, and it's passed a plain array.
 
-      let items;
       if (typeof args.items === 'object') {
         items = Object.values(args.items);
       }
       if (!Array.isArray(items)) {
+        ObjectItems = Object.values(args.items);
+      }
+      if (!Array.isArray(ObjectItems)) {
         console.log('ERROR: args.items is not an array');
         return;
       }
@@ -1497,59 +1526,62 @@ class Zotero {
       //return;
 
       if (Array.isArray(args.items) && args.items.length > 0) {
-        items = items.map((item) => (typeof item === 'string' ? JSON.parse(item) : item));
+        ObjectItems = ObjectItems.map((item) => (typeof item === 'string' ? JSON.parse(item) : item));
         // items = JSON.stringify(items);
       }
-
-      if (items.length > 0) {
-        let res = [];
-        const batchSize = 50;
-        /* items.length = 151
-        0..49 (end=50)
-        50..99 (end=100)
-        100..149 (end=150)
-        150..150 (end=151)
-        */
-        for (var start = 0; start < items.length; start += batchSize) {
-          const end = start + batchSize <= items.length ? start + batchSize : items.length + 1;
-          // Safety check - should always be true:
-          if (items.slice(start, end).length <= batchSize) {
-            logger.error(`Uploading objects ${start} to ${end - 1}`);
-            logger.info(`Uploading objects ${start} to ${end - 1}`);
-            logger.info(`${items.slice(start, end).length}`);
-            const result = await this.http.post('/items', JSON.stringify(items.slice(start, end)), {}, this.config);
-            res.push(result);
-          } else {
-            logger.error(`NOT Uploading objects ${start} to ${end - 1}`);
-            logger.info(`NOT Uploading objects ${start} to ${end - 1}`);
-            logger.info(`${items.slice(start, end).length}`);
-          }
-        }
-        return res;
-        //const result = await this.http.post('/items', items, {}, this.config);
-        //const res = result;
-        //this.show(res);
-        // return this.pruneData(res, args.fullresponse);
-      }
-      return { type: 'success', message: 'No items to create' };
     }
 
-    if (args.item) {
+
+    let ItemsForUpload = FileItems.concat(ObjectItems);
+    if (args.fullresponse && args.item) {
+      // If we are uploading a single item, and we want the full response, we need to add it to the array.
+      let SigleItem = typeof args.item === 'string' ? JSON.parse(args.item) : args.item;
+      ItemsForUpload = ItemsForUpload.concat(JSON.stringify([SigleItem]));
+    }
+
+    if (ItemsForUpload.length > 0) {
+      // If there are items to upload, upload them in batches of 50.
+      let res = [];
+      const batchSize = 50;
+      for (let start = 0; start < ItemsForUpload.length; start += batchSize) {
+        const end = start + batchSize <= ItemsForUpload.length ? start + batchSize : ItemsForUpload.length + 1;
+        // Safety check - should always be true:
+        if (ItemsForUpload.slice(start, end).length) {
+          logger.error(`Uploading objects ${start} to ${end}-1`);
+          logger.info(`Uploading objects ${start} to ${end}-1`);
+          logger.info(`${ItemsForUpload.slice(start, end).length}`);
+          const result = await this.http.post(
+            '/items',
+            JSON.stringify(ItemsForUpload.slice(start, end)),
+            {},
+            this.config,
+          );
+          res.push(result);
+        } else {
+          logger.error(`NOT Uploading objects ${start} to ${end}-1`);
+          logger.info(`NOT Uploading objects ${start} to ${end}-1`);
+          logger.info(`${ItemsForUpload.slice(start, end).length}`);
+
+        }
+      }
+      return res;
+    } else if ((args.fullresponse && args.item) || args.items.length || args.files) {
+      // If there are no items to upload, and we want a full response, Stop.
+      return { type: 'success', message: 'No items to create' };
+    }
+    if (args.item && !args.fullresponse) {
+      // If we are uploading a single item, and we don't want the full response, upload it.
       let item = typeof args.item === 'string' ? JSON.parse(args.item) : args.item;
       let items = JSON.stringify([item]);
 
       const result = await this.http.post('/items', items, {}, this.config);
       this.show(result);
-      return this.pruneData(result, args.fullresponse);
+      return result.successful['0'].data;
     }
   }
 
-  /**
-   * Prunes the data from the response object.
-   * @param res - The response object.
-   * @param fullresponse - Whether to return the full response object or just the pruned data. Default is `false`.
-   * @returns The pruned data or the full response object.
-   */
+
+  // This function is not used now. It was used to create a new item.
   public pruneData(res, fullresponse = false) {
     if (fullresponse) return res;
     return res.successful['0'].data;
@@ -1903,7 +1935,9 @@ class Zotero {
    * Utility functions.
    */
 
+
   public async enclose_item_in_collection(args: ZoteroTypes.IEncloseItemInCollectionArgs): Promise<any> {
+
     const output = [];
     //TODO: args parsing code
     if (!args.key) {
@@ -2072,8 +2106,8 @@ class Zotero {
    */
   public get_doi_from_item(item) {
     let doi = '';
-    if ('doi' in item) {
-      doi = item.doi;
+    if ('DOI' in item) {
+      doi = item.DOI;
     } else {
       item.extra.split('\n').forEach((element) => {
         var mymatch = element.match(/^DOI\:\s*(.*?)\s*$/);
@@ -2084,6 +2118,7 @@ class Zotero {
     }
     return doi;
   }
+
 
   /**
    * Manages the local database based on the provided arguments.
@@ -2099,6 +2134,7 @@ class Zotero {
    * @param args.verbose - Whether to show verbose output.
    * @returns A promise that resolves to the result of the database management operation.
    */
+
   public async manageLocalDB(args: ZoteroTypes.IManageLocalDBArgs): Promise<any> {
     console.log('args: ', { ...args }, this.config);
     if (args.lookup && !args.keys) {
@@ -2181,6 +2217,7 @@ class Zotero {
     // }
   }
 
+
   /**
    * Deduplicates items in the specified group based on certain criteria.
    * It writes the duplicates to a file named `duplicates.json`.
@@ -2189,6 +2226,7 @@ class Zotero {
    * @param args.api_key - The API key of the group.
    * @param args.collection - The collection to add the deduplicated items to.
    */
+
   public async deduplicate_func(args: ZoteroTypes.IDeduplicateFuncArgs) {
     const { PrismaClient } = require('@prisma/client');
     //@ts-ignore
@@ -2319,6 +2357,7 @@ class Zotero {
     }
   }
 
+
   /**
    * Moves and deduplicates items to a specified collection.
    *
@@ -2327,6 +2366,7 @@ class Zotero {
    * @returns A Promise that resolves when the items have been moved and deduplicated.
    */
   public async Move_deduplicate_to_collection(args: ZoteroTypes.IMoveDeduplicateToCollectionArgs) {
+
     // read deduplicate json file
 
     if (!fs.existsSync(args.file)) {
@@ -2478,6 +2518,7 @@ class Zotero {
     }
   }
 
+
   /**
    * Merges items from a specified data file into a Zotero group.
    *
@@ -2486,6 +2527,7 @@ class Zotero {
    * @param args.options - The options for merging the items.
    * @param args.group_id - The ID of the Zotero group to merge the items into.
    */
+
   public async merge_func(args: ZoteroTypes.IMergeFuncArgs) {
     if (!fs.existsSync(args.data)) {
       console.log('file not found');
@@ -2512,11 +2554,13 @@ class Zotero {
     }
   }
   //@ts-ignore
+
   /**
    * Retrieves the count of items from the database based on the provided item IDs.
    * @param items - An array of item IDs.
    * @returns A Promise that resolves to the count of items.
    */
+
   private async getItems(items: string[]) {
     const { PrismaClient } = require('@prisma/client');
     const prisma = new PrismaClient();
@@ -2532,6 +2576,7 @@ class Zotero {
     // check if file exists using fs
   }
 
+
   /**
    * Resolves the given arguments and returns the result.
    *
@@ -2541,6 +2586,7 @@ class Zotero {
    * @returns The resolved result, null if keys not provided.
    */
   public async resolvefunc(args: ZoteroTypes.IResolveFuncArgs) {
+
     const { PrismaClient } = require('@prisma/client');
     const prisma = new PrismaClient();
 
@@ -2811,6 +2857,7 @@ class Zotero {
    * @param args.update_url_field - Whether to update the URL field.
    * @returns A Promise that resolves to the result of attaching the link.
    */
+
   public async attach_link(args: ZoteroTypes.IAttachLinkArgs): Promise<any> {
     // TODO: There's a problem here... the following just offer docorations. We need to have inputs too...
 
@@ -2896,7 +2943,6 @@ class Zotero {
 
     return this.message(0, 'exist status', dataout);
   }
-
   /**
    * Retrieves the value of a specific field from a Zotero item.
    * If the `value` argument is provided, it updates the field with the new value.
@@ -2907,6 +2953,7 @@ class Zotero {
    * @param args.version - The version of the item to update.
    * @returns The value of the field or the updated Zotero item.
    */
+
   public async field(args: ZoteroTypes.IFieldArgs): Promise<any> {
     //TODO: args parsing code
     if (!args.field) {
@@ -2990,7 +3037,6 @@ class Zotero {
     const data = {};
     return this.message(0, 'exit status', data);
   }
-
   /**
    * Updates the URL of an item in the Zotero library.
    * @param args - The arguments for updating the URL.
@@ -2999,6 +3045,7 @@ class Zotero {
    * @param args.version - The version of the item to update.
    * @returns A promise that resolves with the updated item.
    */
+
   public async update_url(args: ZoteroTypes.IUpdateUrlArgs): Promise<any> {
     //TODO: args parsing code
     args.json = {
@@ -3076,7 +3123,9 @@ class Zotero {
   }
 
   // TODO: Implement
+
   public async getbib(args: ZoteroTypes.IGetbibArgs) {
+
     let output;
     try {
       output = await this.getZoteroDataX(args);
@@ -3094,6 +3143,7 @@ class Zotero {
 
   /* START FUcntionS FOR GETBIB */
   async getZoteroDataX(args: ZoteroTypes.IGetZoteroDataXargs) {
+
     //logger.info("Hello")
     let d = new Date();
     let n = d.getTime();
@@ -3312,6 +3362,7 @@ class Zotero {
 
   // TODO: Implement
   public async attach_note(args: ZoteroTypes.IAttachNoteArgs) {
+
     //TODO: args parsing code
     args.notetext = as_value(args.notetext);
     args.key = this.extractKeyAndSetGroup(as_value(args.key));
