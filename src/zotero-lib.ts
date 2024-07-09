@@ -1686,8 +1686,8 @@ class Zotero {
 
   public get_doi_from_item(item) {
     let doi = '';
-    if ('doi' in item) {
-      doi = item.doi;
+    if ('DOI' in item) {
+      doi = item.DOI;
     } else {
       item.extra.split('\n').forEach((element) => {
         var mymatch = element.match(/^DOI\:\s*(.*?)\s*$/);
