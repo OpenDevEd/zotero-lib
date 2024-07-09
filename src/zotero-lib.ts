@@ -36,9 +36,9 @@ import axios from 'axios';
 import path from 'path';
 import webSocket from 'ws';
 import { checkForValidLockFile, removeLockFile } from './lock.utils';
+import { Collection } from './response-types';
 import formatAsCrossRefXML from './utils/formatAsCrossRefXML';
 import { merge_items } from './utils/merge';
-import { Collection } from './response-types';
 // import printJSON from './utils/printJSON';
 
 require('dotenv').config();
@@ -310,7 +310,6 @@ class Zotero {
    */
 
   public async __get(args: ZoteroTypes.__getArgs): Promise<any> {
-
     const out = [];
     for (const uri of args.uri) {
       const res = await this.http.get(uri, { userOrGroupPrefix: !args.root }, this.config);
@@ -331,7 +330,6 @@ class Zotero {
    */
 
   public async __post(args: ZoteroTypes.__postArgs): Promise<any> {
-
     const res = await this.http.post(args.uri, args.data, {}, this.config);
     this.print(res);
     return res;
@@ -343,7 +341,6 @@ class Zotero {
    */
 
   public async __put(args: ZoteroTypes.__putArgs): Promise<any> {
-
     const res = await this.http.put(args.uri, args.data, this.config);
     this.print(res);
     return res;
@@ -355,7 +352,6 @@ class Zotero {
    */
 
   public async __patch(args: ZoteroTypes.__patchArgs): Promise<any> {
-
     const res = await this.http.patch(args.uri, args.data, args.version, this.config);
     this.print(res);
     return res;
@@ -367,7 +363,6 @@ class Zotero {
    */
 
   public async __delete(args: ZoteroTypes.__deleteArgs): Promise<any> {
-
     const output = [];
     for (const uri of args.uri) {
       const response = await this.http.get(uri, undefined, this.config);
@@ -625,7 +620,6 @@ class Zotero {
    */
 
   public async collections(args: ZoteroTypes.ICollectionsArgs): Promise<any | Collection.Get.Collection> {
-
     // TODO: args parsing code
     if (args.json && !args.json.endsWith('.json')) {
       return this.message(0, 'Please provide a valid json file name');
@@ -1060,7 +1054,6 @@ class Zotero {
    */
 
   public async item(args: ZoteroTypes.IItemArgs & { tags?: boolean }): Promise<any> {
-
     const output = [];
 
     // TODO: args parsing code
@@ -1437,7 +1430,6 @@ class Zotero {
         const itemsflat = items.flat(1);
         FileItems = items.flat(1);
 
-
         // TODO: Also add an option 'tags' which adds tags to new items.
         // TODO: from @oaizab to @suzuya1331 is this one should stay like this or should loop over the newcollection array?
         if (args.newcollection) {
@@ -1504,6 +1496,7 @@ class Zotero {
     }
 
     let ObjectItems = [];
+    let items = [];
 
     if ('items' in args) {
       logger.info('Processing args.items');
@@ -1530,7 +1523,6 @@ class Zotero {
         // items = JSON.stringify(items);
       }
     }
-
 
     let ItemsForUpload = FileItems.concat(ObjectItems);
     if (args.fullresponse && args.item) {
@@ -1561,7 +1553,6 @@ class Zotero {
           logger.error(`NOT Uploading objects ${start} to ${end}-1`);
           logger.info(`NOT Uploading objects ${start} to ${end}-1`);
           logger.info(`${ItemsForUpload.slice(start, end).length}`);
-
         }
       }
       return res;
@@ -1579,7 +1570,6 @@ class Zotero {
       return result.successful['0'].data;
     }
   }
-
 
   // This function is not used now. It was used to create a new item.
   public pruneData(res, fullresponse = false) {
@@ -1935,9 +1925,7 @@ class Zotero {
    * Utility functions.
    */
 
-
   public async enclose_item_in_collection(args: ZoteroTypes.IEncloseItemInCollectionArgs): Promise<any> {
-
     const output = [];
     //TODO: args parsing code
     if (!args.key) {
@@ -2119,7 +2107,6 @@ class Zotero {
     return doi;
   }
 
-
   /**
    * Manages the local database based on the provided arguments.
    *
@@ -2216,7 +2203,6 @@ class Zotero {
     //   }
     // }
   }
-
 
   /**
    * Deduplicates items in the specified group based on certain criteria.
@@ -2357,7 +2343,6 @@ class Zotero {
     }
   }
 
-
   /**
    * Moves and deduplicates items to a specified collection.
    *
@@ -2366,7 +2351,6 @@ class Zotero {
    * @returns A Promise that resolves when the items have been moved and deduplicated.
    */
   public async Move_deduplicate_to_collection(args: ZoteroTypes.IMoveDeduplicateToCollectionArgs) {
-
     // read deduplicate json file
 
     if (!fs.existsSync(args.file)) {
@@ -2518,7 +2502,6 @@ class Zotero {
     }
   }
 
-
   /**
    * Merges items from a specified data file into a Zotero group.
    *
@@ -2560,7 +2543,7 @@ class Zotero {
    * @param items - An array of item IDs.
    * @returns A Promise that resolves to the count of items.
    */
-
+  // @ts-ignore
   private async getItems(items: string[]) {
     const { PrismaClient } = require('@prisma/client');
     const prisma = new PrismaClient();
@@ -2576,7 +2559,6 @@ class Zotero {
     // check if file exists using fs
   }
 
-
   /**
    * Resolves the given arguments and returns the result.
    *
@@ -2586,7 +2568,6 @@ class Zotero {
    * @returns The resolved result, null if keys not provided.
    */
   public async resolvefunc(args: ZoteroTypes.IResolveFuncArgs) {
-
     const { PrismaClient } = require('@prisma/client');
     const prisma = new PrismaClient();
 
@@ -3125,7 +3106,6 @@ class Zotero {
   // TODO: Implement
 
   public async getbib(args: ZoteroTypes.IGetbibArgs) {
-
     let output;
     try {
       output = await this.getZoteroDataX(args);
@@ -3143,7 +3123,6 @@ class Zotero {
 
   /* START FUcntionS FOR GETBIB */
   async getZoteroDataX(args: ZoteroTypes.IGetZoteroDataXargs) {
-
     //logger.info("Hello")
     let d = new Date();
     let n = d.getTime();
@@ -3362,7 +3341,6 @@ class Zotero {
 
   // TODO: Implement
   public async attach_note(args: ZoteroTypes.IAttachNoteArgs) {
-
     //TODO: args parsing code
     args.notetext = as_value(args.notetext);
     args.key = this.extractKeyAndSetGroup(as_value(args.key));
