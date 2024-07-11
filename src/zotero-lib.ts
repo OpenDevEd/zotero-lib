@@ -2975,6 +2975,12 @@ class Zotero {
     return this.update_item(args);
   }
 
+  /**
+   * Retrieves an item from Zotero library and updates its ItemAlsoKnownAs field.
+   * @param args - The arguments for retrieving and updating the item.
+   * @param args.key - The key of the item to retrieve and update.
+   * @returns A Promise that resolves to an object containing the update status and the updated item.
+   */
   public async KerkoCiteItemAlsoKnownAs(args: ZoteroTypes.IKerkoCiteItemAlsoKnownAsArgs) {
     //TODO: args parsing code
     args.fullresponse = false;
@@ -3173,6 +3179,21 @@ class Zotero {
     }
   }
 
+  /**
+   * This function is used to make a Zotero query.
+   *
+   * It takes a group ID and a list of keys and returns the data for the items.
+   *
+   * First it group the keys into groups of 25 and then makes the query for each group.
+   *
+   * Finaly it returns the data for the items.
+   *
+   * @param arg - The arguments for the query in type ZoteroTypes.IMakeZoteroQueryArgs.
+   * @param arg.group - The group ID for the query.
+   * @param arg.key - The key for the query.
+   * @param arg.keys - The keys for the query as a string separated by commas.
+   * @returns The items data.
+   */
   async makeZoteroQuery(arg: ZoteroTypes.IMakeZoteroQueryArgs) {
     var response = [];
     logger.info('hello');
@@ -3226,6 +3247,15 @@ class Zotero {
     return { status: 0, message: 'Success', data: response };
   }
 
+  /**
+   * This function is used to make a Zotero query.
+   *
+   * It takes a string separated by commas with groupID:key and returns the data for the items.
+   *
+   * @param arg - The arguments for the query in type ZoteroTypes.IMakeZoteroQueryArgs.
+   * @param arg.groupkeys - The group ID and keys for the query as a string separated by commas. The group ID and keys are separated by a colon. In the format groupID:key.
+   * @returns The items data.
+   */
   async makeMultiQuery(args: ZoteroTypes.IMakeMultiQueryArgs) {
     // logger.info("Multi query 1")
     let mykeys;
@@ -3279,6 +3309,20 @@ class Zotero {
   /* END Fucntions FOR GETBIB */
 
   // TODO: Implement
+  /**
+   * Attaches a note to an item in Zotero.
+   *
+   * It takes the key of the item to attach the note to and the content of the note and/or the path to a file with the note content.
+   *
+   * If both the content and the file path are provided, the content of the file is appended to the content of the note.
+   *
+   * @param args - The arguments for attaching the note in type ZoteroTypes.IAttachNoteArgs.
+   * @param args.key - The key of the item to attach the note to.
+   * @param args.notetext - The text of the note to attach.
+   * @param args.notefile - The path to the file with the note content.
+   * @param args.tags - The tags to attach to the note.
+   * @returns The result of attaching the note.
+   */
   public async attach_note(args: ZoteroTypes.IAttachNoteArgs) {
     //TODO: args parsing code
     args.notetext = as_value(args.notetext);
@@ -3316,6 +3360,18 @@ class Zotero {
     const data = {};
     return this.message(0, 'exit status', data);
   }
+
+  /**
+   * This function is used to find empty items in the Database.
+   *
+   * It write the empty items to a file, either passed as an argument or to the default file `./empty_items.json`.
+   *
+   * If the `delete` argument is passed, it deletes the empty items from the database.
+   *
+   * @param args - The arguments for finding the empty items, in type ZoteroTypes.IFindEmptyItemsArgs.
+   * @param args.output - The path to the file to write the empty items to.
+   * @param args.delete - Whether to delete the empty items from the database.
+   */
   public async findEmptyItems(args: ZoteroTypes.IFindEmptyItemsArgs) {
     let path = args.output ? args.output : './empty_items.json';
     let emptyItems: any[] = await FindEmptyItemsFromDatabase(args['group-id']);
