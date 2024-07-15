@@ -13,3 +13,8 @@ export type ItemArgs = {
 export type ValidateItemsArgs = {
   validate_with: string;
 };
+
+export type ItemReturn = {
+  title?: string;
+  collections?: any;
+};

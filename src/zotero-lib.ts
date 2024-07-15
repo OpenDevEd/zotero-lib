@@ -36,12 +36,12 @@ import axios from 'axios';
 import path from 'path';
 import webSocket from 'ws';
 import { checkForValidLockFile, removeLockFile } from './lock.utils';
-import { Collection, Item, Items } from './response-types';
+import { Collection, Item, Items } from './types/response-types';
 import formatAsCrossRefXML from './utils/formatAsCrossRefXML';
 import { merge_items } from './utils/merge';
 import { ZoteroConfig, ZoteroConfigOptions } from './types/config';
 import { Ids } from './types/ids';
-import { ItemArgs, ValidateItemsArgs } from './types/item';
+import { ItemArgs, ItemReturn, ValidateItemsArgs } from './types/item';
 import { TasgArgs } from './types/tag';
 import { PublicationsArgs } from './types/publications';
 import { TrashArgs } from './types/trash';
@@ -1082,7 +1082,9 @@ class Zotero {
    * <userOrGroupPrefix>/items/<itemKey>/children Child items under a specific item
    */
 
-  public async item(args: ZoteroTypes.IItemArgs & { tags?: boolean }): Promise<any> {
+  public async item(
+    args: ZoteroTypes.IItemArgs & { tags?: boolean },
+  ): Promise<Item.Get.Data | Item.Get.Full | { result: string; status: number }> {
     const output = [];
 
     // TODO: args parsing code

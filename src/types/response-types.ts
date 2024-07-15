@@ -109,38 +109,47 @@ export namespace Item {
       data: Data;
     }
 
+    export interface Full {
+      status?: number;
+      message?: string;
+      output?: any;
+      result?: Item;
+      final?: any;
+    }
+
     export interface Data {
-      key: string;
-      version: number;
-      itemType: string;
-      title: string;
-      creators: Creator[];
-      abstractNote: string;
-      series: string;
-      seriesNumber: string;
-      volume: string;
-      numberOfVolumes: string;
-      edition: string;
-      place: string;
-      publisher: string;
-      date: string;
-      numPages: string;
-      language: string;
-      ISBN: string;
-      shortTitle: string;
-      url: string;
-      accessDate: string;
-      archive: string;
-      archiveLocation: string;
-      libraryCatalog: string;
-      callNumber: string;
-      rights: string;
-      extra: string;
-      tags: Tag[];
-      collections: string[];
-      relations: Relations;
-      dateAdded: Date;
-      dateModified: Date;
+      key?: string;
+      version?: number;
+      itemType?: string;
+      title?: string;
+      creators?: Creator[];
+      abstractNote?: string;
+      series?: string;
+      seriesNumber?: string;
+      volume?: string;
+      numberOfVolumes?: string;
+      edition?: string;
+      place?: string;
+      publisher?: string;
+      date?: string;
+      numPages?: string;
+      language?: string;
+      ISBN?: string;
+      shortTitle?: string;
+      url?: string;
+      accessDate?: string;
+      archive?: string;
+      archiveLocation?: string;
+      libraryCatalog?: string;
+      callNumber?: string;
+      rights?: string;
+      extra?: string;
+      tags?: Tag[];
+      collections?: string[];
+      relations?: Relations;
+      dateAdded?: Date;
+      dateModified?: Date;
+      deleted?: boolean;
     }
 
     export interface Creator {
