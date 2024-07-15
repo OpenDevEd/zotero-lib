@@ -19,7 +19,7 @@ let zoteroLib = new Zotero({});
 async function main() {
   console.log(zoteroLib.config);
 
-  if (zoteroLib.config === false) {
+  if (zoteroLib.config === null) {
     try {
       await configSetup();
       zoteroLib = new Zotero({});

@@ -278,6 +278,10 @@ namespace ZoteroTypes {
     delete?: boolean;
     onlykeys?: boolean;
   }
+
+  export interface IGetIdsArgs {
+    key?: string;
+  }
 }
 
 export { ZoteroTypes };

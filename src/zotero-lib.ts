@@ -36,9 +36,15 @@ import axios from 'axios';
 import path from 'path';
 import webSocket from 'ws';
 import { checkForValidLockFile, removeLockFile } from './lock.utils';
-import { Collection } from './response-types';
+import { Collection, Item, Items } from './response-types';
 import formatAsCrossRefXML from './utils/formatAsCrossRefXML';
 import { merge_items } from './utils/merge';
+import { ZoteroConfig, ZoteroConfigOptions } from './types/config';
+import { Ids } from './types/ids';
+import { ItemArgs, ValidateItemsArgs } from './types/item';
+import { TasgArgs } from './types/tag';
+import { PublicationsArgs } from './types/publications';
+import { TrashArgs } from './types/trash';
 // import printJSON from './utils/printJSON';
 
 require('dotenv').config();
@@ -67,7 +73,7 @@ class Zotero {
     'zotero-schema',
   ];
 
-  config: any;
+  config: ZoteroConfigOptions;
 
   output: string = '';
 
@@ -80,7 +86,7 @@ class Zotero {
    * @param args.config_json - config in json format
    * @param args.verbose - verbose output
    */
-  constructor(args = {}) {
+  constructor(args: ZoteroConfig = {}) {
     // Read config
     this.config = this.configure(args, true);
     this.http = createHttpClient({
@@ -102,7 +108,7 @@ class Zotero {
    * @param shouldReadConfigFile - if the config file should be read
    * @returns the config
    */
-  public configure(args, shouldReadConfigFile = false) {
+  public configure(args: ZoteroConfig, shouldReadConfigFile = false): ZoteroConfigOptions {
     // pick up config: The function reads args and populates config
 
     let config = {};
@@ -132,7 +138,9 @@ class Zotero {
 
     // Check that not both are undefined:
     if (!result.user_id && !result.group_id) {
-      return false;
+      // TODO: this one solved a type error
+      return null;
+      // throw new Error('Neither user/group is specified. You must provide exactly one of --user-id or --group-id');
     }
 
     // Check that one and only one is defined:
@@ -434,7 +442,7 @@ class Zotero {
    * @param args.key - zotero select link format, or just the key
    * @returns object with key, type and group (if applicable) or key
    */
-  public getIds(args) {
+  public getIds(args: ZoteroTypes.IGetIdsArgs): Ids {
     if (!args?.key) console.log('please provide a newlocation');
     const key = args.key;
     const res = key.match(/^zotero\:\/\/select\/groups\/(library|\d+)\/(items|collections)\/([A-Z01-9]+)/);
@@ -462,7 +470,7 @@ class Zotero {
    * @param params - the parameters to pass to the query
    * @returns the total results from a query
    */
-  async count(uri, params = {}) {
+  async count(uri: string, params = {}): Promise<number> {
     return (await this.http.get(uri, { resolveWithFullResponse: true, params }, this.config)).headers['total-results'];
   }
 
@@ -485,7 +493,7 @@ class Zotero {
    * @param key - array of (or simple variable) zotero select link format, or just the key
    * @param n - the input key type (1=group or 3=key) ir the key not match zotero select link
    */
-  private extractKeyGroupVariable(key, n) {
+  private extractKeyGroupVariable(key: string | string[], n: number) {
     // n=1 -> group
     // n=2 -> items vs. collections
     // n=3 -> key
@@ -528,7 +536,7 @@ class Zotero {
   }
 
   // TODO: args parsing code
-  private extractKeyAndSetGroup(key) {
+  private extractKeyAndSetGroup(key: string | string[]) {
     // logger.info("extractKeyAndSetGroup")
     return this.extractKeyGroupVariable(key, 3);
   }
@@ -542,7 +550,7 @@ class Zotero {
    * @returns the note attached to the item
    */
   public async attachNoteToItem(
-    PARENT,
+    PARENT: string,
     options: { content?: string; tags?: any } = {
       content: 'Note note.',
       tags: [],
@@ -572,8 +580,8 @@ class Zotero {
    * @param options.tags - the tags for the link
    */
   public async attachLinkToItem(
-    PARENT,
-    URL,
+    PARENT: string,
+    URL: string,
     options: { title?: string; tags?: any } = {
       title: 'Click to open',
       tags: [],
@@ -619,7 +627,7 @@ class Zotero {
    * TODO: --create-child should go into 'collection'.
    */
 
-  public async collections(args: ZoteroTypes.ICollectionsArgs): Promise<any | Collection.Get.Collection> {
+  public async collections(args: ZoteroTypes.ICollectionsArgs): Promise<Collection.Get.Collection[] | any> {
     // TODO: args parsing code
     if (args.json && !args.json.endsWith('.json')) {
       return this.message(0, 'Please provide a valid json file name');
@@ -729,7 +737,14 @@ class Zotero {
    * @returns the updated collection
    *
    */
-  public async update_collection(args: ZoteroTypes.IUpdateCollectionArgs) {
+  public async update_collection(args: ZoteroTypes.IUpdateCollectionArgs): Promise<
+    | {
+        status: number;
+        message: string;
+        data: any;
+      }
+    | Collection.Update.Collection
+  > {
     if (!args.key) {
       return this.message(0, 'Unable to extract group/key from the string provided.');
     }
@@ -773,7 +788,14 @@ class Zotero {
    * @param args.version - the version of the collection to delete, if not provided, it is retrieved
    * @returns a string confirming the deletion of the collection
    */
-  public async delete_collection(args: ZoteroTypes.IDeleteCollectionArgs) {
+  public async delete_collection(args: ZoteroTypes.IDeleteCollectionArgs): Promise<
+    | string
+    | {
+        status: number;
+        message: string;
+        data: any;
+      }
+  > {
     if (!args.key) {
       return this.message(0, 'Unable to extract group/key from the string provided.');
     }
@@ -797,14 +819,21 @@ class Zotero {
    * @param args.keys - the keys of the collections to delete
    * @returns an array of strings confirming the deletion of the collections
    */
-  public async delete_collections(args: ZoteroTypes.IDeleteCollectionsArgs) {
+  public async delete_collections(args: ZoteroTypes.IDeleteCollectionsArgs): Promise<
+    | string[]
+    | {
+        status: number;
+        message: string;
+        data: any;
+      }
+  > {
     if (!args.keys) {
       return this.message(0, 'Please provide a valid key');
     }
 
     args.keys = args.keys.map((key) => this.extractKeyAndSetGroup(key));
     // check if keys less than 50 otherwise split into chunks
-    let res = [];
+    let res: string[] = [];
     const batchSize = 50;
     for (let start = 0; start < args.keys.length; start += batchSize) {
       const end = start + batchSize <= args.keys.length ? start + batchSize : args.keys.length + 1;
@@ -916,7 +945,7 @@ class Zotero {
    * <userOrGroupPrefix>/items All items in the library, excluding trashed items
    * <userOrGroupPrefix>/items/top Top-level items in the library, excluding trashed items
    */
-  async items(args) {
+  async items(args: ItemArgs) {
     //
     let items;
     // TODO: args parsing code
@@ -986,7 +1015,7 @@ class Zotero {
    * @param items - The items to be validated.
    * @throws Error if the specified schema does not exist or if validation is requested but the default Zotero schema does not exist.
    */
-  private async validate_items(args: any, items: any) {
+  private async validate_items(args: ValidateItemsArgs, items: Items.Get.Data[]): Promise<void> {
     let schema_path = '';
     if (args.validate_with) {
       if (!fs.existsSync(args.validate_with))
@@ -1325,7 +1354,7 @@ class Zotero {
     }
 
     if (args.validate || args.validate_with) {
-      this.validate_items(args, [result]);
+      this.validate_items(args as ValidateItemsArgs, [result]);
     }
 
     this.output = JSON.stringify(output);
@@ -1355,7 +1384,7 @@ class Zotero {
    * (API: /items/KEY/file).
    * Also see 'item', which has options for adding/saving file attachments.
    */
-  async attachment(args) {
+  async attachment(args: { key: string; save: string }) {
     if (args.key) {
       //TODO: args parsing code
       args.key = this.extractKeyAndSetGroup(args.key);
@@ -1736,7 +1765,7 @@ class Zotero {
    * @param args.tags - Whether to retrieve the tags of the items.
    * @returns A Promise that resolves to the items in the trash.
    */
-  async trash(args) {
+  async trash(args: TrashArgs) {
     const items = await this.http.get(`/items/trash${args.tags ? '/tags' : ''}`, undefined, this.config);
     this.show(items);
     return items;
@@ -1752,7 +1781,7 @@ class Zotero {
    * https://www.zotero.org/support/dev/web_api/v3/basics
    * <userOrGroupPrefix>/publications/items Items in My Publications
    */
-  async publications(args) {
+  async publications(args: PublicationsArgs) {
     const items = await this.http.get(`/publications/items${args.tags ? '/tags' : ''}`, undefined, this.config);
     this.show(items);
     return items;
@@ -1762,7 +1791,7 @@ class Zotero {
    * Retrieve a list of items types available in Zotero.
    * (API: /itemTypes)
    */
-  async types(args) {
+  async types(args: any) {
     const types = await this.http.get(
       '/itemTypes',
       {
@@ -1779,7 +1808,7 @@ class Zotero {
    * library_id and api_key has access to.
    * (API: /users/<user-id>/groups)
    */
-  async groups(args) {
+  async groups(args: any) {
     const groups = await this.http.get('/groups', undefined, this.config);
     this.show(groups);
     return groups;
@@ -1899,14 +1928,14 @@ class Zotero {
    * @param args.count - Count the number of items with each tag.
    * @returns A Promise that resolves to the tags.
    */
-  async tags(args) {
+  async tags(args: TasgArgs) {
     let rawTags = null;
     if (args.filter) {
       rawTags = await this.all(`/tags/${encodeURIComponent(args.filter)}`);
     } else {
       rawTags = await this.all('/tags');
     }
-    const tags = rawTags.map((tag) => tag.tag).sort();
+    const tags = rawTags.map((tag: { tag: any }) => tag.tag).sort();
 
     if (args.count) {
       const tag_counts: Record<string, number> = {};
@@ -2092,7 +2121,7 @@ class Zotero {
    * @param item - the item to get the DOI for
    * @returns the DOI of the item
    */
-  public get_doi_from_item(item) {
+  public get_doi_from_item(item: Items.Get.Data): string {
     let doi = '';
     if ('DOI' in item) {
       doi = item.DOI;
@@ -2213,7 +2242,7 @@ class Zotero {
    * @param args.collection - The collection to add the deduplicated items to.
    */
 
-  public async deduplicate_func(args: ZoteroTypes.IDeduplicateFuncArgs) {
+  public async deduplicate_func(args: ZoteroTypes.IDeduplicateFuncArgs): Promise<void> {
     const { PrismaClient } = require('@prisma/client');
     //@ts-ignore
     const prisma = new PrismaClient();
@@ -2350,7 +2379,7 @@ class Zotero {
    * @param args.file - The file containing the items to move and deduplicate.
    * @returns A Promise that resolves when the items have been moved and deduplicated.
    */
-  public async Move_deduplicate_to_collection(args: ZoteroTypes.IMoveDeduplicateToCollectionArgs) {
+  public async Move_deduplicate_to_collection(args: ZoteroTypes.IMoveDeduplicateToCollectionArgs): Promise<void> {
     // read deduplicate json file
 
     if (!fs.existsSync(args.file)) {
@@ -2544,7 +2573,7 @@ class Zotero {
    * @returns A Promise that resolves to the count of items.
    */
   // @ts-ignore
-  private async getItems(items: string[]) {
+  private async getItems(items: string[]): Promise<number> {
     const { PrismaClient } = require('@prisma/client');
     const prisma = new PrismaClient();
     // get all items from the items
@@ -2567,7 +2596,7 @@ class Zotero {
    * @param args.groupid - The ID of the group to resolve the items from.
    * @returns The resolved result, null if keys not provided.
    */
-  public async resolvefunc(args: ZoteroTypes.IResolveFuncArgs) {
+  public async resolvefunc(args: ZoteroTypes.IResolveFuncArgs): Promise<Record<string, object>> {
     const { PrismaClient } = require('@prisma/client');
     const prisma = new PrismaClient();
 
