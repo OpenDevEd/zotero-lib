@@ -150,6 +150,7 @@ export namespace Item {
       dateAdded?: Date;
       dateModified?: Date;
       deleted?: boolean;
+      reportNumber?: string;
     }
 
     export interface Creator {
