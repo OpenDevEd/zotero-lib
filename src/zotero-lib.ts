@@ -2218,7 +2218,7 @@ class Zotero {
     //@ts-ignore
     const prisma = new PrismaClient();
     await prisma.$connect();
-    let group_id = args.group_id;
+    let group_id: number = parseInt(args.group_id);
     console.log('api_key: ', args.api_key);
 
     // get first item
