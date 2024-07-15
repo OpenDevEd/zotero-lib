@@ -1,4 +1,5 @@
 import Zotero from '../zotero-lib';
+import { Item } from '../types/response-types';
 
 async function getItems(items: string[]): Promise<{}> {
   const { PrismaClient } = require('@prisma/client');
@@ -99,8 +100,8 @@ let noMergeType = ['note', 'attachment'];
  */
 async function mergeTwoItems(groupid, base, deleted) {
   const zotero = new Zotero({ verbose: false, 'group-id': groupid });
-  const deletedItem = await zotero.item({ key: deleted, fullresponse: true });
-  const baseItem = await zotero.item({ key: base, fullresponse: true });
+  const deletedItem = (await zotero.item({ key: deleted, fullresponse: true })) as Item.Get.Full;
+  const baseItem = (await zotero.item({ key: base, fullresponse: true })) as Item.Get.Full;
   if (noMergeType.includes(deletedItem.result.data.itemType) || noMergeType.includes(baseItem.result.data.itemType)) {
     console.log('one of the items is not a note or attachment');
     return 0;

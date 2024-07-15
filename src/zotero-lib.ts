@@ -1983,7 +1983,7 @@ class Zotero {
       logger.info(`zotero -> enclose_item_in_collection: group_id ${group_id} `);
     }
 
-    const response = await this.item({ key: key, group_id: group_id });
+    const response = (await this.item({ key: key, group_id: group_id })) as Item.Get.Data;
     // logger.info("response = " + JSON.stringify(response, null, 2))
     // TODO: Have automated test to see whether successful.
     output.push({ response1: response });
@@ -2112,7 +2112,7 @@ class Zotero {
     // We dont know what kind of item this is - gotta get the item to see
 
     args.fullresponse = false;
-    const item = await this.item(args);
+    const item = (await this.item(args)) as Item.Get.Data;
     const doi = this.get_doi_from_item(item);
     logger.info(`DOI: ${doi}, ${typeof doi}`);
     return doi;
@@ -2123,7 +2123,7 @@ class Zotero {
    * @param item - the item to get the DOI for
    * @returns the DOI of the item
    */
-  public get_doi_from_item(item: Items.Get.Data): string {
+  public get_doi_from_item(item: Item.Get.Data): string {
     let doi = '';
     if ('DOI' in item) {
       doi = item.DOI;
@@ -2789,7 +2789,7 @@ class Zotero {
     //TODO: args parsing code
     args.key = as_value(args.key);
     // We dont know what kind of item this is - gotta get the item to see
-    const item = await this.item(args);
+    const item = (await this.item(args)) as Item.Get.Data;
     const existingDOI = this.get_doi_from_item(item) || '';
     if ('doi' in args || 'zenodoRecordID' in args) {
       let json = {};
@@ -2819,7 +2819,7 @@ class Zotero {
       if (update) {
         const updateargs = {
           key: args.key,
-          version: item.version,
+          version: item.version?.toString(),
           json: json,
           fullresponse: false,
           show: true,
