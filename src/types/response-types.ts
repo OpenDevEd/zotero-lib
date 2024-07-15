@@ -210,24 +210,24 @@ export namespace Items {
     }
 
     export interface Data {
-      key: string;
-      version: number;
+      key?: string;
+      version?: number;
       parentItem?: string;
-      itemType: string;
+      itemType?: string;
       linkMode?: string;
-      title: string;
-      accessDate: string;
-      url: string;
+      title?: string;
+      accessDate?: string;
+      url?: string;
       note?: string;
       contentType?: string;
       charset?: string;
       filename?: string;
       md5?: null | string;
       mtime?: number | null;
-      tags: Tag[];
-      relations: Relations;
-      dateAdded: Date;
-      dateModified: Date;
+      tags?: Tag[];
+      relations?: Relations;
+      dateAdded?: Date;
+      dateModified?: Date;
       creators?: Creator[];
       abstractNote?: string;
       websiteTitle?: string;
