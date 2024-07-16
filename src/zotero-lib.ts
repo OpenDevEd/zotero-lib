@@ -36,12 +36,12 @@ import axios from 'axios';
 import path from 'path';
 import webSocket from 'ws';
 import { checkForValidLockFile, removeLockFile } from './lock.utils';
-import { Collection, Item, Items } from './types/response-types';
+import { Collection } from './types/response-types';
 import formatAsCrossRefXML from './utils/formatAsCrossRefXML';
 import { merge_items } from './utils/merge';
 import { ZoteroConfig, ZoteroConfigOptions } from './types/config';
 import { Ids } from './types/ids';
-import { ItemArgs, ValidateItemsArgs } from './types/item';
+import { ItemArgs, ValidateItemsArgs, Item, FullItemResponse } from './types/item';
 import { TasgArgs } from './types/tag';
 import { PublicationsArgs } from './types/publications';
 import { TrashArgs } from './types/trash';
@@ -1015,7 +1015,7 @@ class Zotero {
    * @param items - The items to be validated.
    * @throws Error if the specified schema does not exist or if validation is requested but the default Zotero schema does not exist.
    */
-  private async validate_items(args: ValidateItemsArgs, items: Items.Get.Data[]): Promise<void> {
+  private async validate_items(args: ValidateItemsArgs, items: Item[]): Promise<void> {
     let schema_path = '';
     if (args.validate_with) {
       if (!fs.existsSync(args.validate_with))
@@ -1084,7 +1084,7 @@ class Zotero {
 
   public async item(
     args: ZoteroTypes.IItemArgs & { tags?: boolean },
-  ): Promise<Item.Get.Data | Item.Get.Full | { result: string; status: number }> {
+  ): Promise<Item | FullItemResponse | { result: string; status: number }> {
     const output = [];
 
     // TODO: args parsing code
@@ -1983,7 +1983,7 @@ class Zotero {
       logger.info(`zotero -> enclose_item_in_collection: group_id ${group_id} `);
     }
 
-    const response = (await this.item({ key: key, group_id: group_id })) as Item.Get.Data;
+    const response = (await this.item({ key: key, group_id: group_id })) as Item;
     // logger.info("response = " + JSON.stringify(response, null, 2))
     // TODO: Have automated test to see whether successful.
     output.push({ response1: response });
@@ -2112,7 +2112,7 @@ class Zotero {
     // We dont know what kind of item this is - gotta get the item to see
 
     args.fullresponse = false;
-    const item = (await this.item(args)) as Item.Get.Data;
+    const item = (await this.item(args)) as Item;
     const doi = this.get_doi_from_item(item);
     logger.info(`DOI: ${doi}, ${typeof doi}`);
     return doi;
@@ -2123,7 +2123,7 @@ class Zotero {
    * @param item - the item to get the DOI for
    * @returns the DOI of the item
    */
-  public get_doi_from_item(item: Item.Get.Data): string {
+  public get_doi_from_item(item: Item): string {
     let doi = '';
     if ('DOI' in item) {
       doi = item.DOI;
@@ -2789,7 +2789,7 @@ class Zotero {
     //TODO: args parsing code
     args.key = as_value(args.key);
     // We dont know what kind of item this is - gotta get the item to see
-    const item = (await this.item(args)) as Item.Get.Data;
+    const item = (await this.item(args)) as Item;
     const existingDOI = this.get_doi_from_item(item) || '';
     if ('doi' in args || 'zenodoRecordID' in args) {
       let json = {};
