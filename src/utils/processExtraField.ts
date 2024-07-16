@@ -7,16 +7,16 @@ export default function processExtraField(input = '') {
     } else {
       return input
     } */
-  console.log("pEF:" + lines.join("\n///"));
+  console.log('pEF:' + lines.join('\n///'));
   let doiLines = lines.filter((line) => line.includes('DOI: '));
   if (doiLines.length > 0) {
     let firstDOI = doiLines[0];
     if (doiLines.length > 1) {
-      doiLines = doiLines.slice(1, doiLines.length)
+      doiLines = doiLines.slice(1, doiLines.length);
       // sort dois
       doiLines.sort();
       doiLines.reverse();
-      console.log("pEF:00000>" + doiLines.join("\n"));
+      console.log('pEF:00000>' + doiLines.join('\n'));
       // prefix older DOIs with previous
       doiLines = doiLines.map((doi, index) => {
         /* if (index === 0) {
@@ -29,14 +29,12 @@ export default function processExtraField(input = '') {
         }
         return doi;
       });
-      doiLines = [firstDOI, ...doiLines]
+      doiLines = [firstDOI, ...doiLines];
     } else {
-      doiLines = [firstDOI]
+      doiLines = [firstDOI];
     }
   }
-  let nonDOILines = lines.filter(
-    (line) => !(line.startsWith('DOI: ') || line.startsWith('previousDOI: '))
-  );
+  let nonDOILines = lines.filter((line) => !(line.startsWith('DOI: ') || line.startsWith('previousDOI: ')));
 
   const kerkoLinePrefix = 'KerkoCite.ItemAlsoKnownAs:';
   let kerkoLine = nonDOILines.find((line) => line.startsWith(kerkoLinePrefix));
@@ -57,7 +55,7 @@ export default function processExtraField(input = '') {
           const [, doi] = line.split(' ');
           return doi;
         })
-        .concat(kerkoItems)
+        .concat(kerkoItems),
     ),
   ];
 

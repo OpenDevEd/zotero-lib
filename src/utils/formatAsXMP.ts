@@ -1,6 +1,4 @@
-type Creator =
-  | { name: string; creatorType: string }
-  | { firstName: string; lastName: string; creatorType: string };
+type Creator = { name: string; creatorType: string } | { firstName: string; lastName: string; creatorType: string };
 interface ZoteroItem {
   creators?: [];
   rights: any;
