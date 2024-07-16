@@ -140,7 +140,7 @@ export type Item = {
   inconsistent: boolean;
   // group_id?: number;
   // group: Group;
-  relations: Record<string, string[] | string>;
+  relations: Relation;
   created_at?: string;
   dateAdded?: string;
   dateModified?: string;
@@ -156,6 +156,10 @@ export type Item = {
 type Tag = {
   tag: string;
   type?: number;
+};
+
+type Relation = {
+  [key: string]: string[] | string;
 };
 
 type Creator = {

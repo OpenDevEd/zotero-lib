@@ -36,7 +36,6 @@ import axios from 'axios';
 import path from 'path';
 import webSocket from 'ws';
 import { checkForValidLockFile, removeLockFile } from './lock.utils';
-import { Collection } from './types/response-types';
 import formatAsCrossRefXML from './utils/formatAsCrossRefXML';
 import { merge_items } from './utils/merge';
 import { ZoteroConfig, ZoteroConfigOptions } from './types/config';
@@ -45,6 +44,7 @@ import { ItemArgs, ValidateItemsArgs, Item, FullItemResponse } from './types/ite
 import { TasgArgs } from './types/tag';
 import { PublicationsArgs } from './types/publications';
 import { TrashArgs } from './types/trash';
+import { Collection, UpdateCollectionResponse } from './types/collection';
 // import printJSON from './utils/printJSON';
 
 require('dotenv').config();
@@ -627,7 +627,14 @@ class Zotero {
    * TODO: --create-child should go into 'collection'.
    */
 
-  public async collections(args: ZoteroTypes.ICollectionsArgs): Promise<Collection.Get.Collection[] | any> {
+  public async collections(args: ZoteroTypes.ICollectionsArgs): Promise<
+    | Collection[]
+    | {
+        status: number;
+        message: string;
+        data: any;
+      }
+  > {
     // TODO: args parsing code
     if (args.json && !args.json.endsWith('.json')) {
       return this.message(0, 'Please provide a valid json file name');
@@ -640,7 +647,7 @@ class Zotero {
     // TODO: args parsing code
     // 'Unable to extract group/key from the string provided.',
     if (!args.key && !args.top) {
-      const collections: Collection.Get.Collection[] = await this.all('/collections');
+      const collections: Collection[] = await this.all('/collections');
       return collections;
     }
 
@@ -743,7 +750,7 @@ class Zotero {
         message: string;
         data: any;
       }
-    | Collection.Update.Collection
+    | UpdateCollectionResponse
   > {
     if (!args.key) {
       return this.message(0, 'Unable to extract group/key from the string provided.');
@@ -769,11 +776,7 @@ class Zotero {
 
     args.key = this.extractKeyAndSetGroup(args.key);
 
-    const results: Collection.Update.Collection = await this.http.put(
-      `/collections/${args.key}`,
-      args.json,
-      this.config,
-    );
+    const results: UpdateCollectionResponse = await this.http.put(`/collections/${args.key}`, args.json, this.config);
 
     return results;
   }
@@ -869,7 +872,14 @@ class Zotero {
    * DONE: Why is does the setup for --add and --remove differ? Should 'add' not be "nargs: '*'"? Remove 'itemkeys'?
    * TODO: Add option "--output file.json" to pipe output to file.
    */
-  async collection(args: ZoteroTypes.ICollectionArgs): Promise<any> {
+  async collection(args: ZoteroTypes.ICollectionArgs): Promise<
+    | Collection
+    | {
+        status: number;
+        message: string;
+        data: any;
+      }
+  > {
     // TODO: args parsing code
     if (args.key) {
       args.key = this.extractKeyAndSetGroup(args.key);
@@ -945,7 +955,14 @@ class Zotero {
    * <userOrGroupPrefix>/items All items in the library, excluding trashed items
    * <userOrGroupPrefix>/items/top Top-level items in the library, excluding trashed items
    */
-  async items(args: ItemArgs) {
+  async items(args: ItemArgs): Promise<
+    | Item[]
+    | {
+        status: number;
+        message: string;
+        data: any;
+      }
+  > {
     //
     let items;
     // TODO: args parsing code
@@ -974,7 +991,7 @@ class Zotero {
 
     if (args.count) {
       this.print(await this.count(`${collection}/items${args.top ? '/top' : ''}`, args.filter || {}));
-      return;
+      return null;
     }
 
     // TODO: args parsing code
@@ -2410,11 +2427,11 @@ class Zotero {
     }
     // check if subcollection exists
     let subCollectionToCreate = [];
-    let subCollectionData = await this.collections({
+    let subCollectionData = (await this.collections({
       group_id,
       key: collection,
       terse: true,
-    });
+    })) as Collection[];
     console.log(subCollectionData);
 
     //check if key exists in subcollection
@@ -2442,11 +2459,11 @@ class Zotero {
 
     // add items to sub collection
     console.log(items);
-    subCollectionData = await this.collections({
+    subCollectionData = (await this.collections({
       group_id,
       key: collection,
       terse: true,
-    });
+    })) as Collection[];
     console.log(subCollectionData);
 
     for (const key of keys) {
@@ -2458,11 +2475,11 @@ class Zotero {
 
       for (const item in itemData) {
         let finalName = item;
-        let collections = await this.collections({
+        let collections = (await this.collections({
           group_id,
           key: collection.key,
           terse: true,
-        });
+        })) as Collection[];
         for (const iterator of itemData[item]) {
           finalName = finalName + ' , ' + iterator.key;
         }
