@@ -40,7 +40,7 @@ import formatAsCrossRefXML from './utils/formatAsCrossRefXML';
 import { merge_items } from './utils/merge';
 import { ZoteroConfig, ZoteroConfigOptions } from './types/config';
 import { Ids } from './types/ids';
-import { ItemArgs, ValidateItemsArgs, Item, FullItemResponse } from './types/item';
+import { ItemArgs, ValidateItemsArgs, Item, FullItemResponse, ItemTemplate } from './types/item';
 import { TasgArgs } from './types/tag';
 import { PublicationsArgs } from './types/publications';
 import { TrashArgs } from './types/trash';
@@ -1403,7 +1403,11 @@ class Zotero {
    * (API: /items/KEY/file).
    * Also see 'item', which has options for adding/saving file attachments.
    */
-  async attachment(args: { key: string; save: string }) {
+  async attachment(args: { key: string; save: string }): Promise<{
+    status: number;
+    message: string;
+    data: any;
+  }> {
     if (args.key) {
       //TODO: args parsing code
       args.key = this.extractKeyAndSetGroup(args.key);
@@ -1450,7 +1454,14 @@ class Zotero {
    * [single item](https://www.zotero.org/support/dev/web_api/v3/write_requests#_an_item) OR
    * [multiple items](https://www.zotero.org/support/dev/web_api/v3/write_requests#creating_multiple_items)
    */
-  public async create_item(args: ZoteroTypes.ICreateItemArgs): Promise<any> {
+  public async create_item(args: ZoteroTypes.ICreateItemArgs): Promise<
+    | ItemTemplate
+    | {
+        status: number;
+        message: string;
+        data: any;
+      } | any[]
+  > {
     //
 
     if (args.template) {
@@ -1617,6 +1628,7 @@ class Zotero {
       this.show(result);
       return result.successful['0'].data;
     }
+    return null;
   }
 
   // This function is not used now. It was used to create a new item.

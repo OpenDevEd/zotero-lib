@@ -213,3 +213,34 @@ export type FullItemResponse = {
   result?: ItemResponse;
   final?: any;
 };
+
+export type ItemTemplate = {
+  itemType: string;
+  title: string;
+  creators: Creator[];
+  abstractNote: string;
+  publicationTitle: string;
+  volume: string;
+  issue: string;
+  pages: string;
+  date: string;
+  series: string;
+  seriesTitle: string;
+  seriesText: string;
+  journalAbbreviation: string;
+  language: string;
+  DOI: string;
+  ISSN: string;
+  shortTitle: string;
+  url: string;
+  accessDate: string;
+  archive: string;
+  archiveLocation: string;
+  libraryCatalog: string;
+  callNumber: string;
+  rights: string;
+  extra: string;
+  tags: Tag[];
+  collections: string[];
+  relations: Relation;
+};
