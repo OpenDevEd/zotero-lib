@@ -40,7 +40,7 @@ import formatAsCrossRefXML from './utils/formatAsCrossRefXML';
 import { merge_items } from './utils/merge';
 import { ZoteroConfig, ZoteroConfigOptions } from './types/config';
 import { Ids } from './types/ids';
-import { ItemArgs, ValidateItemsArgs, Item, FullItemResponse, ItemTemplate } from './types/item';
+import { ItemArgs, ValidateItemsArgs, Item, FullItemResponse, ItemTemplate, CreateItemResponse } from './types/item';
 import { TasgArgs } from './types/tag';
 import { PublicationsArgs } from './types/publications';
 import { TrashArgs } from './types/trash';
@@ -1460,7 +1460,12 @@ class Zotero {
         status: number;
         message: string;
         data: any;
-      } | any[]
+      }
+    | CreateItemResponse[]
+    | {
+        type: string;
+        message: string;
+      }
   > {
     //
 
@@ -1572,7 +1577,7 @@ class Zotero {
       }
       if (!Array.isArray(ObjectItems)) {
         console.log('ERROR: args.items is not an array');
-        return;
+        return null;
       }
       //console.log(JSON.stringify(items.slice(0,2), null, 2));
       //return;

@@ -244,3 +244,18 @@ export type ItemTemplate = {
   collections: string[];
   relations: Relation;
 };
+
+export type CreateItemResponse = {
+  successful: {
+    [key: string]: ItemResponse;
+  };
+  success: {
+    [key: string]: string;
+  };
+  unchanged: {
+    [key: string]: string;
+  };
+  failed: {
+    [key: string]: string;
+  };
+};
