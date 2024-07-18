@@ -40,11 +40,23 @@ import formatAsCrossRefXML from './utils/formatAsCrossRefXML';
 import { merge_items } from './utils/merge';
 import { ZoteroConfig, ZoteroConfigOptions } from './types/config';
 import { Ids } from './types/ids';
-import { ItemArgs, ValidateItemsArgs, Item, FullItemResponse, ItemTemplate, CreateItemResponse } from './types/item';
+import {
+  ItemArgs,
+  ValidateItemsArgs,
+  Item,
+  FullItemResponse,
+  ItemTemplate,
+  CreateItemResponse,
+  UpdateItemResponse,
+  ItemType,
+  Fields,
+} from './types/item';
 import { TasgArgs } from './types/tag';
 import { PublicationsArgs } from './types/publications';
 import { TrashArgs } from './types/trash';
 import { Collection, UpdateCollectionResponse } from './types/collection';
+import { GroupResponse } from './types/group';
+import { CreateSearch, Search } from './types/search';
 // import printJSON from './utils/printJSON';
 
 require('dotenv').config();
@@ -1657,7 +1669,14 @@ class Zotero {
    *
    * [see api docs](https://www.zotero.org/support/dev/web_api/v3/write_requests#updating_an_existing_item)
    */
-  public async update_item(args: ZoteroTypes.IUpdateItemArgs): Promise<any> {
+  public async update_item(args: ZoteroTypes.IUpdateItemArgs): Promise<
+    | {
+        status: number;
+        message: string;
+        data: any;
+      }
+    | UpdateItemResponse
+  > {
     //TODO: args parsing code
     args.replace = args.replace || false;
 
@@ -1801,7 +1820,7 @@ class Zotero {
    * @param args.tags - Whether to retrieve the tags of the items.
    * @returns A Promise that resolves to the items in the trash.
    */
-  async trash(args: TrashArgs) {
+  async trash(args: TrashArgs): Promise<Item[]> {
     const items = await this.http.get(`/items/trash${args.tags ? '/tags' : ''}`, undefined, this.config);
     this.show(items);
     return items;
@@ -1817,7 +1836,7 @@ class Zotero {
    * https://www.zotero.org/support/dev/web_api/v3/basics
    * <userOrGroupPrefix>/publications/items Items in My Publications
    */
-  async publications(args: PublicationsArgs) {
+  async publications(args: PublicationsArgs): Promise<Item[]> {
     const items = await this.http.get(`/publications/items${args.tags ? '/tags' : ''}`, undefined, this.config);
     this.show(items);
     return items;
@@ -1827,7 +1846,7 @@ class Zotero {
    * Retrieve a list of items types available in Zotero.
    * (API: /itemTypes)
    */
-  async types(args: any) {
+  async types(): Promise<ItemType[]> {
     const types = await this.http.get(
       '/itemTypes',
       {
@@ -1844,7 +1863,7 @@ class Zotero {
    * library_id and api_key has access to.
    * (API: /users/<user-id>/groups)
    */
-  async groups(args: any) {
+  async groups(): Promise<GroupResponse> {
     const groups = await this.http.get('/groups', undefined, this.config);
     this.show(groups);
     return groups;
@@ -1861,7 +1880,7 @@ class Zotero {
    * @param args.type - The type of item to retrieve the fields for.
    * @returns A Promise that resolves to the template fields.
    */
-  async fields(args: { type?: string }): Promise<any> {
+  async fields(args: { type?: string }): Promise<Fields> {
     if (args.type) {
       const result = {
         itemTypeFields: await this.http.get(
@@ -1909,7 +1928,7 @@ class Zotero {
    *
    * https://www.zotero.org/support/dev/web_api/v3/basics
    */
-  async searches(args: ZoteroTypes.ISearchesArgs) {
+  async searches(args: ZoteroTypes.ISearchesArgs): Promise<Search | Search[] | CreateSearch | string[]> {
     if (args.create) {
       let searchDef = [];
       try {
@@ -2859,7 +2878,7 @@ class Zotero {
           show: true,
         };
 
-        const updatedItem = await this.update_item(updateargs);
+        const updatedItem = (await this.update_item(updateargs)) as UpdateItemResponse;
         if (updatedItem.statusCode == 204) {
           var today = new Date();
           if (args.doi != existingDOI) {
@@ -3052,7 +3071,7 @@ class Zotero {
         fullresponse: false,
         show: true,
       };
-      const update = await this.update_item(updateargs);
+      const update = (await this.update_item(updateargs)) as UpdateItemResponse;
       if (update.statusCode == 204) {
         logger.info('update successfull - getting record');
         const zoteroRecord = await this.item({ key: args.key });
@@ -3092,7 +3111,14 @@ class Zotero {
    * @returns A promise that resolves with the updated item.
    */
 
-  public async update_url(args: ZoteroTypes.IUpdateUrlArgs): Promise<any> {
+  public async update_url(args: ZoteroTypes.IUpdateUrlArgs): Promise<
+    | {
+        status: number;
+        message: string;
+        data: any;
+      }
+    | UpdateItemResponse
+  > {
     //TODO: args parsing code
     args.json = {
       url: args.value,
@@ -3149,7 +3175,7 @@ class Zotero {
         fullresponse: false,
         show: true,
       };
-      const update = await this.update_item(updateargs);
+      const update = (await this.update_item(updateargs)) as UpdateItemResponse;
       let zoteroRecord;
       if (update.statusCode == 204) {
         logger.info('update successfull - getting record');

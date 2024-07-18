@@ -259,3 +259,73 @@ export type CreateItemResponse = {
     [key: string]: string;
   };
 };
+
+// update Item
+
+export type UpdateItemResponse = {
+  body: string;
+  statusCode: number;
+  statusText: string;
+  headers: {
+    date: string;
+    connection: string;
+    server: string;
+    'strict-transport-security': string;
+    'zotero-api-version': string;
+    'zotero-schema-version': string;
+    'last-modified-version': string;
+  };
+  config: {
+    url: string;
+    method: string;
+    data: {
+      type: string;
+      data: number[];
+    };
+    headers: {
+      Accept: string;
+      'Content-Type': string;
+      'User-Agent': string;
+      'Zotero-API-Version': string;
+      'Zotero-API-Key': string;
+      'If-Unmodified-Since-Version': number;
+      'Content-Length': number;
+    };
+    transformRequest: null[];
+    transformResponse: null[];
+    timeout: number;
+    xsrfCookieName: string;
+    xsrfHeaderName: string;
+    maxContentLength: number;
+    maxBodyLength: number;
+    transitional: {
+      silentJSONParsing: boolean;
+      forcedJSONParsing: boolean;
+      clarifyTimeoutError: boolean;
+    };
+    resolveWithFullResponse: boolean;
+  };
+};
+
+// Item types
+
+export type ItemType = {
+  itemType: string;
+  localized: string;
+};
+
+export type ItemTypeField = {
+  field: string;
+  localized: string;
+};
+
+export type ItemTypeCreatorType = {
+  creatorType: string;
+  localized: string;
+};
+
+export type Fields = {
+  itemTypeFields?: ItemTypeField[];
+  itemTypeCreatorTypes?: ItemTypeCreatorType[];
+  itemFields?: ItemTypeField[];
+};
