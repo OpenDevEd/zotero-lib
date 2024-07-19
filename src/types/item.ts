@@ -145,7 +145,7 @@ export type Item = {
   dateAdded?: string;
   dateModified?: string;
   updated_at?: string;
-  deleted?: boolean;
+  deleted?: number;
   // collection_items: CollectionItem[];
   // alsoKnown_as: AlsoKnownAs[];
   numChildren?: number;

@@ -1660,11 +1660,11 @@ class Zotero {
    * or replace (using --replace, API: put /items/KEY).
    *
    * @param args - arguments passed to the function
-   * @param args.key - the key of the item to update, in zotero select link format
-   * @param args.json - the json file to update the item with
-   * @param args.file - the file to update the item with
-   * @param args.version - the version of the item to update
-   * @param args.replace - whether to replace the item
+   * @param args.key - The key of the item. You can provide the key as zotero-select link (zotero://...) to also set the group-id
+   * @param args.json - The JSON object of the new item to update the item with
+   * @param args.file - Path of the file in JSON format to update the item with
+   * @param args.version - Specify the version of the item to update or else the latest version will be used
+   * @param args.replace - Whether to replace the item or update it, if true you should provide the full item
    * @returns the updated item
    *
    * [see api docs](https://www.zotero.org/support/dev/web_api/v3/write_requests#updating_an_existing_item)
@@ -1983,7 +1983,7 @@ class Zotero {
    * @param args.count - Count the number of items with each tag.
    * @returns A Promise that resolves to the tags.
    */
-  async tags(args: TasgArgs) {
+  async tags(args: TasgArgs): Promise<string[] | Record<string, number>> {
     let rawTags = null;
     if (args.filter) {
       rawTags = await this.all(`/tags/${encodeURIComponent(args.filter)}`);
@@ -2007,9 +2007,18 @@ class Zotero {
 
   /**
    * Utility functions.
+   * Enlose the item in a collection and create further subcollections.
+   *
+   * @param args.key - The Zotero item key for the item to be enclosed.
+   * @param args.collection - The Zotero collection key in which the new collection is created.
+   * @param args.title - The title for the new collection.
    */
 
-  public async enclose_item_in_collection(args: ZoteroTypes.IEncloseItemInCollectionArgs): Promise<any> {
+  public async enclose_item_in_collection(args: ZoteroTypes.IEncloseItemInCollectionArgs): Promise<{
+    status: number;
+    message: string;
+    data: any;
+  }> {
     const output = [];
     //TODO: args parsing code
     if (!args.key) {
@@ -2192,21 +2201,22 @@ class Zotero {
   }
 
   /**
-   * Manages the local database based on the provided arguments.
+   * Manages the local synced version of the Zotero library.
    *
-   * @param args - The arguments for managing the local database.
-   * @param args.lookup - Whether to lookup the items.
-   * @param args.keys - The keys of the items to lookup.
+   * @param args.lookup - Whether to lookup the elements in the local database.
+   * @param group_id - The group ID of the library to get backup from.
+   * @param args.keys - The keys of the items to lookup in the local database.
    * @param args.sync - Whether to sync the local database with the online library.
-   * @param args.demon - The cron pattern for the demon.
+   * @param args.export_json - The name of the file to export records from the local database.
+   * @param args.demon - The cron pattern to run the sync as a demon.
    * @param args.lockfile - The lockfile for the sync.
-   * @param args.lock_timeout - The lock timeout for the sync.
-   * @param args.websocket - Whether to use the websocket if not provided the process will exit after 1 second.
+   * @param args.lock_timeout - The number of seconds to wait for the lock before resetting it.
+   * @param args.websocket - Whether to use the websocket for sync if not provided the process will exit after 1 second.
    * @param args.verbose - Whether to show verbose output.
    * @returns A promise that resolves to the result of the database management operation.
    */
 
-  public async manageLocalDB(args: ZoteroTypes.IManageLocalDBArgs): Promise<any> {
+  public async manageLocalDB(args: ZoteroTypes.IManageLocalDBArgs): Promise<Item[] | void> {
     console.log('args: ', { ...args }, this.config);
     if (args.lookup && !args.keys) {
       logger.error('You must provide keys to lookup');
@@ -2289,12 +2299,12 @@ class Zotero {
   }
 
   /**
-   * Deduplicates items in the specified group based on certain criteria.
+   * Deduplicate items in a collection.
    * It writes the duplicates to a file named `duplicates.json`.
    * @param args - The deduplication function arguments.
    * @param args.group_id - The ID of the group to deduplicate.
    * @param args.api_key - The API key of the group.
-   * @param args.collection - The collection to add the deduplicated items to.
+   * @param args.collection - The collection to deduplicate.
    */
 
   public async deduplicate_func(args: ZoteroTypes.IDeduplicateFuncArgs): Promise<void> {
@@ -2428,10 +2438,9 @@ class Zotero {
   }
 
   /**
-   * Moves and deduplicates items to a specified collection.
+   * Move items from deduplicate json file to provided collection.
    *
-   * @param args - The arguments for moving and deduplicating items.
-   * @param args.file - The file containing the items to move and deduplicate.
+   * @param args.file - The json file to read items from , this file is generated by deduplicate_func function.
    * @returns A Promise that resolves when the items have been moved and deduplicated.
    */
   public async Move_deduplicate_to_collection(args: ZoteroTypes.IMoveDeduplicateToCollectionArgs): Promise<void> {
@@ -2590,7 +2599,7 @@ class Zotero {
    * Merges items from a specified data file into a Zotero group.
    *
    * @param args - The arguments for the merge function.
-   * @param args.data - The path to the data file containing the items to be merged.
+   * @param args.data - The path to the data file containing the items to be merged. JSON file.
    * @param args.options - The options for merging the items.
    * @param args.group_id - The ID of the Zotero group to merge the items into.
    */

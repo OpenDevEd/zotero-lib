@@ -18,7 +18,7 @@ export type GroupResponse = {
   };
   data: {
     id: number;
-    version: number;
+    version: number | string;
     name: string;
     owner: number;
     type: string;
@@ -30,3 +30,5 @@ export type GroupResponse = {
     members: number[];
   };
 };
+
+export type GroupData = GroupResponse['data'];
