@@ -1876,8 +1876,7 @@ class Zotero {
    * Note that to retrieve a template, use 'create-item --template TYPE'
    * rather than this command.
    *
-   * @param args - Additional arguments for the request.
-   * @param args.type - The type of item to retrieve the fields for.
+   * @param args.type - Display fields types for TYPE.
    * @returns A Promise that resolves to the template fields.
    */
   async fields(args: { type?: string }): Promise<Fields> {
@@ -2653,7 +2652,7 @@ class Zotero {
   }
 
   /**
-   * Resolves the given arguments and returns the result.
+   * Resolve a Zotero Select link (zotero://...) to a key.
    *
    * @param args - The arguments to resolve.
    * @param args.keys - The keys of the items to resolve.
@@ -2841,7 +2840,7 @@ class Zotero {
    * @param args - The arguments for updating the DOI.
    * @param args.key - The key of the item to update the DOI for.
    * @param args.doi - The new DOI to update the item with.
-   * @param args.zenodoRecordID - The Zenodo record ID to update the item with.
+   * @param args.zenodoRecordID - The Zenodo record number for the item.
    * @param args.verbose - Whether to show verbose output.
    * @returns A Promise that resolves to the updated item.
    */
@@ -2924,11 +2923,11 @@ class Zotero {
    * @param args.key - The key of the item to attach the link to.
    * @param args.url - The URL to attach to the item.
    * @param args.title - The title of the link.
-   * @param args.zenodo - Whether to attach a Zenodo link.
+   * @param args.zenodo - Determine Zenodo id from Zotero item and then add links for Zenodo record, deposit and doi.
    * @param args.id - The Zenodo ID to attach the link to.
    * @param args.tags - The tags to attach to the link.
    * @param args.kerko_site_url - The Kerko site URL to attach to the link.
-   * @param args.update_url_field - Whether to update the URL field.
+   * @param args.update_url_field - Update/overwrite the url field of the item. The url used is `url` (if set) or `kerko-link-key`.
    * @returns A Promise that resolves to the result of attaching the link.
    */
 
@@ -3023,7 +3022,7 @@ class Zotero {
    * @param args - The arguments for retrieving or updating the field.
    * @param args.key - The key of the item to retrieve or update the field for.
    * @param args.field - The field to retrieve or update.
-   * @param args.value - The new value to update the field with.
+   * @param args.value - The new value to update the field with, if not provided, the field value is returned.
    * @param args.version - The version of the item to update.
    * @returns The value of the field or the updated Zotero item.
    */
@@ -3115,8 +3114,8 @@ class Zotero {
    * Updates the URL of an item in the Zotero library.
    * @param args - The arguments for updating the URL.
    * @param args.key - The key of the item to update the URL for.
-   * @param args.value - The new URL to update the item with.
-   * @param args.version - The version of the item to update.
+   * @param args.value - The new URL to update the item with, if not provided, the field value is returned.
+   * @param args.version - The version of the item to update, or else the latest version will be used
    * @returns A promise that resolves with the updated item.
    */
 
@@ -3135,6 +3134,12 @@ class Zotero {
     return this.update_item(args);
   }
 
+  /**
+   * View/merge - extra>Kerko.CiteItemAlsoKnownAs.
+   *
+   * @param args.key - The key of the item to view or update.
+   * @param args.add - The value to update if not provided the field value is returned.
+   */
   public async KerkoCiteItemAlsoKnownAs(args: ZoteroTypes.IKerkoCiteItemAlsoKnownAsArgs) {
     //TODO: args parsing code
     args.fullresponse = false;
@@ -3204,7 +3209,20 @@ class Zotero {
   }
 
   // TODO: Implement
-
+  /**
+   * Get the bibliography
+   *
+   * @param args.key - The key of the item to get the bibliography for. Can be provided as zotero select link
+   * @param args.keys - The array of keys of the items to get the bibliography for. Can be provided as list of Item keys
+   * @param args.group - If you pass `keys` pass `group` as well to specify the group of the keys
+   * @param args.groupkeys - The Zotero items keys for the items for which the bib is obtained. This is a string of the format `1234567:ABCDEFGH,1234567:ABCDEFGH,...`
+   * @param args.xml - The default is for this function to return xml/html (wrapped in json). Use this switch to only return the xml.
+   * @param args.json - The default is for this function to return xml/html (wrapped in json). Use this switch to convert the xml to json.
+   * @param args.zgroup - The source group. Added to the xml.
+   * @param args.zkey - The source key. Added to the xml.
+   * @param args.openinzotero - Target zotero app. Added to the xml.
+   *
+   */
   public async getbib(args: ZoteroTypes.IGetbibArgs) {
     let output;
     try {
@@ -3222,6 +3240,19 @@ class Zotero {
   }
 
   /* START FUcntionS FOR GETBIB */
+  /**
+   * The get bib function utility
+   *
+   * @param args.key - The key of the item to get the bibliography for. Can be provided as zotero select link
+   * @param args.keys - The array of keys of the items to get the bibliography for. Can be provided as list of Item keys
+   * @param args.group - If you pass `keys` pass `group` as well to specify the group of the keys
+   * @param args.groupkeys - The Zotero items keys for the items for which the bib is obtained. This is a string of the format `1234567:ABCDEFGH,1234567:ABCDEFGH,...`
+   * @param args.xml - The default is for this function to return xml/html (wrapped in json). Use this switch to only return the xml.
+   * @param args.json - The default is for this function to return xml/html (wrapped in json). Use this switch to convert the xml to json.
+   * @param args.zgroup - The source group. Added to the xml.
+   * @param args.zkey - The source key. Added to the xml.
+   * @param args.openinzotero - Target zotero app. Added to the xml.
+   */
   async getZoteroDataX(args: ZoteroTypes.IGetZoteroDataXargs) {
     //logger.info("Hello")
     let d = new Date();
@@ -3477,7 +3508,16 @@ class Zotero {
     const data = {};
     return this.message(0, 'exit status', data);
   }
-  public async findEmptyItems(args: ZoteroTypes.IFindEmptyItemsArgs) {
+
+  /**
+   * Finds and handles empty items in the database.
+   *
+   * @param args - The arguments for finding and handling empty items.
+   * @param args.output - The path to store the empty items result in a JSON file. Default is './empty_items.json'.
+   * @param args.delete - Whether to delete the empty items from the database.
+   * @param args.onlykeys - Whether to store only the keys of the empty items. This argument is required when using the 'output' option.
+   */
+  public async findEmptyItems(args: ZoteroTypes.IFindEmptyItemsArgs): Promise<void> {
     let path = args.output ? args.output : './empty_items.json';
     let emptyItems: any[] = await FindEmptyItemsFromDatabase(args['group-id']);
     if (args.delete) {
@@ -3498,7 +3538,7 @@ class Zotero {
   }
 
   // private methods
-  formatMessage(m) {
+  formatMessage(m: any): string {
     const type = typeof m;
 
     const validTypes = ['string', 'number', 'undefined', 'boolean'];
@@ -3528,7 +3568,11 @@ const fetchChangedGroups = async (onlineGroups, offlineGroups): Promise<string[]
   return Object.keys(onlineGroups).filter((group) => onlineGroups[group] !== localGroupsMap[group]);
 };
 
-const fetchGroupItems = async (group, itemIds, args) => {
+const fetchGroupItems = async (
+  group: { group: string | number },
+  itemIds: string | number,
+  args: { api_key: string },
+) => {
   try {
     const res = await axios.get(`${API_URL}/groups/${group.group}/items/?itemKey=${itemIds}&includeTrashed=1`, {
       headers: { Authorization: `Bearer ${args.api_key}` },
