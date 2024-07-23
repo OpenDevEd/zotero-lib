@@ -5,7 +5,7 @@ interface ZoteroItem {
   title: string;
   abstractNote: string;
 }
-export default function formatAsXMP(item: ZoteroItem = {} as ZoteroItem) {
+export default function formatAsXMP(item: ZoteroItem = {} as ZoteroItem): string {
   const { creators = [] } = item;
   const creatorsList = creators
     .map((c: Creator) => {

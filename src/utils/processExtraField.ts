@@ -1,4 +1,12 @@
-export default function processExtraField(input = '') {
+/**
+ * This function processe the zotero extra field.
+ * It sorts the dois and keep the first one as is and prefix the rest with 'previous'.
+ * It also add kerkoCite.ItemAlsoKnownAs: line and sort the dois and kerkoCite.ItemAlsoKnownAs: line.
+ *
+ * @param input - The extra field as a string. separated by newline.
+ * @returns - The extra field as a string. separated by newline.
+ */
+export default function processExtraField(input: string = ''): string {
   let result = '';
 
   const lines = input.split('\n');

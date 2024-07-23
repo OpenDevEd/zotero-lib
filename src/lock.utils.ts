@@ -1,7 +1,7 @@
 import { existsSync } from 'fs';
 import { stat, unlink, writeFile } from 'fs/promises';
 
-export async function checkForValidLockFile(lockfile, lockTimeout) {
+export async function checkForValidLockFile(lockfile: string, lockTimeout: number | string) {
   const threshold = Date.now() - Number(lockTimeout) * 1000;
   if (!existsSync(lockfile)) {
     console.log('no lock file found');
@@ -18,12 +18,12 @@ export async function checkForValidLockFile(lockfile, lockTimeout) {
   return hasValidLockFile;
 }
 
-export function createLockFile(lockfile) {
+export function createLockFile(lockfile: string) {
   console.log('creating lock file');
   return writeFile(lockfile, String(Date.now()));
 }
 
-export function removeLockFile(lockfile) {
+export function removeLockFile(lockfile: string) {
   console.log('removing lock file');
   return unlink(lockfile);
 }

@@ -1,4 +1,5 @@
 import logger from '../logger';
+import { Item } from '../types/item';
 
 const fs = require('fs');
 const os = require('os');
@@ -6,18 +7,18 @@ const Sugar = require('sugar');
 const xmlescape = require('xml-escape');
 
 type Creator = { name: string; creatorType: string } | { firstName: string; lastName: string; creatorType: string };
-interface ZoteroItem {
-  creators?: [];
-  rights: any;
-  title: string;
-  url: string;
-  doi: string;
-  extra: string;
-  callNumber: string;
-  institution: string;
-  abstractNote: string;
-  date: string;
-}
+// interface ZoteroItem {
+//   creators?: [];
+//   rights: any;
+//   title: string;
+//   url: string;
+//   doi: string;
+//   extra: string;
+//   callNumber: string;
+//   institution: string;
+//   abstractNote: string;
+//   date: string;
+// }
 
 /*
             parser_item.add_argument('--crossref-user', {
@@ -42,8 +43,23 @@ interface ZoteroItem {
       });
 
       */
+type FormatAsCrossRefXMLResult = {
+  result: string;
+  status: number;
+};
 
-export default async function formatAsCrossRefXML(item: ZoteroItem = {} as ZoteroItem, args: any) {
+export type FormatAsCrossRefXMLArgs = {
+  author_data: string;
+  crossref_user: string;
+  crossref_user_json: any;
+  crossref_submit: boolean;
+  crossref_no_confirm: boolean;
+};
+
+export default async function formatAsCrossRefXML(
+  item: Item = {} as Item,
+  args: any,
+): Promise<FormatAsCrossRefXMLResult> {
   const { creators = [] } = item;
 
   const authorDataIn: string = [
@@ -234,7 +250,7 @@ export default async function formatAsCrossRefXML(item: ZoteroItem = {} as Zoter
   return { result: result, status: status };
 }
 
-async function crossref_submit(CreateDate, result, crossRefUser) {
+async function crossref_submit(CreateDate: string, result: string, crossRefUser: any): Promise<string> {
   /*
   const FormData = require('form-data');
   const axios = require('axios');
@@ -299,7 +315,7 @@ async function crossref_submit(CreateDate, result, crossRefUser) {
   return fname;
 }
 
-async function crossref_confirm(fname, doi, crossRefUser) {
+async function crossref_confirm(fname: string, doi: string, crossRefUser: any): Promise<number> {
   const { Curl } = require('node-libcurl');
   console.log('Checking submission progress.');
   function sleep(ms) {

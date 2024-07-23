@@ -1,4 +1,5 @@
 import logger from '../logger';
+import { Item } from '../types/item';
 
 const fs = require('fs');
 const os = require('os');
@@ -8,23 +9,23 @@ const Sugar = require('sugar');
   | { name: string; creatorType: string }
   | { firstName: string; lastName: string; creatorType: string };
   */
-interface ZoteroItem {
-  creators?: [];
-  rights: any;
-  title: string;
-  url: string;
-  doi: string;
-  extra: string;
-  callNumber: string;
-  institution: string;
-  abstractNote: string;
-  date: string;
-}
+// interface ZoteroItem {
+//   creators?: [];
+//   rights: any;
+//   title: string;
+//   url: string;
+//   doi: string;
+//   extra: string;
+//   callNumber: string;
+//   institution: string;
+//   abstractNote: string;
+//   date: string;
+// }
 
 // TODO: complete: This needs to check for multiple DOI locations: item.doi and then extra.
 // It then needs to check whether this is a zenodo doi.
 // Also, we need a new "zenodoRecord: 123" and "zenodoConcept: 123"
-function zenodoParseIDFromZoteroRecord(item) {
+function zenodoParseIDFromZoteroRecord(item: Item): string {
   logger.info('item = %O', item);
   const extra = item.extra.split('\n');
   // let doi = '';
@@ -69,7 +70,7 @@ function zenodoParseIDFromZoteroRecord(item) {
 }
 
 export default async function formatAsZenodoJson(
-  item: ZoteroItem = {} as ZoteroItem,
+  item: Item = {} as Item,
   args: any,
 ): Promise<{
   id: string;

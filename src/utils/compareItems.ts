@@ -1,9 +1,15 @@
+import { Creator, Item } from '../types/item';
+
 interface deduplicate_func_result {
   result: boolean;
   reason: string;
 }
 
-export default async function compare(item, item2, args): Promise<deduplicate_func_result> {
+export type CompareArgs = {
+  mode: string;
+};
+
+export default async function compare(item: Item, item2: Item, args: CompareArgs): Promise<deduplicate_func_result> {
   let temp = await DeleteExtra(item);
   let temp2 = await DeleteExtra(item2);
   // console.log(temp);
@@ -44,7 +50,7 @@ export default async function compare(item, item2, args): Promise<deduplicate_fu
 
 //TODO:DRY
 // write function to compare creators
-async function compareCreators(creators, creators2) {
+async function compareCreators(creators: Creator[], creators2: Creator[]): Promise<boolean> {
   try {
     // check if both are empty
     if ((creators === undefined || creators === null) && (creators2 === undefined || creators2 === null)) return true;
@@ -80,7 +86,7 @@ async function DeleteExtra(item) {
 }
 
 //@ts-ignore
-async function CompareAllFields(item, item2) {
+async function CompareAllFields(item: Item, item2: Item): Promise<boolean> {
   // compare the two objects
   // get all the keys of the object
 
@@ -113,7 +119,7 @@ async function CompareAllFields(item, item2) {
  * @returns a boolean value. It returns true if all the non-creator and non-key fields of the two input
  * objects are equal (ignoring case for string values), and false otherwise.
  */
-async function CompareAllFieldsLowerCase(item, item2) {
+async function CompareAllFieldsLowerCase(item: Item, item2: Item): Promise<boolean> {
   // compare the two objects
   // get all the keys of the object
   let keys = Object.keys(item);
@@ -192,7 +198,7 @@ async function CompareAllFieldsLowerCase(item, item2) {
  * (`item`) for identical values in several fields.
  * @returns A boolean value is being returned.
  */
-async function compareIdenticalInSeveralFields(item: any, item2: any): Promise<boolean> {
+async function compareIdenticalInSeveralFields(item: Item, item2: Item): Promise<boolean> {
   const keys1 = Object.keys(item);
   const keys2 = Object.keys(item2);
 
@@ -227,7 +233,7 @@ async function compareIdenticalInSeveralFields(item: any, item2: any): Promise<b
 
 // //@ts-ignore
 // var stringSimilarity = require('string-similarity');
-async function compareDIO(item, item2) {
+async function compareDIO(item: Item, item2: Item): Promise<boolean> {
   // if(item.DOI && item2.DOI){
   //   var similarity = stringSimilarity.compareTwoStrings(item2.title, item.title);
   //   if(similarity > 0.73) {
@@ -246,7 +252,7 @@ async function compareDIO(item, item2) {
   return false;
 }
 
-async function isEmpty(str) {
+async function isEmpty(str: string): Promise<boolean> {
   if (str === undefined || str === null || str === '') return true;
   return false;
 }

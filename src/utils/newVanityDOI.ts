@@ -1,7 +1,13 @@
 const fs = require('fs');
 const os = require('os');
 
-export default function newVanityDOI(item, group_id, crossref_user) {
+type NewVanityDOIItem = {
+  data: {
+    callNumber: string;
+  };
+};
+
+export default function newVanityDOI(item: NewVanityDOIItem, group_id: string, crossref_user: string) {
   let doi = '';
   if (item.data.callNumber && item.data.callNumber != '') {
     const crossRefUserIn: string = [

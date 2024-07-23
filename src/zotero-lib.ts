@@ -29,7 +29,7 @@ import {
 } from './local-db/db';
 import { readConfigFile } from './readConfigFile';
 import { as_array, as_value, catchme, colophon, getCanonicalURL, isomessage, urlify } from './utils';
-import compare from './utils/compareItems';
+import compare, { CompareArgs } from './utils/compareItems';
 import md5File from './utils/md5-file';
 // import saveToFile from './local-db/saveToFile';
 import axios from 'axios';
@@ -2381,7 +2381,7 @@ class Zotero {
 
           // create array of tag objects from item1 and item2
 
-          let result = await compare(item1, item2, args);
+          let result = await compare(item1, item2, args as CompareArgs);
           // let title2 = item2.title.toLowerCase();
           if (result.result && !duplicatesInType.includes(item2.key)) {
             if (!duplicates[result.reason]) duplicates[result.reason] = {};
@@ -3563,7 +3563,7 @@ const API_URL = 'https://api.zotero.org';
 
 // Utils
 
-const fetchChangedGroups = async (onlineGroups, offlineGroups): Promise<string[]> => {
+const fetchChangedGroups = async (onlineGroups: any, offlineGroups: any[]): Promise<string[]> => {
   const localGroupsMap = offlineGroups.reduce((a, c) => ({ ...a, [c.id]: c.version }), {});
   return Object.keys(onlineGroups).filter((group) => onlineGroups[group] !== localGroupsMap[group]);
 };
@@ -3588,7 +3588,7 @@ const fetchGroupItems = async (
 };
 
 // Main Function
-const syncToLocalDB = async (args: any) => {
+const syncToLocalDB = async (args: any): Promise<void> => {
   const syncStart = Date.now();
   console.log('syncing local db with online library');
 
@@ -3670,7 +3670,20 @@ const syncToLocalDB = async (args: any) => {
   const syncEnd = Date.now();
   console.log(`Time taken: ${(syncEnd - syncStart) / 1000}s`);
 };
-async function websocket(args, config) {
+async function websocket(
+  args: ZoteroTypes.IManageLocalDBArgs,
+  config: {
+    api_key: any;
+    group_id?: string;
+    user_id?: string;
+    library_type?: string;
+    indent?: number;
+    zotero_schema?: string;
+    out?: string;
+    verbose?: boolean;
+    show?: boolean;
+  },
+): Promise<void> {
   console.log('starting websocket');
   const groups = await getAllGroups();
   const groupIds: string[] = groups.map((group) => `/groups/${group.id}`);

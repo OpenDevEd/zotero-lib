@@ -146,6 +146,7 @@ export type Item = {
   dateModified?: string;
   updated_at?: string;
   deleted?: number;
+  doi: string;
   // collection_items: CollectionItem[];
   // alsoKnown_as: AlsoKnownAs[];
   numChildren?: number;
@@ -162,7 +163,7 @@ type Relation = {
   [key: string]: string[] | string;
 };
 
-type Creator = {
+export type Creator = {
   creatorType: string;
   name?: string;
   firstName?: string;

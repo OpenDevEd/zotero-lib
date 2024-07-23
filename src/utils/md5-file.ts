@@ -18,6 +18,6 @@ export default function md5File(filename = '') {
  * @param  {String} input - The string (or buffer).
  * @return {String}        - The MD5 hash.
  */
-export function md5(input: string) {
+export function md5(input: string): string {
   return crypto.createHash('md5').update(input).digest('hex');
 }
