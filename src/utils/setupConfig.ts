@@ -1,14 +1,7 @@
 import { input, select } from '@inquirer/prompts';
 import fs from 'fs';
 import os from 'os';
-
-interface IConfig {
-  api_key: string;
-  group_id?: string;
-  user_id?: string;
-  library_type: string;
-  indent: number;
-}
+import { IConfig } from '../types/config';
 
 export const configSetup = async () => {
   let config: IConfig = {

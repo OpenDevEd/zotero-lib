@@ -68,13 +68,13 @@ export function urlify(
   argsZGroup: string,
   argsZKey: string,
   argsOpenInZotero: boolean,
-) {
+): string {
   return `<a href="https://ref.opendeved.net/zo/zg/${elementLibraryId}/7/${elementKey}/NA?${
     argsZGroup || argsZKey ? `src=${argsZGroup}:${argsZKey}&` : ''
   }${argsOpenInZotero ? 'openin=zotero' : ''}">${details}</a>`;
 }
 
-export function colophon(string: string) {
+export function colophon(string: string): string {
   let result = '';
   const match = string.match(/Colophon: (.*?)\n/);
   if (match) {

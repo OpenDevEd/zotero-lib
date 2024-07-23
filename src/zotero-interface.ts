@@ -82,6 +82,7 @@ namespace ZoteroTypes {
     xpm?: boolean;
     crossref?: boolean;
     crossref_user?: string;
+    crossref_user_json?: any;
     crossref_submit?: boolean;
     crossref_no_confirm?: boolean;
     zenodo?: boolean;
@@ -100,6 +101,7 @@ namespace ZoteroTypes {
     validate_with?: string;
     switchNames?: boolean;
     fullresponse?: boolean;
+    tags?: boolean | string[];
   }
 
   export interface ICreateItemArgs extends IZoteroCongif {

@@ -1,11 +1,7 @@
+import { NewVanityDOIItem } from '../types/newVanityDOI';
+
 const fs = require('fs');
 const os = require('os');
-
-type NewVanityDOIItem = {
-  data: {
-    callNumber: string;
-  };
-};
 
 export default function newVanityDOI(item: NewVanityDOIItem, group_id: string, crossref_user: string) {
   let doi = '';

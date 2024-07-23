@@ -1,8 +1,10 @@
+import { ZoteroConfig, ZoteroConfigResult } from './types/config';
+
 const os = require('os');
 const toml = require('@iarna/toml');
 const fs = require('fs');
 
-export function readConfigFile(args: any) {
+export function readConfigFile(args: ZoteroConfig): ZoteroConfigResult {
   let config = {};
 
   const configPath: string = [

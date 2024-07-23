@@ -29,7 +29,7 @@ import {
 } from './local-db/db';
 import { readConfigFile } from './readConfigFile';
 import { as_array, as_value, catchme, colophon, getCanonicalURL, isomessage, urlify } from './utils';
-import compare, { CompareArgs } from './utils/compareItems';
+import compare from './utils/compareItems';
 import md5File from './utils/md5-file';
 // import saveToFile from './local-db/saveToFile';
 import axios from 'axios';
@@ -51,12 +51,13 @@ import {
   ItemType,
   Fields,
 } from './types/item';
-import { TasgArgs } from './types/tag';
+import { TagObject, TasgArgs } from './types/tag';
 import { PublicationsArgs } from './types/publications';
 import { TrashArgs } from './types/trash';
 import { Collection, UpdateCollectionResponse } from './types/collection';
 import { GroupResponse } from './types/group';
 import { CreateSearch, Search } from './types/search';
+import { CompareArgs } from './types/compare';
 // import printJSON from './utils/printJSON';
 
 require('dotenv').config();
@@ -177,7 +178,7 @@ class Zotero {
    * @returns Array of Object tags
    * @example - ['title'] to [{tag: 'title', type: 0}]
    */
-  public objectifyTags(tags) {
+  public objectifyTags(tags: string[]): TagObject[] {
     const result = [];
     if (tags) {
       tags = as_array(tags);
@@ -197,7 +198,7 @@ class Zotero {
    * @param _args - configs provided in args
    * @returns standardized configs
    */
-  private canonicalConfig(_config: any, args: any) {
+  private canonicalConfig(_config: any, args: any): ZoteroConfigOptions {
     const config = { ..._config };
 
     this.config_keys.forEach((key) => {
@@ -244,11 +245,19 @@ class Zotero {
 
     return this.config;
   }
-  public changeConfig(args) {
+  public changeConfig(args: ZoteroConfigOptions) {
     args.group_id ? (this.config.group_id = args.group_id) : null;
   }
 
-  private message(stat = 0, msg = 'None', data = null) {
+  private message(
+    stat = 0,
+    msg = 'None',
+    data = null,
+  ): {
+    status: number;
+    message: string;
+    data: any;
+  } {
     return {
       status: stat,
       message: msg,
@@ -283,7 +292,7 @@ class Zotero {
   }
 
   // Function to get more than 100 records, i.e. chunked retrieval.
-  async all(uri, params = {}) {
+  async all(uri: string, params = {}) {
     let chunk = await this.http
       .get(
         uri,
@@ -490,7 +499,7 @@ class Zotero {
    * Show a message. If the message is an object, it is stringified.
    * @param v - the message to show
    */
-  private show(v) {
+  private show(v: any) {
     // TODO: Look at the type of v: if string, then print, if object, then stringify
     if (typeof v === 'string') {
       this.print(v);
@@ -567,7 +576,19 @@ class Zotero {
       content: 'Note note.',
       tags: [],
     },
-  ) {
+  ): Promise<
+    | ItemTemplate
+    | {
+        status: number;
+        message: string;
+        data: any;
+      }
+    | CreateItemResponse[]
+    | {
+        type: string;
+        message: string;
+      }
+  > {
     const tags = this.objectifyTags(options.tags);
     const noteText = options.content.replace(/\n/g, '<br>');
     const json = {
@@ -598,7 +619,19 @@ class Zotero {
       title: 'Click to open',
       tags: [],
     },
-  ) {
+  ): Promise<
+    | ItemTemplate
+    | {
+        status: number;
+        message: string;
+        data: any;
+      }
+    | CreateItemResponse[]
+    | {
+        type: string;
+        message: string;
+      }
+  > {
     const tags = this.objectifyTags(options.tags);
     logger.info('Linktitle=' + options.title);
     const json = {
@@ -1112,7 +1145,7 @@ class Zotero {
    */
 
   public async item(
-    args: ZoteroTypes.IItemArgs & { tags?: boolean },
+    args: ZoteroTypes.IItemArgs,
   ): Promise<Item | FullItemResponse | { result: string; status: number }> {
     const output = [];
 
@@ -1649,7 +1682,7 @@ class Zotero {
   }
 
   // This function is not used now. It was used to create a new item.
-  public pruneData(res, fullresponse = false) {
+  public pruneData(res: any, fullresponse = false) {
     if (fullresponse) return res;
     return res.successful['0'].data;
   }
@@ -3106,7 +3139,11 @@ class Zotero {
   }
 
   // TODO: Implement
-  public async extra_append(args) {
+  public async extra_append(): Promise<{
+    status: number;
+    message: string;
+    data: any;
+  }> {
     const data = {};
     return this.message(0, 'exit status', data);
   }
@@ -3140,7 +3177,11 @@ class Zotero {
    * @param args.key - The key of the item to view or update.
    * @param args.add - The value to update if not provided the field value is returned.
    */
-  public async KerkoCiteItemAlsoKnownAs(args: ZoteroTypes.IKerkoCiteItemAlsoKnownAsArgs) {
+  public async KerkoCiteItemAlsoKnownAs(args: ZoteroTypes.IKerkoCiteItemAlsoKnownAsArgs): Promise<{
+    status: number;
+    message: string;
+    data: any;
+  }> {
     //TODO: args parsing code
     args.fullresponse = false;
     let thisversion = '';
@@ -3223,7 +3264,7 @@ class Zotero {
    * @param args.openinzotero - Target zotero app. Added to the xml.
    *
    */
-  public async getbib(args: ZoteroTypes.IGetbibArgs) {
+  public async getbib(args: ZoteroTypes.IGetbibArgs): Promise<string | { status: number; message: string; data: any }> {
     let output;
     try {
       output = await this.getZoteroDataX(args);
@@ -3253,7 +3294,9 @@ class Zotero {
    * @param args.zkey - The source key. Added to the xml.
    * @param args.openinzotero - Target zotero app. Added to the xml.
    */
-  async getZoteroDataX(args: ZoteroTypes.IGetZoteroDataXargs) {
+  async getZoteroDataX(
+    args: ZoteroTypes.IGetZoteroDataXargs,
+  ): Promise<string | { status: number; data: any[] | string }> {
     //logger.info("Hello")
     let d = new Date();
     let n = d.getTime();

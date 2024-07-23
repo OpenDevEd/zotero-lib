@@ -6,10 +6,11 @@ const crypto = require('crypto');
  * @param filename - the filename of file to hash
  * @returns - The MD5 hash of input file
  */
-export default function md5File(filename = '') {
+export default function md5File(filename = ''): string {
   if (fs.existsSync(filename)) {
     return md5(fs.readFileSync(filename));
   }
+  return '';
 }
 
 /**

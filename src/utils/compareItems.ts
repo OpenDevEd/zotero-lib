@@ -1,15 +1,7 @@
+import { CompareArgs, Deduplicate_func_result } from '../types/compare';
 import { Creator, Item } from '../types/item';
 
-interface deduplicate_func_result {
-  result: boolean;
-  reason: string;
-}
-
-export type CompareArgs = {
-  mode: string;
-};
-
-export default async function compare(item: Item, item2: Item, args: CompareArgs): Promise<deduplicate_func_result> {
+export default async function compare(item: Item, item2: Item, args: CompareArgs): Promise<Deduplicate_func_result> {
   let temp = await DeleteExtra(item);
   let temp2 = await DeleteExtra(item2);
   // console.log(temp);
@@ -70,7 +62,7 @@ async function compareCreators(creators: Creator[], creators2: Creator[]): Promi
   return true;
 }
 //@ts-ignore
-async function DeleteExtra(item) {
+async function DeleteExtra(item: Item): Promise<Item> {
   let temp = item;
 
   delete temp.accessDate;

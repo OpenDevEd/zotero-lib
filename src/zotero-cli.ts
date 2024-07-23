@@ -127,7 +127,7 @@ async function main() {
 }
 
 // local functions
-function getVersion() {
+function getVersion(): number {
   const pjson = require('../package.json');
   if (pjson.version) logger.info(`zotero-lib version=${pjson.version}`);
   return pjson.version;

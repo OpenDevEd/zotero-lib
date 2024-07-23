@@ -1,11 +1,12 @@
-type Creator = { name: string; creatorType: string } | { firstName: string; lastName: string; creatorType: string };
-interface ZoteroItem {
-  creators?: [];
-  rights: any;
-  title: string;
-  abstractNote: string;
-}
-export default function formatAsXMP(item: ZoteroItem = {} as ZoteroItem): string {
+import { Creator, Item } from '../types/item';
+
+// interface ZoteroItem {
+//   creators?: [];
+//   rights: any;
+//   title: string;
+//   abstractNote: string;
+// }
+export default function formatAsXMP(item: Item = {} as Item): string {
   const { creators = [] } = item;
   const creatorsList = creators
     .map((c: Creator) => {
