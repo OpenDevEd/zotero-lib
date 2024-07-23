@@ -256,7 +256,7 @@ class Zotero {
     };
   }
 
-  private finalActions(output) {
+  private finalActions(output: any) {
     // logger.info("args="+JSON.stringify(args))
     // TODO: Look at the type of output: if string, then print, if object, then stringify
     if (this.config.out) {
@@ -800,7 +800,7 @@ class Zotero {
    *
    * @param args - arguments passed to the function
    * @param args.key - the key of the collection to delete
-   * @param args.version - the version of the collection to delete, if not provided, it is retrieved
+   * @param args.version - the version of the collection to delete, if not provided, it use the latest version
    * @returns a string confirming the deletion of the collection
    */
   public async delete_collection(args: ZoteroTypes.IDeleteCollectionArgs): Promise<
