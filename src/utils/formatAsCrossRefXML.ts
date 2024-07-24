@@ -1,6 +1,6 @@
 import logger from '../logger';
 import { CrossRefUser, FormatAsCrossRefXMLResult } from '../types/formatAsCrossRefXML';
-import { Item } from '../types/item';
+import { Creator, Item } from '../types/item';
 import { ZoteroTypes } from '../zotero-interface';
 
 const fs = require('fs');
@@ -8,7 +8,7 @@ const os = require('os');
 const Sugar = require('sugar');
 const xmlescape = require('xml-escape');
 
-type Creator = { name: string; creatorType: string } | { firstName: string; lastName: string; creatorType: string };
+// type Creator = { name: string; creatorType: string } | { firstName: string; lastName: string; creatorType: string };
 // interface ZoteroItem {
 //   creators?: [];
 //   rights: any;

@@ -1,6 +1,11 @@
 import { CompareArgs, Deduplicate_func_result } from '../types/compare';
 import { Creator, Item } from '../types/item';
 
+/**
+ * This function compares two items and returns a boolean value indicating if the items are identical.
+ * @param {Item} item - The first item to compare.
+ * @param {Item} item2 - The second item being compared to the first item (item) in the compare function.
+ */
 export default async function compare(item: Item, item2: Item, args: CompareArgs): Promise<Deduplicate_func_result> {
   let temp = await DeleteExtra(item);
   let temp2 = await DeleteExtra(item2);
@@ -42,6 +47,11 @@ export default async function compare(item: Item, item2: Item, args: CompareArgs
 
 //TODO:DRY
 // write function to compare creators
+/**
+ * This function compares two arrays of creators and returns a boolean value indicating if the creators are the same.
+ * @param {Creator[]} creators - The first array of creators to compare.
+ * @param {Creator[]} creators2 - The second array of creators to compare.
+ */
 async function compareCreators(creators: Creator[], creators2: Creator[]): Promise<boolean> {
   try {
     // check if both are empty
@@ -225,6 +235,11 @@ async function compareIdenticalInSeveralFields(item: Item, item2: Item): Promise
 
 // //@ts-ignore
 // var stringSimilarity = require('string-similarity');
+/**
+ * This function compares two objects based on their DOI values and returns a boolean indicating if the DOI values are the same.
+ * @param {Item} item - The first object to compare, which contains a DOI value that is being compared with the DOI value of the second object.
+ * @param {Item} item2 - The `item2` parameter is an object that is being compared to another object (`item`) for identical DOI values.
+ */
 async function compareDIO(item: Item, item2: Item): Promise<boolean> {
   // if(item.DOI && item2.DOI){
   //   var similarity = stringSimilarity.compareTwoStrings(item2.title, item.title);
@@ -244,6 +259,9 @@ async function compareDIO(item: Item, item2: Item): Promise<boolean> {
   return false;
 }
 
+/**
+ * This function checks if a string is empty and returns a boolean value.
+ */
 async function isEmpty(str: string): Promise<boolean> {
   if (str === undefined || str === null || str === '') return true;
   return false;

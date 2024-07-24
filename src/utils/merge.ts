@@ -1,6 +1,11 @@
 import Zotero from '../zotero-lib';
 import { FullItemResponse } from '../types/item';
 
+/**
+ * Retrieves items from the database.
+ * @param items - An array of item keys.
+ * @returns A Promise that resolves to an object containing the items.
+ */
 async function getItems(items: string[]): Promise<{}> {
   const { PrismaClient } = require('@prisma/client');
   const prisma = new PrismaClient();

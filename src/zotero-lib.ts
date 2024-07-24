@@ -58,6 +58,7 @@ import { Collection, UpdateCollectionResponse } from './types/collection';
 import { GroupResponse } from './types/group';
 import { CreateSearch, Search } from './types/search';
 import { CompareArgs } from './types/compare';
+import { syncToLocalDBArgs } from './types/syncToLocalDB';
 // import printJSON from './utils/printJSON';
 
 require('dotenv').config();
@@ -1136,6 +1137,7 @@ class Zotero {
    * @param args.organise_extra - to organize the extra field
    * @param args.addtags - the tags to add to the item, array of tags
    * @param args.removetags - the tags to remove from the item, array of tags
+   * @param args.children - retrieve the list of children items
    * @returns the item
    *
    * Also see 'attachment', 'create' and 'update'.
@@ -3155,7 +3157,6 @@ class Zotero {
    * @param args.version - The version of the item to update, or else the latest version will be used
    * @returns A promise that resolves with the updated item.
    */
-
   public async update_url(args: ZoteroTypes.IUpdateUrlArgs): Promise<
     | {
         status: number;
@@ -3408,6 +3409,9 @@ class Zotero {
     }
   }
 
+  /**
+   * Helper function for getZoteroDataX to get simple item
+   */
   async makeZoteroQuery(arg: ZoteroTypes.IMakeZoteroQueryArgs) {
     var response = [];
     logger.info('hello');
@@ -3461,6 +3465,9 @@ class Zotero {
     return { status: 0, message: 'Success', data: response };
   }
 
+  /**
+   * Helper function for getZoteroDataX to get multiple items
+   */
   async makeMultiQuery(args: ZoteroTypes.IMakeMultiQueryArgs) {
     // logger.info("Multi query 1")
     let mykeys;
@@ -3514,6 +3521,14 @@ class Zotero {
   /* END Fucntions FOR GETBIB */
 
   // TODO: Implement
+  /**
+   * Attach note to item
+   *
+   * @param args.key - The key of the item to attach the note to.
+   * @param args.notetext - The text of the note to attach.
+   * @param args.notefile - The path to the file that contains the note to attach.
+   * @param args.tags - The tags to attach to the note.
+   */
   public async attach_note(args: ZoteroTypes.IAttachNoteArgs) {
     //TODO: args parsing code
     args.notetext = as_value(args.notetext);
@@ -3606,11 +3621,17 @@ const API_URL = 'https://api.zotero.org';
 
 // Utils
 
+/**
+ * Fetch for the groups that is different from the groups in the database.
+ */
 const fetchChangedGroups = async (onlineGroups: any, offlineGroups: any[]): Promise<string[]> => {
   const localGroupsMap = offlineGroups.reduce((a, c) => ({ ...a, [c.id]: c.version }), {});
   return Object.keys(onlineGroups).filter((group) => onlineGroups[group] !== localGroupsMap[group]);
 };
 
+/**
+ * Fetch the current item from zotero.
+ */
 const fetchGroupItems = async (
   group: { group: string | number },
   itemIds: string | number,
@@ -3631,7 +3652,12 @@ const fetchGroupItems = async (
 };
 
 // Main Function
-const syncToLocalDB = async (args: any): Promise<void> => {
+/**
+ * Synchronizes the local database with the online library.
+ *
+ * @param args - The arguments for the synchronization process.
+ */
+const syncToLocalDB = async (args: syncToLocalDBArgs): Promise<void> => {
   const syncStart = Date.now();
   console.log('syncing local db with online library');
 
@@ -3713,6 +3739,13 @@ const syncToLocalDB = async (args: any): Promise<void> => {
   const syncEnd = Date.now();
   console.log(`Time taken: ${(syncEnd - syncStart) / 1000}s`);
 };
+
+/**
+ * Establishes a WebSocket connection to the Zotero server and listens for events.
+ *
+ * @param args - The arguments for managing the local database.
+ * @param config - The configuration options for the WebSocket connection.
+ */
 async function websocket(
   args: ZoteroTypes.IManageLocalDBArgs,
   config: {

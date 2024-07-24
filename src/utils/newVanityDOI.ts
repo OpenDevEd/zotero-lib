@@ -3,6 +3,12 @@ import { NewVanityDOIItem } from '../types/newVanityDOI';
 const fs = require('fs');
 const os = require('os');
 
+/**
+ * Generate a new vanity DOI
+ * @param item - the item to generate the vanity DOI for
+ * @param group_id - the group id
+ * @param crossref_user - the crossref user
+ */
 export default function newVanityDOI(item: NewVanityDOIItem, group_id: string, crossref_user: string) {
   let doi = '';
   if (item.data.callNumber && item.data.callNumber != '') {
