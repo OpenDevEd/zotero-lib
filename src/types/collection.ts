@@ -1,18 +1,18 @@
 export type CollectionResponse = {
-  key: string;
-  version: number;
-  library: Library;
-  links: CollectionLinks;
-  meta: Meta;
-  data: Collection;
+  key?: string;
+  version?: number;
+  library?: Library;
+  links?: CollectionLinks;
+  meta?: Meta;
+  data?: Collection;
 };
 
 export type Collection = {
-  key: string;
-  version: number;
-  name: string;
-  parentCollection: boolean | string;
-  relations: Relation;
+  key?: string;
+  version?: number;
+  name?: string;
+  parentCollection?: boolean | string;
+  relations?: Relation;
 };
 
 type Relation = {
@@ -20,30 +20,30 @@ type Relation = {
 };
 
 type Library = {
-  type: string;
-  id: number;
-  name: string;
-  links: LibraryLinks;
+  type?: string;
+  id?: number;
+  name?: string;
+  links?: LibraryLinks;
 };
 
 type LibraryLinks = {
-  alternate: Alternate;
+  alternate?: Alternate;
 };
 
 type Alternate = {
-  href: string;
-  type: string;
+  href?: string;
+  type?: string;
 };
 
 type CollectionLinks = {
-  self: Alternate;
-  alternate: Alternate;
+  self?: Alternate;
+  alternate?: Alternate;
   up?: Alternate;
 };
 
 type Meta = {
-  numCollections: number;
-  numItems: number;
+  numCollections?: number;
+  numItems?: number;
 };
 
 // Update Collection Types
@@ -57,41 +57,41 @@ export type UpdateCollectionResponse = {
 };
 
 type Config = {
-  url: string;
-  method: string;
-  data: string;
-  headers: ConfigHeaders;
-  transformRequest: null[];
-  transformResponse: null[];
-  timeout: number;
-  xsrfCookieName: string;
-  xsrfHeaderName: string;
-  maxContentLength: number;
-  maxBodyLength: number;
-  transitional: Transitional;
+  url?: string;
+  method?: string;
+  data?: string;
+  headers?: ConfigHeaders;
+  transformRequest?: null[];
+  transformResponse?: null[];
+  timeout?: number;
+  xsrfCookieName?: string;
+  xsrfHeaderName?: string;
+  maxContentLength?: number;
+  maxBodyLength?: number;
+  transitional?: Transitional;
 };
 
 type ConfigHeaders = {
-  Accept: string;
-  'Content-Type': string;
-  'User-Agent': string;
-  'Zotero-API-Version': string;
-  'Zotero-API-Key': string;
-  'Content-Length': number;
+  Accept?: string;
+  'Content-Type'?: string;
+  'User-Agent'?: string;
+  'Zotero-API-Version'?: string;
+  'Zotero-API-Key'?: string;
+  'Content-Length'?: number;
 };
 
 type Transitional = {
-  silentJSONParsing: boolean;
-  forcedJSONParsing: boolean;
-  clarifyTimeoutError: boolean;
+  silentJSONParsing?: boolean;
+  forcedJSONParsing?: boolean;
+  clarifyTimeoutError?: boolean;
 };
 
 type CollectionHeaders = {
-  date: string;
-  connection: string;
-  server: string;
-  'strict-transport-security': string;
-  'zotero-api-version': string;
-  'zotero-schema-version': string;
-  'last-modified-version': string;
+  date?: string;
+  connection?: string;
+  server?: string;
+  'strict-transport-security'?: string;
+  'zotero-api-version'?: string;
+  'zotero-schema-version'?: string;
+  'last-modified-version'?: string;
 };

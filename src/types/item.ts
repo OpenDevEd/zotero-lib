@@ -140,7 +140,7 @@ export type Item = {
   inconsistent: boolean;
   // group_id?: number;
   // group: Group;
-  relations: Relation;
+  relations?: Relation;
   created_at?: string;
   dateAdded?: string;
   dateModified?: string;
@@ -216,34 +216,34 @@ export type FullItemResponse = {
 };
 
 export type ItemTemplate = {
-  itemType: string;
-  title: string;
-  creators: Creator[];
-  abstractNote: string;
-  publicationTitle: string;
-  volume: string;
-  issue: string;
-  pages: string;
-  date: string;
-  series: string;
-  seriesTitle: string;
-  seriesText: string;
-  journalAbbreviation: string;
-  language: string;
-  DOI: string;
-  ISSN: string;
-  shortTitle: string;
-  url: string;
-  accessDate: string;
-  archive: string;
-  archiveLocation: string;
-  libraryCatalog: string;
-  callNumber: string;
-  rights: string;
-  extra: string;
-  tags: Tag[];
-  collections: string[];
-  relations: Relation;
+  itemType?: string;
+  title?: string;
+  creators?: Creator[];
+  abstractNote?: string;
+  publicationTitle?: string;
+  volume?: string;
+  issue?: string;
+  pages?: string;
+  date?: string;
+  series?: string;
+  seriesTitle?: string;
+  seriesText?: string;
+  journalAbbreviation?: string;
+  language?: string;
+  DOI?: string;
+  ISSN?: string;
+  shortTitle?: string;
+  url?: string;
+  accessDate?: string;
+  archive?: string;
+  archiveLocation?: string;
+  libraryCatalog?: string;
+  callNumber?: string;
+  rights?: string;
+  extra?: string;
+  tags?: Tag[];
+  collections?: string[];
+  relations?: Relation;
 };
 
 export type CreateItemResponse = {
@@ -267,62 +267,72 @@ export type UpdateItemResponse = {
   body: string;
   statusCode: number;
   statusText: string;
-  headers: {
-    date: string;
-    connection: string;
-    server: string;
-    'strict-transport-security': string;
-    'zotero-api-version': string;
-    'zotero-schema-version': string;
-    'last-modified-version': string;
-  };
-  config: {
-    url: string;
-    method: string;
-    data: {
-      type: string;
-      data: number[];
-    };
-    headers: {
-      Accept: string;
-      'Content-Type': string;
-      'User-Agent': string;
-      'Zotero-API-Version': string;
-      'Zotero-API-Key': string;
-      'If-Unmodified-Since-Version': number;
-      'Content-Length': number;
-    };
-    transformRequest: null[];
-    transformResponse: null[];
-    timeout: number;
-    xsrfCookieName: string;
-    xsrfHeaderName: string;
-    maxContentLength: number;
-    maxBodyLength: number;
-    transitional: {
-      silentJSONParsing: boolean;
-      forcedJSONParsing: boolean;
-      clarifyTimeoutError: boolean;
-    };
-    resolveWithFullResponse: boolean;
-  };
+  headers: Headers;
+  config: Config;
+};
+
+type Headers = {
+  date?: string;
+  connection?: string;
+  server?: string;
+  'strict-transport-security'?: string;
+  'zotero-api-version'?: string;
+  'zotero-schema-version'?: string;
+  'last-modified-version'?: string;
+};
+
+type Config = {
+  url?: string;
+  method?: string;
+  data?: ConfigData;
+  headers?: ConfigHeaders;
+  transformRequest?: null[];
+  transformResponse?: null[];
+  timeout?: number;
+  xsrfCookieName?: string;
+  xsrfHeaderName?: string;
+  maxContentLength?: number;
+  maxBodyLength?: number;
+  transitional?: Transitional;
+  resolveWithFullResponse?: boolean;
+};
+
+type Transitional = {
+  silentJSONParsing?: boolean;
+  forcedJSONParsing?: boolean;
+  clarifyTimeoutError?: boolean;
+};
+
+type ConfigHeaders = {
+  Accept?: string;
+  'Content-Type'?: string;
+  'User-Agent'?: string;
+  'Zotero-API-Version'?: string;
+  'Zotero-API-Key'?: string;
+  'If-Unmodified-Since-Version'?: number;
+  'Content-Length'?: number;
+};
+
+type ConfigData = {
+  type: string;
+  data: number[];
 };
 
 // Item types
 
 export type ItemType = {
-  itemType: string;
-  localized: string;
+  itemType?: string;
+  localized?: string;
 };
 
 export type ItemTypeField = {
-  field: string;
-  localized: string;
+  field?: string;
+  localized?: string;
 };
 
 export type ItemTypeCreatorType = {
-  creatorType: string;
-  localized: string;
+  creatorType?: string;
+  localized?: string;
 };
 
 export type Fields = {
