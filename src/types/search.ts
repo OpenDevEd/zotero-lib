@@ -1,36 +1,6 @@
 export type CreateSearch = {
   successful: {
-    [key: string]: {
-      key: string;
-      version: number;
-      library: {
-        type: string;
-        id: number;
-        name: string;
-        links: {
-          alternate: {
-            href: string;
-            type: string;
-          };
-        };
-      };
-      links: {
-        self: {
-          href: string;
-          type: string;
-        };
-      };
-      data: {
-        key: string;
-        version: number;
-        name: string;
-        conditions: {
-          condition: string;
-          operator: string;
-          value: string;
-        }[];
-      };
-    };
+    [key: string]: Search;
   };
   success: {
     [key: string]: string;
@@ -48,31 +18,36 @@ export type CreateSearch = {
 export type Search = {
   key: string;
   version: number;
-  library: {
-    type: string;
-    id: number;
-    name: string;
-    links: {
-      alternate: {
-        href: string;
-        type: string;
-      };
-    };
-  };
+  library: Library;
   links: {
-    self: {
-      href: string;
-      type: string;
-    };
+    self: LinkType;
   };
-  data: {
-    key: string;
-    version: number;
-    name: string;
-    conditions: {
-      condition: string;
-      operator: string;
-      value: string;
-    }[];
+  data: SearchData;
+};
+
+type Library = {
+  type: string;
+  id: number;
+  name: string;
+  links: {
+    alternate: LinkType;
   };
+};
+
+type LinkType = {
+  href: string;
+  type: string;
+};
+
+type SearchData = {
+  key: string;
+  version: number;
+  name: string;
+  conditions: Condition[];
+};
+
+type Condition = {
+  condition: string;
+  operator: string;
+  value: string;
 };
