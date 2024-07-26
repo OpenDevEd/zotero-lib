@@ -51,14 +51,12 @@ import {
   ItemType,
   Fields,
 } from './types/item';
-import { TagObject, TasgArgs } from './types/tag';
+import { TagObject } from './types/tag';
 import { PublicationsArgs } from './types/publications';
-import { TrashArgs } from './types/trash';
 import { Collection, UpdateCollectionResponse } from './types/collection';
 import { GroupResponse } from './types/group';
 import { CreateSearch, Search } from './types/search';
 import { CompareArgs } from './types/compare';
-import { syncToLocalDBArgs } from './types/syncToLocalDB';
 // import printJSON from './utils/printJSON';
 
 require('dotenv').config();
@@ -1855,7 +1853,7 @@ class Zotero {
    * @param args.tags - Whether to retrieve the tags of the items.
    * @returns A Promise that resolves to the items in the trash.
    */
-  async trash(args: TrashArgs): Promise<Item[]> {
+  async trash(args: ZoteroTypes.ITrashArgs): Promise<Item[]> {
     const items = await this.http.get(`/items/trash${args.tags ? '/tags' : ''}`, undefined, this.config);
     this.show(items);
     return items;
@@ -2017,7 +2015,7 @@ class Zotero {
    * @param args.count - Count the number of items with each tag.
    * @returns A Promise that resolves to the tags.
    */
-  async tags(args: TasgArgs): Promise<string[] | Record<string, number>> {
+  async tags(args: ZoteroTypes.ITagsArgs): Promise<string[] | Record<string, number>> {
     let rawTags = null;
     if (args.filter) {
       rawTags = await this.all(`/tags/${encodeURIComponent(args.filter)}`);
@@ -3657,7 +3655,7 @@ const fetchGroupItems = async (
  *
  * @param args - The arguments for the synchronization process.
  */
-const syncToLocalDB = async (args: syncToLocalDBArgs): Promise<void> => {
+const syncToLocalDB = async (args: ZoteroTypes.ISyncToLocalDBArgs): Promise<void> => {
   const syncStart = Date.now();
   console.log('syncing local db with online library');
 

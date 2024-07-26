@@ -281,8 +281,24 @@ namespace ZoteroTypes {
     onlykeys?: boolean;
   }
 
-  export interface IGetIdsArgs {
+  export interface IGetIdsArgs extends ZoteroTypes.IZoteroCongif {
     key?: string;
+  }
+
+  export interface ITrashArgs extends ZoteroTypes.IZoteroCongif {
+    tags?: boolean;
+  }
+
+  export interface ITagsArgs extends ZoteroTypes.IZoteroCongif {
+    filter?: string;
+    count?: boolean;
+  }
+
+  export interface ISyncToLocalDBArgs {
+    user_id?: string;
+    groupid?: string;
+    api_key?: string;
+    group_id?: string;
   }
 }
 
