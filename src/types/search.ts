@@ -1,3 +1,5 @@
+import { Library, ResponseLinks } from './global';
+
 export type CreateSearch = {
   successful: {
     [key: string]: Search;
@@ -19,24 +21,8 @@ export type Search = {
   key: string;
   version: number;
   library: Library;
-  links: {
-    self: LinkType;
-  };
+  links: ResponseLinks;
   data: SearchData;
-};
-
-type Library = {
-  type: string;
-  id: number;
-  name: string;
-  links: {
-    alternate: LinkType;
-  };
-};
-
-type LinkType = {
-  href: string;
-  type: string;
 };
 
 type SearchData = {
