@@ -305,6 +305,18 @@ namespace ZoteroTypes {
     zenodoWriteFile?: boolean;
     author_data?: string;
   }
+
+  export interface IWebsocketConfig {
+    api_key: any;
+    group_id?: string;
+    user_id?: string;
+    library_type?: string;
+    indent?: number;
+    zotero_schema?: string;
+    out?: string;
+    verbose?: boolean;
+    show?: boolean;
+  }
 }
 
 export { ZoteroTypes };

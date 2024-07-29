@@ -1,5 +1,6 @@
 import logger from '../logger';
 import { Item } from '../types/item';
+import { Zenodo } from '../types/zenodo';
 import { ZoteroTypes } from '../zotero-interface';
 
 const fs = require('fs');
@@ -73,13 +74,7 @@ function zenodoParseIDFromZoteroRecord(item: Item): string {
 export default async function formatAsZenodoJson(
   item: Item = {} as Item,
   args: ZoteroTypes.IZenodoArgs,
-): Promise<{
-  id: string;
-  title: string;
-  description: string;
-  authors: { name: string }[];
-  publication_date: string;
-}> {
+): Promise<Zenodo> {
   // const { creators = [] } = item;
   logger.info('formatAsZenodoJson');
 

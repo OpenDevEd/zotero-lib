@@ -123,7 +123,7 @@ class Zotero {
   public configure(args: ZoteroConfig, shouldReadConfigFile = false): ZoteroConfigOptions {
     // pick up config: The function reads args and populates config
 
-    let config = {};
+    let config: ZoteroConfigOptions = {} as ZoteroConfigOptions;
 
     // STEP 1. Read config file
     if (shouldReadConfigFile || args.config) {
@@ -197,7 +197,7 @@ class Zotero {
    * @param _args - configs provided in args
    * @returns standardized configs
    */
-  private canonicalConfig(_config: any, args: any): ZoteroConfigOptions {
+  private canonicalConfig(_config: ZoteroConfigOptions, args: any): ZoteroConfigOptions {
     const config = { ..._config };
 
     this.config_keys.forEach((key) => {
@@ -3744,20 +3744,7 @@ const syncToLocalDB = async (args: ZoteroTypes.ISyncToLocalDBArgs): Promise<void
  * @param args - The arguments for managing the local database.
  * @param config - The configuration options for the WebSocket connection.
  */
-async function websocket(
-  args: ZoteroTypes.IManageLocalDBArgs,
-  config: {
-    api_key: any;
-    group_id?: string;
-    user_id?: string;
-    library_type?: string;
-    indent?: number;
-    zotero_schema?: string;
-    out?: string;
-    verbose?: boolean;
-    show?: boolean;
-  },
-): Promise<void> {
+async function websocket(args: ZoteroTypes.IManageLocalDBArgs, config: ZoteroTypes.IWebsocketConfig): Promise<void> {
   console.log('starting websocket');
   const groups = await getAllGroups();
   const groupIds: string[] = groups.map((group) => `/groups/${group.id}`);

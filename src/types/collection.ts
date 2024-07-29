@@ -1,16 +1,16 @@
 export type CollectionResponse = {
-  key?: string;
-  version?: number;
-  library?: Library;
+  key: string;
+  version: number;
+  library: Library;
   links?: CollectionLinks;
-  meta?: Meta;
-  data?: Collection;
+  meta: Meta;
+  data: Collection;
 };
 
 export type Collection = {
-  key?: string;
-  version?: number;
-  name?: string;
+  key: string;
+  version: number;
+  name: string;
   parentCollection?: boolean | string;
   relations?: Relation;
 };
@@ -20,9 +20,9 @@ type Relation = {
 };
 
 type Library = {
-  type?: string;
-  id?: number;
-  name?: string;
+  type: string;
+  id: number;
+  name: string;
   links?: LibraryLinks;
 };
 
@@ -42,8 +42,8 @@ type CollectionLinks = {
 };
 
 type Meta = {
-  numCollections?: number;
-  numItems?: number;
+  numCollections: number;
+  numItems: number;
 };
 
 // Update Collection Types

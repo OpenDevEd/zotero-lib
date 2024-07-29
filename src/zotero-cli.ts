@@ -11,6 +11,7 @@ import { configSetup } from './utils/setupConfig';
 import Zotero from './zotero-lib';
 import { Item } from './types/item';
 import { ZoteroTypes } from './zotero-interface';
+import { Zenodo } from './types/zenodo';
 const fs = require('fs');
 
 let zoteroLib = new Zotero({});
@@ -199,16 +200,7 @@ function parseArguments() {
   return parser.parse_args();
 }
 
-async function getZenodoJson(
-  item: Item,
-  args: ZoteroTypes.IZenodoArgs,
-): Promise<{
-  id: string;
-  title: string;
-  description: string;
-  authors: { name: string }[];
-  publication_date: string;
-}> {
+async function getZenodoJson(item: Item, args: ZoteroTypes.IZenodoArgs): Promise<Zenodo> {
   const updateDoc = await formatAsZenodoJson(item, args);
   // logger.info("getZenodoJson updateDoc="+JSON.stringify(    updateDoc        ,null,2))
 
