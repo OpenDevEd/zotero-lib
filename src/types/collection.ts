@@ -1,4 +1,4 @@
-import { ConfigHeaders, Library, Relation, ResponseLinks, Transitional } from './global';
+import { ConfigHeaders, Library, Relation, ResponseConfig, ResponseLinks, Transitional } from './global';
 
 export type CollectionResponse = {
   key: string;
@@ -29,22 +29,7 @@ export type UpdateCollectionResponse = {
   status: number;
   statusText: string;
   headers: CollectionHeaders;
-  config: Config;
-};
-
-type Config = {
-  url?: string;
-  method?: string;
-  data?: string;
-  headers?: ConfigHeaders;
-  transformRequest?: null[];
-  transformResponse?: null[];
-  timeout?: number;
-  xsrfCookieName?: string;
-  xsrfHeaderName?: string;
-  maxContentLength?: number;
-  maxBodyLength?: number;
-  transitional?: Transitional;
+  config: ResponseConfig;
 };
 
 type CollectionHeaders = {

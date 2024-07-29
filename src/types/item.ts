@@ -1,4 +1,4 @@
-import { Alternate, ConfigHeaders, Library, Relation, ResponseLinks, Transitional } from './global';
+import { Alternate, ConfigHeaders, Library, Relation, ResponseConfig, ResponseLinks, Transitional } from './global';
 
 export type ItemArgs = {
   filter: any;
@@ -244,7 +244,7 @@ export type UpdateItemResponse = {
   statusCode: number;
   statusText: string;
   headers: Headers;
-  config: Config;
+  config: ResponseConfig;
 };
 
 type Headers = {
@@ -255,27 +255,6 @@ type Headers = {
   'zotero-api-version'?: string;
   'zotero-schema-version'?: string;
   'last-modified-version'?: string;
-};
-
-type Config = {
-  url?: string;
-  method?: string;
-  data?: ConfigData;
-  headers?: ConfigHeaders;
-  transformRequest?: null[];
-  transformResponse?: null[];
-  timeout?: number;
-  xsrfCookieName?: string;
-  xsrfHeaderName?: string;
-  maxContentLength?: number;
-  maxBodyLength?: number;
-  transitional?: Transitional;
-  resolveWithFullResponse?: boolean;
-};
-
-type ConfigData = {
-  type: string;
-  data: number[];
 };
 
 // Item types

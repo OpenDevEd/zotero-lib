@@ -40,3 +40,24 @@ export type Transitional = {
   forcedJSONParsing?: boolean;
   clarifyTimeoutError?: boolean;
 };
+
+export type ResponseConfig = {
+  url?: string;
+  method?: string;
+  data?: ConfigData;
+  headers?: ConfigHeaders;
+  transformRequest?: null[];
+  transformResponse?: null[];
+  timeout?: number;
+  xsrfCookieName?: string;
+  xsrfHeaderName?: string;
+  maxContentLength?: number;
+  maxBodyLength?: number;
+  transitional?: Transitional;
+  resolveWithFullResponse?: boolean;
+};
+
+type ConfigData = {
+  type: string;
+  data: number[];
+};
