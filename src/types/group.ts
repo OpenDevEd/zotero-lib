@@ -1,19 +1,11 @@
+import { ResponseLinks } from './global';
+
 export type GroupResponse = {
   id: number;
   version: number;
-  links: Link;
+  links: ResponseLinks;
   meta: Meta;
   data: GroupData;
-};
-
-type LinkTyoe = {
-  href: string;
-  type: string;
-};
-
-type Link = {
-  self: LinkTyoe;
-  alternate: LinkTyoe;
 };
 
 type Meta = {
@@ -23,9 +15,9 @@ type Meta = {
 };
 
 export type GroupData = {
-  id?: number;
-  version?: number | string;
-  name?: string;
+  id: number;
+  version: number | string;
+  name: string;
   owner?: number;
   type?: string;
   description?: string;
