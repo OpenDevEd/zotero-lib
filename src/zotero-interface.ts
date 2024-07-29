@@ -300,6 +300,11 @@ namespace ZoteroTypes {
     api_key?: string;
     group_id?: string;
   }
+
+  export interface IZenodoArgs extends IZoteroCongif {
+    zenodoWriteFile?: boolean;
+    author_data?: string;
+  }
 }
 
 export { ZoteroTypes };

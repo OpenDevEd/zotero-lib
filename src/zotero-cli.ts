@@ -10,6 +10,7 @@ import printJSON from './utils/printJSON';
 import { configSetup } from './utils/setupConfig';
 import Zotero from './zotero-lib';
 import { Item } from './types/item';
+import { ZoteroTypes } from './zotero-interface';
 const fs = require('fs');
 
 let zoteroLib = new Zotero({});
@@ -200,12 +201,12 @@ function parseArguments() {
 
 async function getZenodoJson(
   item: Item,
-  args: any,
+  args: ZoteroTypes.IZenodoArgs,
 ): Promise<{
   id: string;
   title: string;
   description: string;
-  authors: any[];
+  authors: { name: string }[];
   publication_date: string;
 }> {
   const updateDoc = await formatAsZenodoJson(item, args);
