@@ -1,4 +1,4 @@
-import { Alternate, ConfigHeaders, Library, Relation, ResponseConfig, ResponseLinks, Transitional } from './global';
+import { Library, Relation, ResponseConfig, ResponseLinks } from './global';
 
 export type ItemArgs = {
   filter: any;
