@@ -1,4 +1,4 @@
-import { Library, Relation, ResponseConfig, ResponseLinks } from './global';
+import { Library, Relation, ResponseConfig, ResponseHeaders, ResponseLinks } from './global';
 
 export type ItemArgs = {
   filter: any;
@@ -243,18 +243,8 @@ export type UpdateItemResponse = {
   body: string;
   statusCode: number;
   statusText: string;
-  headers: Headers;
+  headers: ResponseHeaders;
   config: ResponseConfig;
-};
-
-type Headers = {
-  date?: string;
-  connection?: string;
-  server?: string;
-  'strict-transport-security'?: string;
-  'zotero-api-version'?: string;
-  'zotero-schema-version'?: string;
-  'last-modified-version'?: string;
 };
 
 // Item types

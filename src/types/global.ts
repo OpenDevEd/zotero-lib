@@ -61,3 +61,13 @@ type ConfigData = {
   type: string;
   data: number[];
 };
+
+export type ResponseHeaders = {
+  date?: string;
+  connection?: string;
+  server?: string;
+  'strict-transport-security'?: string;
+  'zotero-api-version'?: string;
+  'zotero-schema-version'?: string;
+  'last-modified-version'?: string;
+};

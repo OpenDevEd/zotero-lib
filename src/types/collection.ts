@@ -1,4 +1,4 @@
-import { Library, Relation, ResponseConfig, ResponseLinks } from './global';
+import { Library, Relation, ResponseConfig, ResponseHeaders, ResponseLinks } from './global';
 
 export type CollectionResponse = {
   key: string;
@@ -28,16 +28,6 @@ export type UpdateCollectionResponse = {
   body: string;
   status: number;
   statusText: string;
-  headers: CollectionHeaders;
+  headers: ResponseHeaders;
   config: ResponseConfig;
-};
-
-type CollectionHeaders = {
-  date?: string;
-  connection?: string;
-  server?: string;
-  'strict-transport-security'?: string;
-  'zotero-api-version'?: string;
-  'zotero-schema-version'?: string;
-  'last-modified-version'?: string;
 };
