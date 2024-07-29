@@ -1,3 +1,5 @@
+import { Alternate, ConfigHeaders, Library, Relation, ResponseLinks, Transitional } from './global';
+
 export type ItemArgs = {
   filter: any;
   json: string;
@@ -159,10 +161,6 @@ type Tag = {
   type?: number;
 };
 
-type Relation = {
-  [key: string]: string[] | string;
-};
-
 export type Creator = {
   creatorType: string;
   name?: string;
@@ -174,31 +172,9 @@ export type ItemResponse = {
   key: string;
   version: number;
   library: Library;
-  links: ItemLinks;
+  links?: ResponseLinks;
   meta: Meta;
   data: Item;
-};
-
-type Library = {
-  type: string;
-  id: number;
-  name: string;
-  links: LibraryLinks;
-};
-
-type LibraryLinks = {
-  alternate: Alternate;
-};
-
-type Alternate = {
-  href: string;
-  type: string;
-  up?: Alternate;
-};
-
-type ItemLinks = {
-  self: Alternate;
-  alternate: Alternate;
 };
 
 type Meta = {
@@ -295,22 +271,6 @@ type Config = {
   maxBodyLength?: number;
   transitional?: Transitional;
   resolveWithFullResponse?: boolean;
-};
-
-type Transitional = {
-  silentJSONParsing?: boolean;
-  forcedJSONParsing?: boolean;
-  clarifyTimeoutError?: boolean;
-};
-
-type ConfigHeaders = {
-  Accept?: string;
-  'Content-Type'?: string;
-  'User-Agent'?: string;
-  'Zotero-API-Version'?: string;
-  'Zotero-API-Key'?: string;
-  'If-Unmodified-Since-Version'?: number;
-  'Content-Length'?: number;
 };
 
 type ConfigData = {
