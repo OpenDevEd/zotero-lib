@@ -58,6 +58,7 @@ import { GroupResponse } from './types/group';
 import { CreateSearch, Search } from './types/search';
 import { CompareArgs } from './types/compare';
 import { MessageData, MessageStatus } from './types/message';
+import { KeyReturn } from './types/key';
 // import printJSON from './utils/printJSON';
 
 require('dotenv').config();
@@ -401,7 +402,7 @@ class Zotero {
    * @param args.terse - show output in a terse format, `id name owner type`
    * @returns details about the API key
    */
-  public async key(args: ZoteroTypes.IKeyArgs): Promise<any> {
+  public async key(args: ZoteroTypes.IKeyArgs): Promise<KeyReturn> {
     if (!args.api_key) {
       args.api_key = this.config.api_key;
     }
