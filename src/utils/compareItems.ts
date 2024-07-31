@@ -1,9 +1,12 @@
-interface deduplicate_func_result {
-  result: boolean;
-  reason: string;
-}
+import { CompareArgs, Deduplicate_func_result } from '../types/compare';
+import { Creator, Item } from '../types/item';
 
-export default async function compare(item, item2, args): Promise<deduplicate_func_result> {
+/**
+ * This function compares two items and returns a boolean value indicating if the items are identical.
+ * @param {Item} item - The first item to compare.
+ * @param {Item} item2 - The second item being compared to the first item (item) in the compare function.
+ */
+export default async function compare(item: Item, item2: Item, args: CompareArgs): Promise<Deduplicate_func_result> {
   let temp = await DeleteExtra(item);
   let temp2 = await DeleteExtra(item2);
   // console.log(temp);
@@ -44,7 +47,12 @@ export default async function compare(item, item2, args): Promise<deduplicate_fu
 
 //TODO:DRY
 // write function to compare creators
-async function compareCreators(creators, creators2) {
+/**
+ * This function compares two arrays of creators and returns a boolean value indicating if the creators are the same.
+ * @param {Creator[]} creators - The first array of creators to compare.
+ * @param {Creator[]} creators2 - The second array of creators to compare.
+ */
+async function compareCreators(creators: Creator[], creators2: Creator[]): Promise<boolean> {
   try {
     // check if both are empty
     if ((creators === undefined || creators === null) && (creators2 === undefined || creators2 === null)) return true;
@@ -64,7 +72,7 @@ async function compareCreators(creators, creators2) {
   return true;
 }
 //@ts-ignore
-async function DeleteExtra(item) {
+async function DeleteExtra(item: Item): Promise<Item> {
   let temp = item;
 
   delete temp.accessDate;
@@ -80,7 +88,7 @@ async function DeleteExtra(item) {
 }
 
 //@ts-ignore
-async function CompareAllFields(item, item2) {
+async function CompareAllFields(item: Item, item2: Item): Promise<boolean> {
   // compare the two objects
   // get all the keys of the object
 
@@ -113,7 +121,7 @@ async function CompareAllFields(item, item2) {
  * @returns a boolean value. It returns true if all the non-creator and non-key fields of the two input
  * objects are equal (ignoring case for string values), and false otherwise.
  */
-async function CompareAllFieldsLowerCase(item, item2) {
+async function CompareAllFieldsLowerCase(item: Item, item2: Item): Promise<boolean> {
   // compare the two objects
   // get all the keys of the object
   let keys = Object.keys(item);
@@ -192,7 +200,7 @@ async function CompareAllFieldsLowerCase(item, item2) {
  * (`item`) for identical values in several fields.
  * @returns A boolean value is being returned.
  */
-async function compareIdenticalInSeveralFields(item: any, item2: any): Promise<boolean> {
+async function compareIdenticalInSeveralFields(item: Item, item2: Item): Promise<boolean> {
   const keys1 = Object.keys(item);
   const keys2 = Object.keys(item2);
 
@@ -227,7 +235,12 @@ async function compareIdenticalInSeveralFields(item: any, item2: any): Promise<b
 
 // //@ts-ignore
 // var stringSimilarity = require('string-similarity');
-async function compareDIO(item, item2) {
+/**
+ * This function compares two objects based on their DOI values and returns a boolean indicating if the DOI values are the same.
+ * @param {Item} item - The first object to compare, which contains a DOI value that is being compared with the DOI value of the second object.
+ * @param {Item} item2 - The `item2` parameter is an object that is being compared to another object (`item`) for identical DOI values.
+ */
+async function compareDIO(item: Item, item2: Item): Promise<boolean> {
   // if(item.DOI && item2.DOI){
   //   var similarity = stringSimilarity.compareTwoStrings(item2.title, item.title);
   //   if(similarity > 0.73) {
@@ -246,7 +259,10 @@ async function compareDIO(item, item2) {
   return false;
 }
 
-async function isEmpty(str) {
+/**
+ * This function checks if a string is empty and returns a boolean value.
+ */
+async function isEmpty(str: string): Promise<boolean> {
   if (str === undefined || str === null || str === '') return true;
   return false;
 }

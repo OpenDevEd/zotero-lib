@@ -1,17 +1,13 @@
 import { input, select } from '@inquirer/prompts';
 import fs from 'fs';
 import os from 'os';
+import { ZoteroConfigOptions } from '../types/config';
 
-interface IConfig {
-  api_key: string;
-  group_id?: string;
-  user_id?: string;
-  library_type: string;
-  indent: number;
-}
-
+/**
+ * Setup the config file, this will ask for the api_key, group_id/user_id, and library_type
+ */
 export const configSetup = async () => {
-  let config: IConfig = {
+  let config: ZoteroConfigOptions = {
     api_key: '',
     group_id: '',
     library_type: '',

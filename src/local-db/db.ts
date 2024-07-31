@@ -1,4 +1,9 @@
 // import path from 'path';
+
+import { AlsoKnownAsDB, NewAlsoKnownAsDB, NewItemDB, UpdateAlsoKnownAsDB, UpdateItemDB } from '../types/db';
+import { GroupData } from '../types/group';
+import { Item, ItemResponse } from '../types/item';
+
 /**
  * Retrieves all groups from the database.
  * @returns {Promise<Group[]>} A promise that resolves to an array of groups.
@@ -19,7 +24,7 @@ export async function getAllGroups() {
  * @param {Array<Object>} groupData - The group data to be saved.
  * @returns {Promise<void>} - A promise that resolves when the group data is saved.
  */
-export async function saveGroup(groupData) {
+export async function saveGroup(groupData: GroupData[]): Promise<void> {
   const { PrismaClient } = require('@prisma/client');
   const prisma = new PrismaClient();
 
@@ -33,7 +38,7 @@ export async function saveGroup(groupData) {
           id: id,
         },
         data: {
-          version: parseInt(version),
+          version: parseInt(version as string),
 
           updatedAt: new Date(),
         },
@@ -42,7 +47,7 @@ export async function saveGroup(groupData) {
       await prisma.groups.create({
         data: {
           id: id,
-          version: parseInt(version),
+          version: parseInt(version as string),
           itemsVersion: 0,
 
           createdAt: new Date(),
@@ -95,7 +100,7 @@ let newItems = [];
  * @param {PrismaClient} prisma - The Prisma client instance.
  * @returns {Promise<void>} - A Promise that resolves when the items are inserted.
  */
-async function insertItems(prisma) {
+async function insertItems(prisma: any): Promise<void> {
   // insert multiple rows of items
   await prisma.items.createMany({
     data: newItems,
@@ -113,7 +118,7 @@ let UpdatedItems = [];
  * @param {PrismaClient} prisma - The Prisma client instance.
  * @returns {Promise<void>} - A promise that resolves when the items are updated.
  */
-async function updateItems(prisma) {
+async function updateItems(prisma: any): Promise<void> {
   // const { PrismaClient } = require('@prisma/client');
   // const prisma = new PrismaClient();
   console.log('updating items...');
@@ -175,7 +180,7 @@ let updatedAlsoKnownAs = [];
  * @param prisma - The Prisma client instance.
  * @returns A Promise that resolves when the update is complete.
  */
-async function updateAlsoKnownAs(prisma) {
+async function updateAlsoKnownAs(prisma: any): Promise<void> {
   // insert multiple rows of items
   console.log('updating alsoKnownAs...');
   if (updatedAlsoKnownAs.length > 0) {
@@ -207,7 +212,11 @@ async function updateAlsoKnownAs(prisma) {
  * @param groupId - The ID of the group.
  * @returns {Promise<void>}
  */
-export async function saveZoteroItems(allFetchedItems, lastModifiedVersion, groupId: string) {
+export async function saveZoteroItems(
+  allFetchedItems: ItemResponse[][],
+  lastModifiedVersion,
+  groupId: string,
+): Promise<void> {
   const { PrismaClient } = require('@prisma/client');
   const prisma = new PrismaClient();
   // console.log(lastModifiedVersion);
@@ -300,7 +309,12 @@ export async function saveZoteroItems(allFetchedItems, lastModifiedVersion, grou
  * @param newItems - An array to store new items.
  * @param updatedItems - An array to store updated items.
  */
-function handleDeletedItem(item, allItemsIds, newItems, updatedItems) {
+function handleDeletedItem(
+  item: ItemResponse,
+  allItemsIds: string[],
+  newItems: NewItemDB[],
+  updatedItems: UpdateItemDB[],
+) {
   if (!allItemsIds.includes(item.key)) {
     newItems.push({
       id: item.key,
@@ -332,7 +346,12 @@ function handleDeletedItem(item, allItemsIds, newItems, updatedItems) {
  * @param newItems - An array to store new items.
  * @param updatedItems - An array to store updated items.
  */
-function handleUpdatedOrNewItem(item, allItemsIds, newItems, updatedItems) {
+function handleUpdatedOrNewItem(
+  item: ItemResponse,
+  allItemsIds: string[],
+  newItems: NewItemDB[],
+  updatedItems: UpdateItemDB[],
+): void {
   if (!allItemsIds.includes(item.key)) {
     newItems.push({
       id: item.key,
@@ -362,7 +381,12 @@ function handleUpdatedOrNewItem(item, allItemsIds, newItems, updatedItems) {
  * @param newAlsoKnownAs - The array to store new "also known as" data.
  * @param updateAlsoKnownAs - The array to store updated "also known as" data.
  */
-function handleAlsoKnownAs(item, alsoKnownAs, newAlsoKnownAs, updateAlsoKnownAs) {
+function handleAlsoKnownAs(
+  item: ItemResponse,
+  alsoKnownAs: AlsoKnownAsDB[],
+  newAlsoKnownAs: NewAlsoKnownAsDB[],
+  updateAlsoKnownAs: UpdateAlsoKnownAsDB[],
+): void {
   if (alsoKnownAs.some((i) => i.item_id === item.key && i.group_id === item.library.id)) {
     updateAlsoKnownAs.push({
       id: alsoKnownAs.find((i) => i.item_id === item.key && i.group_id === item.library.id).id,
@@ -389,7 +413,7 @@ function handleAlsoKnownAs(item, alsoKnownAs, newAlsoKnownAs, updateAlsoKnownAs)
  * @param keys - The keys to lookup items for.
  * @returns A promise that resolves to an array of items matching the provided keys.
  */
-export async function lookupItems(keys) {
+export async function lookupItems(keys: { keys: string[] }): Promise<Item[]> {
   const { PrismaClient } = require('@prisma/client');
   const prisma = new PrismaClient();
 
@@ -408,7 +432,7 @@ export async function lookupItems(keys) {
  * @param group_id - The ID of the group to search for empty items.
  * @returns A promise that resolves to an array of empty items.
  */
-export async function FindEmptyItemsFromDatabase(group_id: string) {
+export async function FindEmptyItemsFromDatabase(group_id: string): Promise<Item[]> {
   const { PrismaClient } = require('@prisma/client');
   const prisma = new PrismaClient();
 
