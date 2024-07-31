@@ -57,6 +57,7 @@ import { Collection, UpdateCollectionResponse } from './types/collection';
 import { GroupResponse } from './types/group';
 import { CreateSearch, Search } from './types/search';
 import { CompareArgs } from './types/compare';
+import { MessageData, MessageStatus } from './types/message';
 // import printJSON from './utils/printJSON';
 
 require('dotenv').config();
@@ -248,15 +249,7 @@ class Zotero {
     args.group_id ? (this.config.group_id = args.group_id) : null;
   }
 
-  private message(
-    stat = 0,
-    msg = 'None',
-    data = null,
-  ): {
-    status: number;
-    message: string;
-    data: any;
-  } {
+  private message(stat = 0, msg = 'None', data = null): MessageData {
     return {
       status: stat,
       message: msg,
@@ -575,19 +568,7 @@ class Zotero {
       content: 'Note note.',
       tags: [],
     },
-  ): Promise<
-    | ItemTemplate
-    | {
-        status: number;
-        message: string;
-        data: any;
-      }
-    | CreateItemResponse[]
-    | {
-        type: string;
-        message: string;
-      }
-  > {
+  ): Promise<ItemTemplate | MessageData | CreateItemResponse[] | MessageStatus> {
     const tags = this.objectifyTags(options.tags);
     const noteText = options.content.replace(/\n/g, '<br>');
     const json = {
@@ -618,19 +599,7 @@ class Zotero {
       title: 'Click to open',
       tags: [],
     },
-  ): Promise<
-    | ItemTemplate
-    | {
-        status: number;
-        message: string;
-        data: any;
-      }
-    | CreateItemResponse[]
-    | {
-        type: string;
-        message: string;
-      }
-  > {
+  ): Promise<ItemTemplate | MessageData | CreateItemResponse[] | MessageStatus> {
     const tags = this.objectifyTags(options.tags);
     logger.info('Linktitle=' + options.title);
     const json = {
@@ -671,14 +640,7 @@ class Zotero {
    * TODO: --create-child should go into 'collection'.
    */
 
-  public async collections(args: ZoteroTypes.ICollectionsArgs): Promise<
-    | Collection[]
-    | {
-        status: number;
-        message: string;
-        data: any;
-      }
-  > {
+  public async collections(args: ZoteroTypes.ICollectionsArgs): Promise<Collection[] | MessageData> {
     // TODO: args parsing code
     if (args.json && !args.json.endsWith('.json')) {
       return this.message(0, 'Please provide a valid json file name');
@@ -788,14 +750,9 @@ class Zotero {
    * @returns the updated collection
    *
    */
-  public async update_collection(args: ZoteroTypes.IUpdateCollectionArgs): Promise<
-    | {
-        status: number;
-        message: string;
-        data: any;
-      }
-    | UpdateCollectionResponse
-  > {
+  public async update_collection(
+    args: ZoteroTypes.IUpdateCollectionArgs,
+  ): Promise<MessageData | UpdateCollectionResponse> {
     if (!args.key) {
       return this.message(0, 'Unable to extract group/key from the string provided.');
     }
@@ -835,14 +792,7 @@ class Zotero {
    * @param args.version - the version of the collection to delete, if not provided, it use the latest version
    * @returns a string confirming the deletion of the collection
    */
-  public async delete_collection(args: ZoteroTypes.IDeleteCollectionArgs): Promise<
-    | string
-    | {
-        status: number;
-        message: string;
-        data: any;
-      }
-  > {
+  public async delete_collection(args: ZoteroTypes.IDeleteCollectionArgs): Promise<string | MessageData> {
     if (!args.key) {
       return this.message(0, 'Unable to extract group/key from the string provided.');
     }
@@ -866,14 +816,7 @@ class Zotero {
    * @param args.keys - the keys of the collections to delete
    * @returns an array of strings confirming the deletion of the collections
    */
-  public async delete_collections(args: ZoteroTypes.IDeleteCollectionsArgs): Promise<
-    | string[]
-    | {
-        status: number;
-        message: string;
-        data: any;
-      }
-  > {
+  public async delete_collections(args: ZoteroTypes.IDeleteCollectionsArgs): Promise<string[] | MessageData> {
     if (!args.keys) {
       return this.message(0, 'Please provide a valid key');
     }
@@ -916,14 +859,7 @@ class Zotero {
    * DONE: Why is does the setup for --add and --remove differ? Should 'add' not be "nargs: '*'"? Remove 'itemkeys'?
    * TODO: Add option "--output file.json" to pipe output to file.
    */
-  async collection(args: ZoteroTypes.ICollectionArgs): Promise<
-    | Collection
-    | {
-        status: number;
-        message: string;
-        data: any;
-      }
-  > {
+  async collection(args: ZoteroTypes.ICollectionArgs): Promise<Collection | MessageData> {
     // TODO: args parsing code
     if (args.key) {
       args.key = this.extractKeyAndSetGroup(args.key);
@@ -999,14 +935,7 @@ class Zotero {
    * <userOrGroupPrefix>/items All items in the library, excluding trashed items
    * <userOrGroupPrefix>/items/top Top-level items in the library, excluding trashed items
    */
-  async items(args: ItemArgs): Promise<
-    | Item[]
-    | {
-        status: number;
-        message: string;
-        data: any;
-      }
-  > {
+  async items(args: ItemArgs): Promise<Item[] | MessageData> {
     //
     let items;
     // TODO: args parsing code
@@ -1499,19 +1428,9 @@ class Zotero {
    * [single item](https://www.zotero.org/support/dev/web_api/v3/write_requests#_an_item) OR
    * [multiple items](https://www.zotero.org/support/dev/web_api/v3/write_requests#creating_multiple_items)
    */
-  public async create_item(args: ZoteroTypes.ICreateItemArgs): Promise<
-    | ItemTemplate
-    | {
-        status: number;
-        message: string;
-        data: any;
-      }
-    | CreateItemResponse[]
-    | {
-        type: string;
-        message: string;
-      }
-  > {
+  public async create_item(
+    args: ZoteroTypes.ICreateItemArgs,
+  ): Promise<ItemTemplate | MessageData | CreateItemResponse[] | MessageStatus> {
     //
 
     if (args.template) {
@@ -1702,14 +1621,7 @@ class Zotero {
    *
    * [see api docs](https://www.zotero.org/support/dev/web_api/v3/write_requests#updating_an_existing_item)
    */
-  public async update_item(args: ZoteroTypes.IUpdateItemArgs): Promise<
-    | {
-        status: number;
-        message: string;
-        data: any;
-      }
-    | UpdateItemResponse
-  > {
+  public async update_item(args: ZoteroTypes.IUpdateItemArgs): Promise<MessageData | UpdateItemResponse> {
     //TODO: args parsing code
     args.replace = args.replace || false;
 
@@ -1776,14 +1688,7 @@ class Zotero {
    *
    * [see api docs](https://www.zotero.org/support/dev/web_api/v3/write_requests#deleting_an_item)
    */
-  public async delete_item(args: ZoteroTypes.IDeleteItemArgs): Promise<
-    | string
-    | {
-        status: number;
-        message: string;
-        data: any;
-      }
-  > {
+  public async delete_item(args: ZoteroTypes.IDeleteItemArgs): Promise<string | MessageData> {
     if (!args.key) {
       return this.message(0, 'Unable to extract group/key from the string provided.');
     }
@@ -1813,14 +1718,7 @@ class Zotero {
    *
    * [see api docs](https://www.zotero.org/support/dev/web_api/v3/write_requests#deleting_multiple_items)
    */
-  public async delete_items(args: ZoteroTypes.IDeleteItemsArgs): Promise<
-    | string[]
-    | {
-        status: number;
-        message: string;
-        data: any;
-      }
-  > {
+  public async delete_items(args: ZoteroTypes.IDeleteItemsArgs): Promise<string[] | MessageData> {
     if (!args.keys) {
       return this.message(0, 'Please provide a valid keys');
     }
@@ -3155,14 +3053,7 @@ class Zotero {
    * @param args.version - The version of the item to update, or else the latest version will be used
    * @returns A promise that resolves with the updated item.
    */
-  public async update_url(args: ZoteroTypes.IUpdateUrlArgs): Promise<
-    | {
-        status: number;
-        message: string;
-        data: any;
-      }
-    | UpdateItemResponse
-  > {
+  public async update_url(args: ZoteroTypes.IUpdateUrlArgs): Promise<MessageData | UpdateItemResponse> {
     //TODO: args parsing code
     args.json = {
       url: args.value,
