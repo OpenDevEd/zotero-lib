@@ -1,5 +1,6 @@
 import Zotero from '../zotero-lib';
 import { FullItemResponse } from '../types/item';
+import { MergeItems } from '../types/merge';
 
 /**
  * Retrieves items from the database.
@@ -26,7 +27,7 @@ async function getItems(items: string[]): Promise<{}> {
  * @param items - An array of item keys.
  * @returns A Promise that resolves to an array containing the oldest item key and an array of the remaining item keys.
  */
-export async function get_oldest_item(items: string[]): Promise<any[]> {
+export async function get_oldest_item(items: string[]): Promise<MergeItems> {
   let allItems = await getItems(items);
   // change object to array
   let allItemsArray = Object.values(allItems);
@@ -48,7 +49,7 @@ export async function get_oldest_item(items: string[]): Promise<any[]> {
   ];
 }
 
-export async function get_Newest_item(items: string[]): Promise<any[]> {
+export async function get_Newest_item(items: string[]): Promise<MergeItems> {
   let allItems = await getItems(items);
   // change object to array
   let allItemsArray = Object.values(allItems);
