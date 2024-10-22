@@ -9,6 +9,9 @@ import formatAsZenodoJson from './utils/formatAsZenodoJson';
 import printJSON from './utils/printJSON';
 import { configSetup } from './utils/setupConfig';
 import Zotero from './zotero-lib';
+import { Item } from './types/item';
+import { ZoteroTypes } from './zotero-interface';
+import { Zenodo } from './types/zenodo';
 const fs = require('fs');
 
 let zoteroLib = new Zotero({});
@@ -19,7 +22,7 @@ let zoteroLib = new Zotero({});
 async function main() {
   console.log(zoteroLib.config);
 
-  if (zoteroLib.config === false) {
+  if (zoteroLib.config === null) {
     try {
       await configSetup();
       zoteroLib = new Zotero({});
@@ -126,7 +129,7 @@ async function main() {
 }
 
 // local functions
-function getVersion() {
+function getVersion(): number {
   const pjson = require('../package.json');
   if (pjson.version) logger.info(`zotero-lib version=${pjson.version}`);
   return pjson.version;
@@ -197,7 +200,7 @@ function parseArguments() {
   return parser.parse_args();
 }
 
-async function getZenodoJson(item, args: any) {
+async function getZenodoJson(item: Item, args: ZoteroTypes.IZenodoArgs): Promise<Zenodo> {
   const updateDoc = await formatAsZenodoJson(item, args);
   // logger.info("getZenodoJson updateDoc="+JSON.stringify(    updateDoc        ,null,2))
 

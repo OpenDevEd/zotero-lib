@@ -1,5 +1,12 @@
 import Zotero from '../zotero-lib';
+import { FullItemResponse } from '../types/item';
+import { MergeItems } from '../types/merge';
 
+/**
+ * Retrieves items from the database.
+ * @param items - An array of item keys.
+ * @returns A Promise that resolves to an object containing the items.
+ */
 async function getItems(items: string[]): Promise<{}> {
   const { PrismaClient } = require('@prisma/client');
   const prisma = new PrismaClient();
@@ -20,7 +27,7 @@ async function getItems(items: string[]): Promise<{}> {
  * @param items - An array of item keys.
  * @returns A Promise that resolves to an array containing the oldest item key and an array of the remaining item keys.
  */
-export async function get_oldest_item(items: string[]) {
+export async function get_oldest_item(items: string[]): Promise<MergeItems> {
   let allItems = await getItems(items);
   // change object to array
   let allItemsArray = Object.values(allItems);
@@ -42,7 +49,7 @@ export async function get_oldest_item(items: string[]) {
   ];
 }
 
-export async function get_Newest_item(items: string[]) {
+export async function get_Newest_item(items: string[]): Promise<MergeItems> {
   let allItems = await getItems(items);
   // change object to array
   let allItemsArray = Object.values(allItems);
@@ -70,14 +77,14 @@ export async function get_Newest_item(items: string[]) {
  * @param {string} groupid - The ID of the group.
  * @param {string[]} items - An array of item IDs to be merged.
  */
-export async function merge_items(groupid, items: string[]) {
+export async function merge_items(groupid: string, items: string[]) {
   let itemarr = await get_oldest_item(items);
   let base = itemarr[0];
   let deleted = itemarr[1];
   await mergeMultipleItems(groupid, base, deleted);
 }
 
-async function changedParentItem(groupid, child, newParent) {
+async function changedParentItem(groupid: string, child: string, newParent: string) {
   const zotero = new Zotero({ verbose: false, 'group-id': groupid });
   await zotero.update_item({
     key: child,
@@ -97,10 +104,10 @@ let noMergeType = ['note', 'attachment'];
  * @param {string} deleted - The key of the deleted item.
  * @returns {Promise<number>} - A promise that resolves to 1 if the merge is successful, or 0 otherwise.
  */
-async function mergeTwoItems(groupid, base, deleted) {
+async function mergeTwoItems(groupid: string, base: string, deleted: string): Promise<number> {
   const zotero = new Zotero({ verbose: false, 'group-id': groupid });
-  const deletedItem = await zotero.item({ key: deleted, fullresponse: true });
-  const baseItem = await zotero.item({ key: base, fullresponse: true });
+  const deletedItem = (await zotero.item({ key: deleted, fullresponse: true })) as FullItemResponse;
+  const baseItem = (await zotero.item({ key: base, fullresponse: true })) as FullItemResponse;
   if (noMergeType.includes(deletedItem.result.data.itemType) || noMergeType.includes(baseItem.result.data.itemType)) {
     console.log('one of the items is not a note or attachment');
     return 0;
@@ -247,7 +254,7 @@ async function mergeTwoItems(groupid, base, deleted) {
  * @param {string[]} deletedarr - An array of IDs of the items to be merged with the base item.
  * @returns 0
  */
-async function mergeMultipleItems(groupid, base, deletedarr) {
+async function mergeMultipleItems(groupid: string, base: string, deletedarr: string[]): Promise<number> {
   for (const deleted of deletedarr) {
     let result = await mergeTwoItems(groupid, base, deleted);
     if (result === 0) {

@@ -1,23 +1,26 @@
 import logger from '../logger';
+import { CrossRefUser, FormatAsCrossRefXMLResult } from '../types/formatAsCrossRefXML';
+import { Creator, Item } from '../types/item';
+import { ZoteroTypes } from '../zotero-interface';
 
 const fs = require('fs');
 const os = require('os');
 const Sugar = require('sugar');
 const xmlescape = require('xml-escape');
 
-type Creator = { name: string; creatorType: string } | { firstName: string; lastName: string; creatorType: string };
-interface ZoteroItem {
-  creators?: [];
-  rights: any;
-  title: string;
-  url: string;
-  doi: string;
-  extra: string;
-  callNumber: string;
-  institution: string;
-  abstractNote: string;
-  date: string;
-}
+// type Creator = { name: string; creatorType: string } | { firstName: string; lastName: string; creatorType: string };
+// interface ZoteroItem {
+//   creators?: [];
+//   rights: any;
+//   title: string;
+//   url: string;
+//   doi: string;
+//   extra: string;
+//   callNumber: string;
+//   institution: string;
+//   abstractNote: string;
+//   date: string;
+// }
 
 /*
             parser_item.add_argument('--crossref-user', {
@@ -43,7 +46,10 @@ interface ZoteroItem {
 
       */
 
-export default async function formatAsCrossRefXML(item: ZoteroItem = {} as ZoteroItem, args: any) {
+export default async function formatAsCrossRefXML(
+  item: Item = {} as Item,
+  args: ZoteroTypes.IItemArgs,
+): Promise<FormatAsCrossRefXMLResult> {
   const { creators = [] } = item;
 
   const authorDataIn: string = [
@@ -121,7 +127,7 @@ export default async function formatAsCrossRefXML(item: ZoteroItem = {} as Zoter
     `${os.homedir()}/.config/zotero-cli/crossref-user.json`,
   ].find((cfg) => fs.existsSync(cfg));
 
-  let crossRefUser = crossRefUserIn
+  let crossRefUser: CrossRefUser = crossRefUserIn
     ? JSON.parse(fs.readFileSync(crossRefUserIn, 'utf-8'))
     : { depositor_name: 'NAME:ROLE', email_address: 'EMAIL' };
   if (args.crossref_user_json) crossRefUser = args.crossref_user_json;
@@ -234,7 +240,7 @@ export default async function formatAsCrossRefXML(item: ZoteroItem = {} as Zoter
   return { result: result, status: status };
 }
 
-async function crossref_submit(CreateDate, result, crossRefUser) {
+async function crossref_submit(CreateDate: string, result: string, crossRefUser: CrossRefUser): Promise<string> {
   /*
   const FormData = require('form-data');
   const axios = require('axios');
@@ -299,7 +305,7 @@ async function crossref_submit(CreateDate, result, crossRefUser) {
   return fname;
 }
 
-async function crossref_confirm(fname, doi, crossRefUser) {
+async function crossref_confirm(fname: string, doi: string, crossRefUser: CrossRefUser): Promise<number> {
   const { Curl } = require('node-libcurl');
   console.log('Checking submission progress.');
   function sleep(ms) {
