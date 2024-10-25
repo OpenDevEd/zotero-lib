@@ -94,9 +94,8 @@ async function main() {
     if (!(args.func in zoteroLib)) {
       throw new Error(`No cmd handler defined for ${args.func}`);
     }
-    console.log('args', args);
-    zoteroLib.changeConfig(args);
-    let result = await zoteroLib[args.func](zoteroLib.config);
+    
+    let result = await zoteroLib[args.func](args);
     // This really just works for 'item'... should realy move those functions elsewhere
     if (args.xmp) {
       result = formatAsXMP(result);
