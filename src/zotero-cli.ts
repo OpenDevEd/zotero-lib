@@ -14,7 +14,7 @@ import { ZoteroTypes } from './zotero-interface';
 import { Zenodo } from './types/zenodo';
 const fs = require('fs');
 
-let zoteroLib = new Zotero({});
+let zoteroLib = new Zotero({api_key:''});
 
 /**
  * Initialize Command Line Interface
@@ -26,7 +26,7 @@ async function main() {
     try {
       await configSetup();
       console.log('config setup done');
-      zoteroLib = new Zotero({});
+      zoteroLib = new Zotero({api_key:''});
     } catch (error) {
       throw new Error('error happened while setting up config please try again');
       // throw new Error('Both user/group are missing. You must provide exactly one of --user-id or --group-id');
