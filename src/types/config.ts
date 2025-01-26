@@ -1,5 +1,5 @@
 export type ZoteroConfig = {
-  'api_key'?: string;
+  api_key: string; // Required API key
   'api-key'?: string;
   config?: string;
   config_json?: any;
