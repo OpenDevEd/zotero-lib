@@ -82,6 +82,7 @@ namespace ZoteroTypes {
     xpm?: boolean;
     crossref?: boolean;
     crossref_user?: string;
+    crossref_user_json?: any;
     crossref_submit?: boolean;
     crossref_no_confirm?: boolean;
     zenodo?: boolean;
@@ -100,6 +101,7 @@ namespace ZoteroTypes {
     validate_with?: string;
     switchNames?: boolean;
     fullresponse?: boolean;
+    tags?: boolean | string[];
   }
 
   export interface ICreateItemArgs extends IZoteroCongif {
@@ -277,6 +279,43 @@ namespace ZoteroTypes {
     output?: string;
     delete?: boolean;
     onlykeys?: boolean;
+  }
+
+  export interface IGetIdsArgs extends ZoteroTypes.IZoteroCongif {
+    key?: string;
+  }
+
+  export interface ITrashArgs extends ZoteroTypes.IZoteroCongif {
+    tags?: boolean;
+  }
+
+  export interface ITagsArgs extends ZoteroTypes.IZoteroCongif {
+    filter?: string;
+    count?: boolean;
+  }
+
+  export interface ISyncToLocalDBArgs {
+    user_id?: string;
+    groupid?: string;
+    api_key?: string;
+    group_id?: string;
+  }
+
+  export interface IZenodoArgs extends IZoteroCongif {
+    zenodoWriteFile?: boolean;
+    author_data?: string;
+  }
+
+  export interface IWebsocketConfig {
+    api_key: any;
+    group_id?: string;
+    user_id?: string;
+    library_type?: string;
+    indent?: number;
+    zotero_schema?: string;
+    out?: string;
+    verbose?: boolean;
+    show?: boolean;
   }
 }
 

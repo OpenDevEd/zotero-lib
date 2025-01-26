@@ -1,13 +1,15 @@
+import { ZoteroTypes } from '../zotero-interface';
+
 const he = require('he');
 
-export function as_value(value) {
+export function as_value(value: any): any {
   if (Array.isArray(value)) {
     value = value[0];
   }
   return value;
 }
 
-export function as_array(value) {
+export function as_array(value: any): any {
   let result = [];
   if (value === undefined) {
     return value;
@@ -22,7 +24,7 @@ export function as_array(value) {
   return result;
 }
 
-export function catchme(number, text, error, data) {
+export function catchme(number: number, text: string, error: any, data: any) {
   return JSON.stringify(
     {
       status: number,
@@ -35,13 +37,19 @@ export function catchme(number, text, error, data) {
   );
 }
 
-export function isomessage(text) {
+export function isomessage(text: string) {
   var d = new Date();
   var n = d.toISOString();
   return text + '; on ' + n;
 }
+type CanonicalUrlElement = {
+  data: { url: string };
+  bib: string;
+  library: { id: any };
+  key: any;
+};
 
-export function getCanonicalURL(args, element) {
+export function getCanonicalURL(args: ZoteroTypes.IGetZoteroDataXargs, element: CanonicalUrlElement) {
   let url = '';
   url =
     element.data.url != '' && !element.bib.match(element.data.url)
@@ -53,13 +61,20 @@ export function getCanonicalURL(args, element) {
   return url;
 }
 
-export function urlify(details, elementLibraryId, elementKey, argsZGroup, argsZKey, argsOpenInZotero) {
+export function urlify(
+  details: string,
+  elementLibraryId: string,
+  elementKey: string,
+  argsZGroup: string,
+  argsZKey: string,
+  argsOpenInZotero: boolean,
+): string {
   return `<a href="https://ref.opendeved.net/zo/zg/${elementLibraryId}/7/${elementKey}/NA?${
     argsZGroup || argsZKey ? `src=${argsZGroup}:${argsZKey}&` : ''
   }${argsOpenInZotero ? 'openin=zotero' : ''}">${details}</a>`;
 }
 
-export function colophon(string) {
+export function colophon(string: string): string {
   let result = '';
   const match = string.match(/Colophon: (.*?)\n/);
   if (match) {

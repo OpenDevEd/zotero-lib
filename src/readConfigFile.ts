@@ -1,9 +1,18 @@
+import { ZoteroConfig, ZoteroConfigOptions } from './types/config';
+
 const os = require('os');
 const toml = require('@iarna/toml');
 const fs = require('fs');
 
-export function readConfigFile(args: any) {
-  let config = {};
+/**
+ * Read and parse the config file
+ * @param args.config - path to the config file, if not provided, it will look in the default locations
+ * @default args.config - 'zotero-cli.toml', `~/.config/zotero-cli/zotero-cli.toml`
+ */
+export function readConfigFile(args: ZoteroConfig): ZoteroConfigOptions {
+  let config: ZoteroConfigOptions = {
+    api_key: '',
+  };
 
   const configPath: string = [
     args.config,
