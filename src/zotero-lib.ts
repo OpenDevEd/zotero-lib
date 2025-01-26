@@ -2629,8 +2629,11 @@ class Zotero {
               where: {
                 group_id: parseInt(group_id),
                 data: {
-                  contains: `${groupid.toString()}:${itemid}`,
+                  contains: `${itemid}`,
                 },
+                item_id: {
+                  not: itemid,
+              },
                 isDeleted: false,
               },
               select: {
@@ -2643,8 +2646,11 @@ class Zotero {
             rows = await prisma.alsoKnownAs.findMany({
               where: {
                 data: {
-                  contains: `${groupid.toString()}:${itemid}`,
+                  contains: `${itemid}`,
                 },
+                item_id: {
+                  not: itemid,
+              },
                 isDeleted: false,
               },
               select: {
