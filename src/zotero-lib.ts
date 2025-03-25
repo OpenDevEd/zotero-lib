@@ -100,7 +100,7 @@ class Zotero {
    * @param args.config_json - config in json format
    * @param args.verbose - verbose output
    */
-  constructor(args: ZoteroConfig = {}) {
+  constructor(args: ZoteroConfig = { api_key: '' }) {
     // Read config
     this.config = this.configure(args, true);
     this.http = createHttpClient({
@@ -139,6 +139,10 @@ class Zotero {
       if (typeof args.config_json === 'string') {
         configObject = JSON.parse(args.config_json);
       }
+    
+    if(args['api-key'])
+      config.api_key=args['api-key'];
+    this.print('config=' + JSON.stringify(config, null, 2));
 
       //TODO: is it intended way to merge???
       config = { ...config, ...configObject };
@@ -1088,7 +1092,13 @@ class Zotero {
     if (!args.key && !(args.filter && args.filter['itemKey'])) {
       return this.message(0, 'Unable to extract group/key from the string provided.');
     }
-    if (args.key) args.key = this.extractKeyAndSetGroup(args.key);
+    if (args.key) {
+      args.key = this.extractKeyAndSetGroup(args.key);
+      // Ensure group_id is set in config after extraction
+      if (!this.config.group_id) {
+          return this.message(0, 'No group ID provided or extracted from the key.');
+      }
+  }
 
     // TODO: Need to implement filter as a command line option --filter="{...}"
 
@@ -2629,8 +2639,11 @@ class Zotero {
               where: {
                 group_id: parseInt(group_id),
                 data: {
-                  contains: `${groupid.toString()}:${itemid}`,
+                  contains: `${itemid}`,
                 },
+                item_id: {
+                  not: itemid,
+              },
                 isDeleted: false,
               },
               select: {
@@ -2643,8 +2656,11 @@ class Zotero {
             rows = await prisma.alsoKnownAs.findMany({
               where: {
                 data: {
-                  contains: `${groupid.toString()}:${itemid}`,
+                  contains: `${itemid}`,
                 },
+                item_id: {
+                  not: itemid,
+              },
                 isDeleted: false,
               },
               select: {
