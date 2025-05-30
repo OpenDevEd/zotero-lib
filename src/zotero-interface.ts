@@ -317,6 +317,12 @@ namespace ZoteroTypes {
     verbose?: boolean;
     show?: boolean;
   }
+
+  export interface IDownloadAttachmentsArgs extends IZoteroCongif {
+    key: string;
+    filename: string;
+    group_id?: string;
+  }
 }
 
 export { ZoteroTypes };

@@ -1002,6 +1002,61 @@ class Zotero {
     return items;
   }
 
+
+  /**
+   * Downloads an attachment file from a Zotero item.
+   * 
+   * This method downloads a file attachment associated with a Zotero item and saves it to the local filesystem.
+   * It uses the Zotero API to retrieve the file and streams it to the specified location.
+   * 
+   * @param args - The arguments for downloading the attachment
+   * @param args.key - The key of the Zotero item attachment to download
+   * @param args.filename - The local filename/path where the attachment should be saved
+   * @param args.group_id - (Optional) The Zotero group ID. If not provided, uses the configured group_id
+   * 
+   * @returns A Promise that resolves to:
+   * - null if the download was successful
+   * - MessageData with status 1 and error message if there was a failure
+   * 
+   * @example
+   * ```typescript
+   * // Download an attachment
+   * const result = await zotero.download_attachment({
+   *   key: "ABCD1234",
+   *   filename: "document.pdf",
+   *   group_id: "123456"
+   * });
+   * ```
+   */
+  public async download_attachment(args: ZoteroTypes.IDownloadAttachmentsArgs): Promise<MessageData | null> {
+    const { key, filename, group_id } = args;
+    if (!key) {
+      return this.message(1, 'key is required');
+    }
+
+    const res = await axios.get(`https://api.zotero.org/groups/${group_id || this.config.group_id}/items/${key}/file`, {
+      responseType: 'stream',
+      headers: {
+        Authorization: `Bearer ${this.config.api_key}`,
+      },
+    });
+
+    if (!res) {
+      return this.message(1, 'Failed to download attachment');
+    }
+
+    const writer = fs.createWriteStream(filename);
+
+    res.data.pipe(writer);
+
+    await new Promise<void>((resolve, reject) => {
+      writer.on('finish', resolve);
+      writer.on('error', reject);
+    });
+
+    return null;
+  }
+
   /**
    * Validates the items using a specified schema or the default Zotero schema.
    * @param args - The arguments passed to the method.
@@ -1108,6 +1163,7 @@ class Zotero {
       output.push({ record: item });
 
       if (args.savefiles) {
+        console.log("savefiles", args.savefiles)
         const children = await this.http.get(`/items/${args.key}/children`, undefined, this.config);
         output.push({ children });
         await Promise.all(
@@ -1116,12 +1172,17 @@ class Zotero {
             .map(async (child) => {
               if (child.data.filename) {
                 logger.info(`Downloading file ${child.data.filename}`);
-                // TODO: Is 'binary' correct?
-                fs.writeFileSync(
-                  child.data.filename,
-                  await this.http.get(`/items/${child.key}/file`, undefined, this.config),
-                  'binary',
-                );
+                
+                const downloadResult = await this.download_attachment({
+                  key: child.key,
+                  filename: child.data.filename,
+                  group_id: this.config.group_id
+                });
+
+                if (downloadResult) {
+                  // If there was an error
+                  throw new Error(downloadResult.message);
+                }
 
                 // checking md5, if it doesn't match we throw an error
                 const downloadedFilesMD5 = md5File(child.data.filename);
