@@ -1,231 +1,463 @@
 # zotero-lib
 
-## Introduction
+A powerful TypeScript library and CLI tool for interacting with the Zotero API. Part of the OpenDevEd zotzen ecosystem for managing academic libraries.
 
-Tools for working with the APIs of Zotero and Zenodo (zotzen)
+## Table of Contents
 
-This repository is part of a set of repositories, [see here](https://github.com/orgs/OpenDevEd/teams/zotzen-team/repositories). Currently, this set contains a number of libraries
-
-- zenodo-lib [GitHub](https://github.com/opendeved/zenodo-lib), [npm](https://www.npmjs.com/package/zenodo-lib)
-- zotero-lib [GitHub](https://github.com/opendeved/zotero-lib), [npm](https://www.npmjs.com/package/zotero-lib)
-- zotzen-lib [GitHub](https://github.com/opendeved/zotzen-lib), [npm](https://www.npmjs.com/package/zotzen-lib)
-
-(The above tools can also be installed as command-line tools (CLI) with `npm -g`.)
-
-And a web application
-
-- [zotzen-web](https://github.com/opendeved/zotzen-web)
-
-This code builds on earlier code for [zotero-cli](https://github.com/OpenDevEd/zotero-cli), which was developed by [@bjohas](https://github.com/bjohas), [@retorquere](https://github.com/retorquere) and [@a1diablo](https://github.com/a1diablo).
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [CLI Commands](#cli-commands)
+- [Library Usage](#library-usage)
+- [Configuration](#configuration)
+- [Development](#development)
+- [API Reference](#api-reference)
+- [Contributing](#contributing)
+- [License](#license)
 
 ## Installation
 
-Install this library in a module with
-
-```bash
-npm install zotero-lib
-yarn add zotero-lib
-```
-
-or as global CLI
+### As a CLI Tool (Global)
 
 ```bash
 npm install -g zotero-lib
+# or
 yarn global add zotero-lib
 ```
 
-View entry on [npm](https://www.npmjs.com/package/zotero-lib)
-
-## Use of the library and the CLI
-
-The directory tests/ contains a number of tests that illustrate the
-use of the npm library. The file tests/test_cli.sh has examples for
-use of the library from the command line.
-
-## CLI Documentation
-
-The zotero-cli allows you to access zoter from cmd line, it allows you to automate redundant taskse easily
-
-## Basic usage
-
-### Help
+### As a Library (Local)
 
 ```bash
+npm install zotero-lib
+# or
+yarn add zotero-lib
+```
+
+### From Source
+
+```bash
+git clone https://github.com/OpenDevEd/zotero-lib.git
+cd zotero-lib
+npm install
+npm run build
+```
+
+## Quick Start
+
+### CLI Basics
+
+```bash
+# Show help
 zotero-lib -h
 zotero-lib --help
-```
 
-This will print help for all commands and options accepted by zotero-lib
-
-### Version
-
-```bash
+# Show version
 zotero-lib -v
-zotero-lib --version
+
+# Get items from a group
+zotero-lib items --group-id 12345 --api-key YOUR_API_KEY --filter '{"limit": 10}'
+
+# Create an item
+zotero-lib create --group-id 12345 --api-key YOUR_API_KEY --items '{"title": "My Book", "itemType": "book"}'
 ```
 
-This will print the version of cli you have installed
+### Environment Variables
 
-### create
-
-This allows you to create item(s). You can create items in two different ways either by providing file containg json or json items as string
-
-Both of these options can be used by providing following arguments
-
-- `--files` - this accepts text files containing json
-- `--items` - this accepts items as json string
-
-**Note**: You must use only one of these at a time
-
-Examples
+Set these for convenience (avoids passing `--api-key` every time):
 
 ```bash
-zotero-lib create --files filepath.txt
-zotero-lib create --items '{"title": "zotero item 1", "itemType": "book"}' '{"title": "zotero item 2", "itemType": "book"}'
+export ZOTERO_API_KEY="your-api-key-here"
+export ZOTERO_GROUP_ID="12345"
 ```
 
-### update
+Or create a `.env` file:
 
-This sub-command can be used to update existing items
+```
+ZOTERO_API_KEY=your-api-key-here
+ZOTERO_GROUP_ID=12345
+```
+
+## CLI Commands
+
+### Item Management
+
+#### Create Items
 
 ```bash
-zotero-lib update --key key-here --json '{"title": "zotero item 1 updat", "itemType": "book"}'
-zotero-lib update --key key-here --file filepath.txt
+# From file containing JSON
+zotero-lib create --files items.json
+
+# From command line JSON
+zotero-lib create --items '{"title": "Book Title", "itemType": "book"}'
+
+# Multiple items
+zotero-lib create --items '{"title": "Book 1"}' '{"title": "Book 2"}'
 ```
 
-You can also specify option replace which completely replace existing item and only keep provided information
+#### Update Items
 
 ```bash
-zotero-lib update --replace --key key-here --json '{"title": "zotero item 1 updat", "itemType": "book"}'
+# Update by key
+zotero-lib update --key ABC123 --json '{"title": "Updated Title"}'
+
+# Replace entire item
+zotero-lib update --replace --key ABC123 --json '{"title": "New Item", "itemType": "book"}'
+
+# From file
+zotero-lib update --key ABC123 --file items.json
 ```
 
-### item
-
-This sub-command has various use cases
-
-To fetch item
+#### Get Items
 
 ```bash
-zotero-lib item --key key-here
+# Single item
+zotero-lib item --key ABC123
+
+# Multiple items with filters
+zotero-lib items --filter '{"limit": 50, "start": 0}'
+
+# Top-level items only (no attachments/notes)
+zotero-lib items --top
+
+# Items in specific collection
+zotero-lib items --collection ABC123
 ```
 
-To add files
+#### Delete Items
 
 ```bash
-zotero-lib item --key key-here --addfiles test.json
+# Move to trash
+zotero-lib delete --key ABC123
+
+# Permanent delete
+zotero-lib delete --key ABC123 --permanent
 ```
 
-### items
-
-This sub-command can be used to fetch items with various filters
+### Collection Management
 
 ```bash
-zotero-lib items --filter '{"limit": 10}'
+# List collections
+zotero-lib collections --group-id 12345
+
+# Create collection
+zotero-lib collection --group-id 12345 --name "My Collection"
+
+# Update collection
+zotero-lib update-collection --key ABC123 --name "New Name"
+
+# Delete collection
+zotero-lib delete-collection --key ABC123
 ```
 
-### collection
-
-### collections
-
-### publications
-
-### tags
-
-### attachment
-
-### types
-
-### groups
-
-### fields
-
-### searches
-
-### key
-
-### field
-
-This sub-command can be used to fetch field information
+### Tag Management
 
 ```bash
-zoetro-lib field --key key-here --field field-name
+# List tags
+zotero-lib tags --group-id 12345
+
+# Get items by tag
+zotero-lib items --tag "important"
 ```
 
-Modify field information
+### Attachments
 
 ```bash
-zoetro-lib field --key key-here --field field-name --value new-value
+# Add attachment
+zotero-lib attachment --key ABC123 --addfiles file.pdf
+
+# Attach link
+zotero-lib attach-link --key ABC123 --url "https://example.com"
+
+# Attach note
+zotero-lib attach-note --key ABC123 --note "This is a note"
 ```
 
-Or with `--extra` to fetch extra information
+### DOI Operations
 
 ```bash
-zoetro-lib field --extra --key key-here --field field-name
+# Get DOI for an item
+zotero-lib get-doi --key ABC123
+
+# Update DOI
+zotero-lib update-doi --key ABC123 --doi "10.1234/example"
 ```
 
-And modify extra information
+### Field Operations
 
 ```bash
-zoetro-lib field --extra --key key-here --field field-name --value new-value
+# Get field value
+zotero-lib field --key ABC123 --field title
+
+# Set field value
+zotero-lib field --key ABC123 --field title --value "New Title"
+
+# Get extra field
+zotero-lib field --key ABC123 --extra --field customField
 ```
 
+### Database Sync
 
-### update-url
+Sync your Zotero library locally using SQLite:
 
-### get-doi
+```bash
+# Initial sync
+zotero-lib db backup.db --sync --group-id 12345
 
-### update-doi
+# Incremental sync (only fetches changes since last sync)
+zotero-lib db backup.db --sync
 
-### enclose-item
+# Export to JSON
+zotero-lib db backup.db --export-json=backup.json
 
-### attach-link
+# Lookup items locally
+zotero-lib db backup.db --lookup --keys ABC123,DEF456
 
-### attach-note
+# Scheduled sync (daemon mode)
+zotero-lib db backup.db --sync --daemon="0 * * * *"  # Every hour
 
-### kciaka
+# Find inconsistent items
+zotero-lib db backup.db --errors
+```
 
-### bibliography
+### Merge & Deduplicate
 
-### Local Database Syncing
+#### Intelligent Merge (Recommended)
 
-You can use this cli to locally backup your online zotero library. The `db` cmd allows you to sync online library in local sqlite database. On first run all online records are synced into local database. On subsequent runs only those records are fetched, which were modifed since last sync.
+```bash
+# Merge duplicates with intelligent strategy
+zotero-lib merge --group-id 12345 --data duplicates.json --strategy intelligent_fill
 
-The underlying database is SQLite. You dont need to install any server or anything it will work out of box as SQLite comes bundled with this cli. 
+# Available strategies:
+#   - intelligent_fill (default): Fill empty fields from duplicates
+#   - keep_oldest: Preserve oldest item
+#   - keep_newest: Preserve newest item
+```
 
-To use this cmd you need to provide your db name along with one or more options. The options which you can specify are detailed below.
+#### Deduplicate
 
-`--sync` make local db synced with online library  
-`--lookup` allow you to lookup specific items in the local db  
-`--keys` this must be used with `--lookup` to specify specfic keys you want to locate  
-`--lockfile` name of lock file to be used, default is "sync.lock" 
-`--lock-timeout` if a lock file already exist, how much older it should be to classify it as outdated, if its outdated it will be removed and a new one will be generated
-`--export-json=<file-name.json>` export localdb as json with given `file-name.json`  
-`--demon=<valid-cron-pattern` this will make the sync process run in demon mode, where it will peridically sync by itself, see [https://crontab.guru](https://crontab.guru) to learn about crontab pattern  
-`--errors` this will list all inconsistent items which have non zero children and non zero references 
+```bash
+# Find duplicates
+zotero-lib deduplicate --group-id 12345 --options identical
 
-These options are optional and can be combined as required. If all options are specified then they will be read/applied in above order.
+# With output file
+zotero-lib deduplicate --group-id 12345 --output duplicates.json
+```
 
-#### Examples
+### Other Commands
 
-To sync given db file `backup.db` with online version
+```bash
+# Get item types
+zotero-lib types --group-id 12345
 
-````bash
-zotero-cli db backup.db --sync
-````
+# List groups
+zotero-lib groups
 
-To export give db file `backup.db` as json file `./backup.json`
+# Search items
+zotero-lib searches --group-id 12345
 
-````bash
-zotero-cli db backup.db --export-json="./backup.json"
-````
+# Get library fields
+zotero-lib fields --group-id 12345
 
-You can combine previous two steps in one cmd
+# Create bibliography
+zotero-lib bibliography --group-id 12345 --style apa
 
-````bash
-zotero-cli db backup.db --sync --export-json="./backup.json"
-````
+# Get item template
+zotero-lib TEMPLATE --item-type book
+```
 
+## Library Usage
 
-## Also see
+### Import the Library
 
-[zotero-api-client](https://github.com/tnajdek/zotero-api-client) (With hindsight we might have built on zotero-api-client - we might still rebuild our code to use zotero-api-client.)
+```typescript
+import { Zotero } from 'zotero-lib';
+```
+
+### Initialize
+
+```typescript
+const zotero = new Zotero({
+  apiKey: 'your-api-key',
+  groupId: 12345
+});
+```
+
+### Fetch Items
+
+```typescript
+// Get all items
+const items = await zotero.getItems();
+
+// Get items with filters
+const items = await zotero.getItems({
+  limit: 50,
+  start: 0,
+  collection: 'collection-key',
+  tag: 'important'
+});
+
+// Get single item
+const item = await zotero.getItem('ABC123');
+```
+
+### Create Items
+
+```typescript
+const newItem = await zotero.createItem({
+  title: 'My Book',
+  itemType: 'book',
+  creators: [{
+    creatorType: 'author',
+    firstName: 'John',
+    lastName: 'Doe'
+  }]
+});
+```
+
+### Update Items
+
+```typescript
+await zotero.updateItem('ABC123', {
+  title: 'Updated Title'
+});
+```
+
+### Merge Items
+
+```typescript
+import { merge_items, MergeStrategy } from 'zotero-lib/build/utils/merge';
+
+const result = await merge_items(
+  groupId,
+  itemKeys,
+  MergeStrategy.INTELLIGENT_FILL
+);
+
+console.log(result);
+```
+
+## Configuration
+
+### Config File
+
+Create `zotero.config.json` in your project root:
+
+```json
+{
+  "apiKey": "your-api-key",
+  "groupId": 12345,
+  "libraryType": "group"
+}
+```
+
+### Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `ZOTERO_API_KEY` | Your Zotero API key |
+| `ZOTERO_GROUP_ID` | Default group ID |
+| `ZOTERO_LIBRARY_TYPE` | 'user' or 'group' (default: 'user') |
+
+## Development
+
+### Setup
+
+```bash
+npm install
+npm run build
+```
+
+### Available Scripts
+
+```bash
+# Development
+npm run dev          # Run with ts-node
+
+# Build
+npm run build        # Build for production
+
+# Test
+npm test             # Run Jest tests
+npm run legacy:test  # Run legacy tests
+
+# Lint
+npx eslint src/
+
+# Type checking
+npx tsc --noEmit
+
+# Generate docs
+npm run docs         # Generate TypeScript documentation
+
+# Publish
+npm run publish:patch  # Patch release
+npm run publish:minor  # Minor release
+npm run publish:major  # Major release
+```
+
+### Running Tests
+
+```bash
+# All tests
+npm test
+
+# Specific test file
+npx jest tests/utils.test.ts
+
+# With coverage
+npm test -- --coverage
+```
+
+## API Reference
+
+### Zotero Class
+
+#### Constructor
+
+```typescript
+new Zotero(config: ZoteroConfig)
+```
+
+#### Methods
+
+| Method | Description |
+|--------|-------------|
+| `getItems(options?)` | Fetch items from library |
+| `getItem(key)` | Fetch single item |
+| `createItem(item)` | Create new item |
+| `updateItem(key, data)` | Update item |
+| `deleteItem(key)` | Delete item |
+| `getCollections()` | List collections |
+| `createCollection(name, parent?)` | Create collection |
+| `getTags()` | List tags |
+| `getItemTypes()` | List item types |
+| `getFields()` | List available fields |
+
+### Merge Strategies
+
+```typescript
+enum MergeStrategy {
+  INTELLIGENT_FILL = 'intelligent_fill',
+  KEEP_OLDEST = 'keep_oldest',
+  KEEP_NEWEST = 'keep_newest'
+}
+```
+
+## Related Projects
+
+This library is part of the OpenDevEd zotzen ecosystem:
+
+- [zenodo-lib](https://github.com/opendeved/zenodo-lib) - Zenodo API library
+- [zotzen-lib](https://github.com/opendeved/zotzen-lib) - Combined Zotero + Zenodo
+- [zotzen-web](https://github.com/opendeved/zotzen-web) - Web interface
+
+## License
+
+ISC License - see [LICENSE](LICENSE) file for details.
+
+## Credits
+
+Originally built on [zotero-cli](https://github.com/OpenDevEd/zotero-cli) by [@bjohas](https://github.com/bjohas), [@retorquere](https://github.com/retorquere), and [@a1diablo](https://github.com/a1diablo).
+
+---
+
+For more details, see the [full documentation](docs/) or run `zotero-lib --help`.
