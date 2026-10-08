@@ -46,6 +46,25 @@ const xmlescape = require('xml-escape');
 
       */
 
+// Zotero creator types (presenter, contributor, cartographer, ...) are a wider set than the
+// contributor_role values the Crossref schema accepts, and Crossref rejects the whole deposit on an unknown one.
+const CROSSREF_CONTRIBUTOR_ROLES = new Set([
+  'author',
+  'chair',
+  'editor',
+  'reader',
+  'review-assistant',
+  'reviewer',
+  'reviewer-external',
+  'stats-reviewer',
+  'translator',
+]);
+
+export function crossrefContributorRole(creatorType?: string): string {
+  const role = creatorType?.trim().toLowerCase() ?? '';
+  return CROSSREF_CONTRIBUTOR_ROLES.has(role) ? role : 'author';
+}
+
 export default async function formatAsCrossRefXML(
   item: Item = {} as Item,
   args: ZoteroTypes.IItemArgs,
@@ -85,21 +104,22 @@ export default async function formatAsCrossRefXML(
       let orcid = '';
       let org = '';
       const fullname = 'name' in c ? c.name : `${c.firstName} ${c.lastName}`;
+      const role = crossrefContributorRole(c.creatorType);
       if (fullname in authorDataExpanded) {
         if (authorDataExpanded[fullname]['orcid']) {
           orcid = `<ORCID>${authorDataExpanded[fullname]['orcid']}</ORCID>`;
         }
         if (authorDataExpanded[fullname]['organization']) {
-          org = `<organization sequence='${seq}' contributor_role='${c.creatorType}'>${authorDataExpanded[fullname]['organization']}</organization>`;
+          org = `<organization sequence='${seq}' contributor_role='${role}'>${authorDataExpanded[fullname]['organization']}</organization>`;
         }
       }
       if ('name' in c) {
-        person = `<person_name sequence='${seq}' contributor_role='${c.creatorType}'>
+        person = `<person_name sequence='${seq}' contributor_role='${role}'>
       <given_name>${c.name}</given_name>
       <surname>${c.name}</surname>${orcid}
 </person_name>${org}`;
       } else {
-        person = `<person_name sequence='${seq}' contributor_role='${c.creatorType}'>
+        person = `<person_name sequence='${seq}' contributor_role='${role}'>
       <given_name>${c.firstName}</given_name>
       <surname>${c.lastName}</surname>${orcid}
 </person_name>${org}`;
