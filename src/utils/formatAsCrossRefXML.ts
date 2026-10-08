@@ -65,6 +65,18 @@ export function crossrefContributorRole(creatorType?: string): string {
   return CROSSREF_CONTRIBUTOR_ROLES.has(role) ? role : 'author';
 }
 
+// Zotero item types without an institution field (presentation, ...) used to deposit the literal text "undefined".
+// Both elements are optional in the Crossref schema, so they are left out instead.
+export function crossrefPublisherXML(institution?: string): string {
+  if (!institution?.trim()) return '';
+  return `<publisher>
+         <publisher_name>${xmlescape(institution)}</publisher_name>
+        </publisher>
+        <institution>
+         <institution_name>${xmlescape(institution)}</institution_name>
+        </institution>`;
+}
+
 export default async function formatAsCrossRefXML(
   item: Item = {} as Item,
   args: ZoteroTypes.IItemArgs,
@@ -222,12 +234,7 @@ export default async function formatAsCrossRefXML(
         <day>${day}</day>
         <year>${year}</year>
         </publication_date>
-        <publisher>
-         <publisher_name>${xmlescape(institution)}</publisher_name>
-        </publisher>
-        <institution>
-         <institution_name>${xmlescape(institution)}</institution_name>
-        </institution>
+        ${crossrefPublisherXML(institution)}
         <doi_data>
          <doi>${doi}</doi>
          <resource>${url}</resource>
